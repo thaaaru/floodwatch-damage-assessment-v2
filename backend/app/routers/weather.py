@@ -38,16 +38,35 @@ async def get_all_weather(
     """
     Get weather summary for all districts. Used by the dashboard map.
     Data is cached and refreshed every 30 minutes to avoid API rate limits.
+    Returns stale data immediately if available, triggers background refresh.
     """
+    import asyncio
+
     if hours not in [24, 48, 72]:
         hours = 24
 
-    # Ensure cache is populated (will only fetch if cache is expired or empty)
-    if not weather_cache.is_cache_valid():
-        await weather_cache.refresh_cache()
+    # Check if we have any cached data (even if stale)
+    cached_data = weather_cache.get_all_weather(hours)
 
-    # Return cached data
-    return weather_cache.get_all_weather(hours)
+    # If cache is invalid, trigger background refresh (don't wait)
+    if not weather_cache.is_cache_valid():
+        if cached_data:
+            # Have stale data - return it immediately, refresh in background
+            asyncio.create_task(weather_cache.refresh_cache())
+            return cached_data
+        else:
+            # No cached data at all - must wait for refresh
+            try:
+                await weather_cache.refresh_cache()
+                return weather_cache.get_all_weather(hours)
+            except Exception as e:
+                raise HTTPException(
+                    status_code=503,
+                    detail=f"Weather service unavailable and no cached data: {str(e)}"
+                )
+
+    # Return fresh cached data
+    return cached_data
 
 
 @router.get("/cache-status")
