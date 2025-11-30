@@ -6,7 +6,7 @@ const nextConfig = {
     return [
       {
         source: '/api/proxy/:path*',
-        destination: 'http://198.199.76.11:8000/api/:path*',
+        destination: 'https://api.floodwatch.hackandbuild.dev/api/:path*',
       },
     ];
   },
