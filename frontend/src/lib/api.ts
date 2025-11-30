@@ -1,8 +1,9 @@
-// Detect if we're in production (HTTPS) to use the proxy
+// In production, call API directly. In development, use local backend
 const isProduction = typeof window !== 'undefined' && window.location.protocol === 'https:';
 
-// In production, use proxy. In development, connect directly to backend
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+// Production uses the API domain directly (CORS enabled), development uses local backend
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL ||
+  (isProduction ? 'https://api.floodwatch.hackandbuild.dev' : 'http://localhost:8000');
 
 export interface District {
   name: string;
@@ -123,12 +124,7 @@ export interface SubscribeResponse {
 
 class ApiClient {
   private getUrl(endpoint: string): string {
-    // In production (HTTPS), use the proxy route
-    // endpoint comes in as "/api/something", proxy expects "/api/proxy/something"
-    if (isProduction) {
-      // Convert /api/weather/all -> /api/proxy/weather/all
-      return endpoint.replace('/api/', '/api/proxy/');
-    }
+    // Always use BACKEND_BASE directly (works for both production and development)
     return `${BACKEND_BASE}${endpoint}`;
   }
 
