@@ -1,5 +1,5 @@
-// In production, call API directly. In development, use local backend
-const isProduction = typeof window !== 'undefined' && window.location.protocol === 'https:';
+// Use NODE_ENV to detect production (works on both server and client)
+const isProduction = process.env.NODE_ENV === 'production';
 
 // Production uses the API domain directly (CORS enabled), development uses local backend
 const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL ||
