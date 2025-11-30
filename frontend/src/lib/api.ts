@@ -1,9 +1,10 @@
-// Use NODE_ENV to detect production (works on both server and client)
-const isProduction = process.env.NODE_ENV === 'production';
+// Production API URL - hardcoded for reliability
+const PRODUCTION_API = 'https://api.floodwatch.hackandbuild.dev';
 
-// Production uses the API domain directly (CORS enabled), development uses local backend
-const BACKEND_BASE = process.env.NEXT_PUBLIC_API_URL ||
-  (isProduction ? 'https://api.floodwatch.hackandbuild.dev' : 'http://localhost:8000');
+// Use production API in production, localhost in development
+const BACKEND_BASE = process.env.NODE_ENV === 'production'
+  ? PRODUCTION_API
+  : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
 export interface District {
   name: string;
