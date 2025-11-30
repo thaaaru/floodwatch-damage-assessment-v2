@@ -65,8 +65,7 @@ class HereWeatherService:
             url = f"{self.BASE_URL}/report"
             params = {
                 "apiKey": api_key,
-                "latitude": lat,
-                "longitude": lon,
+                "location": f"{lat},{lon}",
                 "products": "observation",
                 "oneObservation": "true",
             }
@@ -124,8 +123,7 @@ class HereWeatherService:
             url = f"{self.BASE_URL}/report"
             params = {
                 "apiKey": api_key,
-                "latitude": lat,
-                "longitude": lon,
+                "location": f"{lat},{lon}",
                 "products": "forecast7days",
             }
 
@@ -180,8 +178,7 @@ class HereWeatherService:
             url = f"{self.BASE_URL}/report"
             params = {
                 "apiKey": api_key,
-                "latitude": lat,
-                "longitude": lon,
+                "location": f"{lat},{lon}",
                 "products": "alerts",
             }
 

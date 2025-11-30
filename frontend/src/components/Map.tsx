@@ -7,7 +7,6 @@ import { getAlertColor } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
 import GoogleMapsTraffic from './GoogleMapsTraffic';
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 
 interface RadarFrame {
   time: number;
