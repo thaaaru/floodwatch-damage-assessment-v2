@@ -294,6 +294,18 @@ class ApiClient {
   async refreshMarineConditions(): Promise<{ status: string; count: number; summary: Record<string, number> }> {
     return this.fetch('/api/intel/marine/refresh', { method: 'POST' });
   }
+
+  // Traffic Incidents endpoints (TomTom)
+  async getTrafficIncidents(category?: string): Promise<TrafficResponse> {
+    const params = new URLSearchParams();
+    if (category) params.set('category', category);
+    const query = params.toString();
+    return this.fetch<TrafficResponse>(`/api/intel/traffic${query ? `?${query}` : ''}`);
+  }
+
+  async refreshTrafficIncidents(): Promise<{ status: string; count: number; summary: Record<string, number> }> {
+    return this.fetch('/api/intel/traffic/refresh', { method: 'POST' });
+  }
 }
 
 // Intelligence types
@@ -556,6 +568,40 @@ export interface MarineResponse {
     max_wave_height: number;
   };
   conditions: MarineCondition[];
+}
+
+// Traffic Incidents types (TomTom)
+export interface TrafficIncident {
+  id: string;
+  icon_category: number;
+  category: string;
+  severity: string;
+  lat: number;
+  lon: number;
+  description: string;
+  from_location: string;
+  to_location: string;
+  road_name: string;
+  delay_seconds: number;
+  delay_minutes: number;
+  length_meters: number;
+  length_km: number;
+  start_time: string | null;
+  end_time: string | null;
+}
+
+export interface TrafficResponse {
+  count: number;
+  summary: {
+    total: number;
+    road_closed: number;
+    accidents: number;
+    roadworks: number;
+    flooding: number;
+    jams: number;
+    other: number;
+  };
+  incidents: TrafficIncident[];
 }
 
 export const api = new ApiClient();

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     open_meteo_marine_url: str = "https://marine-api.open-meteo.com/v1/marine"
     tomorrow_io_api_key: str = ""
     weatherapi_key: str = ""  # WeatherAPI.com key for alerts
+    tomtom_api_key: str = ""  # TomTom Traffic API key
 
     # Application
     alert_check_interval_minutes: int = 15

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
-import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, api } from '@/lib/api';
+import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, TrafficIncident, api } from '@/lib/api';
 import { getAlertColor } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
 import L from 'leaflet';
@@ -144,6 +144,54 @@ function createMarineIcon(riskLevel: string): L.DivIcon {
   });
 }
 
+// Traffic incident colors and icons
+function getTrafficIncidentColor(category: number): string {
+  switch (category) {
+    case 8: return '#dc2626';   // Road Closed - red
+    case 1: return '#f97316';   // Accident - orange
+    case 11: return '#3b82f6';  // Flooding - blue
+    case 9: return '#eab308';   // Road Works - yellow
+    case 6: return '#9333ea';   // Jam - purple
+    default: return '#6b7280';  // Other - gray
+  }
+}
+
+function getTrafficIncidentIcon(category: number): string {
+  switch (category) {
+    case 8: return '🚫';  // Road Closed
+    case 1: return '⚠️';   // Accident
+    case 11: return '🌊'; // Flooding
+    case 9: return '🚧';  // Road Works
+    case 6: return '🚗';  // Jam
+    default: return '⚡';  // Other
+  }
+}
+
+function createTrafficIcon(category: number): L.DivIcon {
+  const color = getTrafficIncidentColor(category);
+  const icon = getTrafficIncidentIcon(category);
+  const size = 28;
+
+  return L.divIcon({
+    className: 'custom-traffic-marker',
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      background-color: ${color};
+      border: 2px solid white;
+      border-radius: 50%;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+    ">${icon}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
 function getForecastAlertColor(level: string): string {
   if (level === 'red') return '#dc2626';
   if (level === 'orange') return '#f97316';
@@ -202,6 +250,8 @@ export default function Map({ onDistrictSelect, hours, layer }: MapProps) {
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
   const [showMarine, setShowMarine] = useState(false);
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
+  const [showTraffic, setShowTraffic] = useState(false);
+  const [trafficIncidents, setTrafficIncidents] = useState<TrafficIncident[]>([]);
 
   const isForecastLayer = layer.startsWith('forecast');
   const forecastDayIndex = isForecastLayer ? parseInt(layer.replace('forecast', '')) - 1 : 0;
@@ -277,6 +327,24 @@ export default function Map({ onDistrictSelect, hours, layer }: MapProps) {
     const interval = setInterval(fetchMarineData, 30 * 60 * 1000); // Refresh every 30 minutes
     return () => clearInterval(interval);
   }, [showMarine]);
+
+  // Fetch traffic incidents when enabled
+  useEffect(() => {
+    if (!showTraffic) return;
+
+    const fetchTrafficData = async () => {
+      try {
+        const data = await api.getTrafficIncidents();
+        setTrafficIncidents(data.incidents);
+      } catch (err) {
+        console.error('Failed to fetch traffic data:', err);
+      }
+    };
+
+    fetchTrafficData();
+    const interval = setInterval(fetchTrafficData, 5 * 60 * 1000); // Refresh every 5 minutes
+    return () => clearInterval(interval);
+  }, [showTraffic]);
 
   // Animate overlay frames with different speeds
   useEffect(() => {
@@ -752,6 +820,77 @@ export default function Map({ onDistrictSelect, hours, layer }: MapProps) {
     ));
   }, [showMarine, marineConditions]);
 
+  // Traffic incident markers
+  const trafficMarkers = useMemo(() => {
+    if (!showTraffic || trafficIncidents.length === 0) return null;
+
+    return trafficIncidents.map((incident) => (
+      <Marker
+        key={`traffic-${incident.id}`}
+        position={[incident.lat, incident.lon]}
+        icon={createTrafficIcon(incident.icon_category)}
+      >
+        <Popup maxWidth={300} minWidth={250}>
+          <div className="p-1">
+            <h3 className="font-bold text-sm border-b pb-1 mb-2">
+              {incident.category}
+            </h3>
+            <div className="text-xs text-gray-600 mb-2">{incident.road_name}</div>
+
+            {/* Severity badge */}
+            <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${
+              incident.severity === 'critical' ? 'bg-red-100 text-red-700' :
+              incident.severity === 'major' ? 'bg-orange-100 text-orange-700' :
+              incident.severity === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
+              'bg-gray-100 text-gray-700'
+            }`}>
+              {incident.severity.toUpperCase()}
+            </div>
+
+            {/* Description */}
+            {incident.description && (
+              <div className="text-xs text-gray-700 mb-2 bg-gray-50 p-2 rounded">
+                {incident.description}
+              </div>
+            )}
+
+            {/* Location info */}
+            <div className="grid grid-cols-2 gap-1 text-xs mb-2">
+              {incident.from_location && (
+                <div className="bg-blue-50 p-1.5 rounded">
+                  <span className="text-gray-500">From: </span>
+                  <span className="font-medium">{incident.from_location}</span>
+                </div>
+              )}
+              {incident.to_location && (
+                <div className="bg-blue-50 p-1.5 rounded">
+                  <span className="text-gray-500">To: </span>
+                  <span className="font-medium">{incident.to_location}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Delay and length */}
+            <div className="grid grid-cols-2 gap-1 text-xs">
+              {incident.delay_minutes > 0 && (
+                <div className="bg-orange-50 p-1.5 rounded text-center">
+                  <div className="text-gray-500">Delay</div>
+                  <div className="font-bold text-orange-700">{incident.delay_minutes} min</div>
+                </div>
+              )}
+              {incident.length_km > 0 && (
+                <div className="bg-gray-50 p-1.5 rounded text-center">
+                  <div className="text-gray-500">Length</div>
+                  <div className="font-medium">{incident.length_km} km</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </Popup>
+      </Marker>
+    ));
+  }, [showTraffic, trafficIncidents]);
+
   if (loading && weatherData.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
@@ -848,6 +987,20 @@ export default function Map({ onDistrictSelect, hours, layer }: MapProps) {
             </svg>
             Marine
           </button>
+          <button
+            onClick={() => setShowTraffic(!showTraffic)}
+            className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
+              showTraffic
+                ? 'bg-red-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+            title="Road incidents & closures"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            Traffic
+          </button>
           <a
             href="https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=7.8731;x=80.7718;z=8;d=2;dl=2;dc=0;"
             target="_blank"
@@ -937,6 +1090,31 @@ export default function Map({ onDistrictSelect, hours, layer }: MapProps) {
             <div className="text-gray-400 mt-1">{marineConditions.length} coastal points</div>
           </div>
         )}
+
+        {showTraffic && (
+          <div className="bg-white rounded-lg shadow-md p-2 text-xs">
+            <div className="text-gray-600 font-medium mb-1">Road Incidents</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1">
+                <span>🚫</span>
+                <span className="text-gray-600">Closed</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>⚠️</span>
+                <span className="text-gray-600">Accident</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>🌊</span>
+                <span className="text-gray-600">Flooding</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span>🚧</span>
+                <span className="text-gray-600">Works</span>
+              </div>
+            </div>
+            <div className="text-gray-400 mt-1">{trafficIncidents.length} incidents</div>
+          </div>
+        )}
       </div>
 
       {loading && (
@@ -968,6 +1146,7 @@ export default function Map({ onDistrictSelect, hours, layer }: MapProps) {
         {riverLines}
         {riverMarkers}
         {marineMarkers}
+        {trafficMarkers}
       </MapContainer>
     </div>
   );

@@ -17,6 +17,7 @@ from ..services.osm_facilities import (
 )
 from ..services.weatherapi_alerts import weatherapi_service
 from ..services.marine_weather import marine_service
+from ..services.traffic_incidents import traffic_service
 
 router = APIRouter(prefix="/api/intel", tags=["intelligence"])
 
@@ -602,3 +603,60 @@ async def get_marine_for_district(district: str):
             return cond
 
     return {"error": f"No marine data for district: {district}", "available_districts": list(set(c["district"] for c in conditions))}
+
+
+# ============================================================
+# Traffic Incidents Endpoints (TomTom Traffic API)
+# ============================================================
+
+@router.get("/traffic")
+async def get_traffic_incidents(
+    category: Optional[str] = Query(None, description="Filter by category: road_closed, accident, roadworks, flooding, jam"),
+):
+    """
+    Get real-time traffic incidents for Sri Lanka from TomTom.
+
+    Returns road closures, accidents, roadworks, flooding, and traffic jams.
+    Automatically detected - no manual reporting needed.
+
+    Categories:
+    - road_closed: Road closures
+    - accident: Traffic accidents
+    - roadworks: Construction/road works
+    - flooding: Flooded roads
+    - jam: Traffic jams
+
+    Data is cached for 5 minutes and sourced from TomTom Traffic API.
+    """
+    if not traffic_service.is_cache_valid():
+        await traffic_service.fetch_incidents()
+
+    if category:
+        incidents = traffic_service.get_by_category(category)
+    else:
+        incidents = traffic_service.get_cached_data()
+
+    summary = traffic_service.get_summary()
+
+    return {
+        "count": len(incidents),
+        "summary": summary,
+        "incidents": incidents,
+    }
+
+
+@router.post("/traffic/refresh")
+async def refresh_traffic_incidents():
+    """
+    Force refresh traffic incidents from TomTom.
+
+    Normally cached for 5 minutes. Use this to get immediate update.
+    """
+    incidents = await traffic_service.fetch_incidents()
+    summary = traffic_service.get_summary()
+
+    return {
+        "status": "refreshed",
+        "count": len(incidents),
+        "summary": summary,
+    }
