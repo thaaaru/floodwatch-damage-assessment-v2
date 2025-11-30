@@ -11,14 +11,26 @@ from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# Sri Lanka bounding box
-# Southwest corner to Northeast corner
-SRI_LANKA_BBOX = {
-    "min_lat": 5.9,
-    "min_lon": 79.5,
-    "max_lat": 9.9,
-    "max_lon": 82.0,
-}
+# Sri Lanka split into smaller regions (TomTom limits bbox to 10,000 km²)
+# Using ~0.8° x 0.8° regions (~8,000 km² each)
+SRI_LANKA_REGIONS = [
+    # Colombo Metro
+    {"min_lat": 6.7, "min_lon": 79.7, "max_lat": 7.1, "max_lon": 80.2, "name": "Colombo"},
+    # Galle-Matara
+    {"min_lat": 5.9, "min_lon": 80.0, "max_lat": 6.4, "max_lon": 80.6, "name": "Galle-Matara"},
+    # Kandy
+    {"min_lat": 7.1, "min_lon": 80.4, "max_lat": 7.5, "max_lon": 80.9, "name": "Kandy"},
+    # Kurunegala-Anuradhapura
+    {"min_lat": 7.5, "min_lon": 79.9, "max_lat": 8.2, "max_lon": 80.6, "name": "Kurunegala"},
+    # Jaffna
+    {"min_lat": 9.4, "min_lon": 79.8, "max_lat": 9.9, "max_lon": 80.4, "name": "Jaffna"},
+    # Trincomalee
+    {"min_lat": 8.3, "min_lon": 80.9, "max_lat": 8.8, "max_lon": 81.4, "name": "Trincomalee"},
+    # Batticaloa
+    {"min_lat": 7.5, "min_lon": 81.4, "max_lat": 8.0, "max_lon": 81.9, "name": "Batticaloa"},
+    # Negombo-Chilaw
+    {"min_lat": 7.1, "min_lon": 79.7, "max_lat": 7.6, "max_lon": 80.2, "name": "Negombo"},
+]
 
 # TomTom incident categories
 INCIDENT_CATEGORIES = {
@@ -117,8 +129,38 @@ class TrafficIncidentsService:
         self._last_fetch: Optional[datetime] = None
         self._cache_duration_seconds = 300  # 5 minutes
 
+    async def fetch_incidents_for_region(self, region: dict) -> list[dict]:
+        """Fetch traffic incidents for a specific region"""
+        api_key = self.settings.tomtom_api_key
+
+        if not api_key:
+            return []
+
+        try:
+            bbox = f"{region['min_lon']},{region['min_lat']},{region['max_lon']},{region['max_lat']}"
+
+            params = {
+                "key": api_key,
+                "bbox": bbox,
+                "fields": "{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay,events{description,code,iconCategory},startTime,endTime,from,to,length,delay,roadNumbers}}}",
+                "language": "en-GB",
+                "categoryFilter": "0,1,2,3,4,5,6,7,8,9,10,11,14",
+                "timeValidityFilter": "present",
+            }
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(self.BASE_URL, params=params)
+                response.raise_for_status()
+                data = response.json()
+
+            return data.get("incidents", [])
+
+        except Exception as e:
+            logger.error(f"Failed to fetch incidents for region {region.get('name', 'unknown')}: {e}")
+            return []
+
     async def fetch_incidents(self) -> list[dict]:
-        """Fetch traffic incidents for Sri Lanka"""
+        """Fetch traffic incidents for all of Sri Lanka (multiple regions)"""
         api_key = self.settings.tomtom_api_key
 
         if not api_key:
@@ -126,26 +168,22 @@ class TrafficIncidentsService:
             return []
 
         try:
-            # Build bounding box string: minLon,minLat,maxLon,maxLat
-            bbox = f"{SRI_LANKA_BBOX['min_lon']},{SRI_LANKA_BBOX['min_lat']},{SRI_LANKA_BBOX['max_lon']},{SRI_LANKA_BBOX['max_lat']}"
+            # Fetch from all regions
+            all_raw_incidents = []
+            seen_ids = set()
 
-            url = f"{self.BASE_URL}"
-            params = {
-                "key": api_key,
-                "bbox": bbox,
-                "fields": "{incidents{type,geometry{type,coordinates},properties{id,iconCategory,magnitudeOfDelay,events{description,code,iconCategory},startTime,endTime,from,to,length,delay,roadNumbers,aci{probabilityOfOccurrence,numberOfReports,lastReportTime}}}}",
-                "language": "en-GB",
-                "categoryFilter": "0,1,2,3,4,5,6,7,8,9,10,11,14",  # All categories
-                "timeValidityFilter": "present",
-            }
+            for region in SRI_LANKA_REGIONS:
+                raw_incidents = await self.fetch_incidents_for_region(region)
+                for incident in raw_incidents:
+                    incident_id = incident.get("properties", {}).get("id")
+                    if incident_id and incident_id not in seen_ids:
+                        seen_ids.add(incident_id)
+                        all_raw_incidents.append(incident)
 
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.get(url, params=params)
-                response.raise_for_status()
-                data = response.json()
+            logger.info(f"Fetched {len(all_raw_incidents)} raw incidents from {len(SRI_LANKA_REGIONS)} regions")
 
             incidents = []
-            raw_incidents = data.get("incidents", [])
+            raw_incidents = all_raw_incidents
 
             for item in raw_incidents:
                 try:
