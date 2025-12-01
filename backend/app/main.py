@@ -69,15 +69,19 @@ allowed_origins = [
     "http://127.0.0.1:3001",
     "https://frontend-iltbjzuqs-thaaarus-projects.vercel.app",
     "https://frontend-thaaarus-projects.vercel.app",
+    "https://floodwatch-lk.vercel.app",
+    "https://floodwatch.vercel.app",
+    "https://staging-floodwatch.vercel.app",
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Include routers
