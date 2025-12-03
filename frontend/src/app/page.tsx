@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { api, Alert } from '@/lib/api';
 import AlertList from '@/components/AlertList';
+import NewsFeed from '@/components/NewsFeed';
 import { MapLayer } from '@/components/Map';
 
 const Map = dynamic(() => import('@/components/Map'), {
@@ -268,21 +269,59 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Alerts Sidebar - Desktop */}
+        {/* Sidebar - Desktop */}
         <div className="hidden lg:block absolute top-4 right-4 bottom-4 w-80">
-          <div className="h-full card overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-slate-200/60">
-              <h2 className="section-title">Active Alerts</h2>
-              <p className="section-subtitle mt-0.5">
-                {selectedDistrict ? `Showing ${selectedDistrict}` : 'All districts'}
-              </p>
+          <div className="h-full flex flex-col gap-3">
+            {/* News Section - Flexible height based on alerts */}
+            <div className={`card overflow-hidden flex flex-col ${alerts.length === 0 ? 'flex-1' : 'min-h-[200px]'}`} style={alerts.length > 0 ? { flex: '0 0 auto', maxHeight: '50%' } : undefined}>
+              <div className="px-4 py-3 border-b border-slate-200/60 flex items-center gap-2">
+                <svg className="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
+                <h2 className="text-sm font-semibold text-slate-800">News & Updates</h2>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3">
+                <NewsFeed maxItems={alerts.length === 0 ? 10 : 4} compact />
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-4">
-              <AlertList
-                alerts={selectedDistrict ? alerts.filter(a => a.district === selectedDistrict) : alerts}
-                compact
-              />
-            </div>
+
+            {/* Alerts Section - Only show if there are alerts */}
+            {alerts.length > 0 && (
+              <div className="card overflow-hidden flex flex-col flex-1 min-h-[150px]">
+                <div className="px-4 py-3 border-b border-slate-200/60 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <h2 className="text-sm font-semibold text-slate-800">Active Alerts</h2>
+                  </div>
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-600 font-semibold">
+                    {alerts.length}
+                  </span>
+                </div>
+                <div className="px-4 py-2 bg-slate-50/50 border-b border-slate-100">
+                  <p className="text-xs text-slate-500">
+                    {selectedDistrict ? `Showing ${selectedDistrict}` : 'All districts'}
+                  </p>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3">
+                  <AlertList
+                    alerts={selectedDistrict ? alerts.filter(a => a.district === selectedDistrict) : alerts}
+                    compact
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* No Alerts Message - subtle indicator */}
+            {alerts.length === 0 && !loading && (
+              <div className="card px-4 py-3 flex items-center gap-2 text-sm text-emerald-600 bg-emerald-50/50">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>No active alerts</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
