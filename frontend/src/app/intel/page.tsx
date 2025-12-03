@@ -60,8 +60,8 @@ export default function IntelDashboard() {
 
   useEffect(() => {
     fetchData();
-    // Auto-refresh every 5 minutes (data is cached for 5-30 minutes on backend)
-    const interval = setInterval(fetchData, 300000);
+    // Auto-refresh every 30 minutes (matches backend cache duration)
+    const interval = setInterval(fetchData, 1800000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
