@@ -21,6 +21,10 @@ from ..services.traffic_incidents import traffic_service
 from ..services.here_traffic_flow import here_flow_service
 from ..services.tomtom_traffic_flow import tomtom_flow_service
 from ..services.here_weather import here_weather_service
+from ..services.irrigation_fetcher import irrigation_fetcher
+from ..services.weather_cache import weather_cache
+from ..services.flood_patterns import flood_analyzer, DISTRICT_COORDS
+from ..services.environmental_data import environmental_service
 
 router = APIRouter(prefix="/api/intel", tags=["intelligence"])
 
@@ -876,3 +880,564 @@ async def refresh_here_weather():
         "alerts_count": len(alerts),
         "summary": here_weather_service.get_summary(),
     }
+
+
+# ============================================================
+# Irrigation Department River Water Levels (ArcGIS)
+# ============================================================
+
+@router.get("/irrigation")
+async def get_irrigation_water_levels():
+    """
+    Get real-time river water levels from Irrigation Department.
+
+    Returns water levels for 39 gauging stations with:
+    - Current water level (meters)
+    - Flood thresholds (alert, minor flood, major flood)
+    - Percentage to each threshold
+    - Affected districts
+    - Coordinates for mapping
+
+    Data sourced from Irrigation Department's ArcGIS service.
+    Cached for 5 minutes.
+    """
+    if not irrigation_fetcher.is_cache_valid():
+        await irrigation_fetcher.fetch_water_levels()
+
+    stations = irrigation_fetcher.get_cached_data()
+    summary = irrigation_fetcher.get_summary()
+
+    return {
+        "count": len(stations),
+        "summary": summary,
+        "stations": stations,
+    }
+
+
+@router.get("/irrigation/district/{district}")
+async def get_irrigation_by_district(district: str):
+    """
+    Get river stations affecting a specific district.
+
+    Returns flood risk assessment for the district based on
+    river water levels at upstream stations.
+    """
+    if not irrigation_fetcher.is_cache_valid():
+        await irrigation_fetcher.fetch_water_levels()
+
+    return irrigation_fetcher.get_flood_risk_for_district(district)
+
+
+@router.post("/irrigation/refresh")
+async def refresh_irrigation_data():
+    """
+    Force refresh river water level data from Irrigation Department.
+
+    Normally cached for 5 minutes. Use this to get immediate update.
+    """
+    stations = await irrigation_fetcher.fetch_water_levels()
+    summary = irrigation_fetcher.get_summary()
+
+    return {
+        "status": "refreshed",
+        "count": len(stations),
+        "summary": summary,
+    }
+
+
+# ============================================================
+# Composite Flood Threat Score
+# ============================================================
+
+@router.get("/flood-threat")
+async def get_flood_threat_assessment():
+    """
+    Get composite flood threat assessment for all districts.
+
+    Combines multiple data sources into a single threat score (0-100):
+    - Current rainfall (24/48/72h accumulated) - 30%
+    - River water levels vs flood thresholds - 40%
+    - Forecast rainfall (next 24-48h) - 30%
+
+    Returns:
+    - National threat level
+    - Per-district threat scores
+    - Top risk districts
+    - Contributing factors
+    """
+    # Ensure data is fresh
+    if not weather_cache.is_cache_valid():
+        await weather_cache.refresh_cache()
+    if not irrigation_fetcher.is_cache_valid():
+        await irrigation_fetcher.fetch_water_levels()
+
+    weather_data = weather_cache.get_all_weather(hours=24)
+    forecast_data = weather_cache.get_all_forecast()
+    river_data = irrigation_fetcher.get_cached_data()
+
+    # Build district threat assessments
+    district_threats = []
+
+    for weather in weather_data:
+        district = weather.get("district", "")
+        if not district:
+            continue
+
+        threat = _calculate_district_threat(
+            district=district,
+            weather=weather,
+            forecast_data=forecast_data,
+            river_data=river_data,
+        )
+        district_threats.append(threat)
+
+    # Sort by threat score
+    district_threats.sort(key=lambda x: x["threat_score"], reverse=True)
+
+    # Calculate national threat level
+    if district_threats:
+        avg_score = sum(d["threat_score"] for d in district_threats) / len(district_threats)
+        max_score = max(d["threat_score"] for d in district_threats)
+        # National level is weighted toward max (emergencies matter more)
+        national_score = (avg_score * 0.3) + (max_score * 0.7)
+    else:
+        national_score = 0
+
+    # Determine national threat level
+    if national_score >= 70:
+        national_level = "CRITICAL"
+    elif national_score >= 50:
+        national_level = "HIGH"
+    elif national_score >= 30:
+        national_level = "MEDIUM"
+    else:
+        national_level = "LOW"
+
+    # Summary stats
+    critical_count = sum(1 for d in district_threats if d["threat_level"] == "CRITICAL")
+    high_count = sum(1 for d in district_threats if d["threat_level"] == "HIGH")
+    medium_count = sum(1 for d in district_threats if d["threat_level"] == "MEDIUM")
+
+    # River summary
+    river_summary = irrigation_fetcher.get_summary()
+
+    return {
+        "national_threat_level": national_level,
+        "national_threat_score": round(national_score, 1),
+        "summary": {
+            "critical_districts": critical_count,
+            "high_risk_districts": high_count,
+            "medium_risk_districts": medium_count,
+            "rivers_at_major_flood": river_summary.get("major_flood", 0),
+            "rivers_at_minor_flood": river_summary.get("minor_flood", 0),
+            "rivers_at_alert": river_summary.get("alert", 0),
+        },
+        "top_risk_districts": district_threats[:10],
+        "all_districts": district_threats,
+        "highest_risk_river": river_summary.get("highest_risk_station"),
+        "analyzed_at": weather_cache.get_cache_info().get("last_updated"),
+    }
+
+
+def _calculate_district_threat(
+    district: str,
+    weather: dict,
+    forecast_data: list,
+    river_data: list,
+) -> dict:
+    """Calculate composite threat score for a district."""
+    factors = []
+
+    # 1. Current rainfall score (0-30 points)
+    rainfall_24h = weather.get("rainfall_24h_mm", 0) or 0
+    rainfall_48h = weather.get("rainfall_48h_mm", 0) or 0
+    rainfall_72h = weather.get("rainfall_72h_mm", 0) or 0
+
+    # Use max of different periods, scaled
+    max_rainfall = max(rainfall_24h, rainfall_48h / 2, rainfall_72h / 3)
+
+    if max_rainfall >= 150:
+        rainfall_score = 30
+    elif max_rainfall >= 100:
+        rainfall_score = 25
+    elif max_rainfall >= 75:
+        rainfall_score = 20
+    elif max_rainfall >= 50:
+        rainfall_score = 15
+    elif max_rainfall >= 25:
+        rainfall_score = 10
+    else:
+        rainfall_score = max_rainfall / 25 * 10
+
+    if rainfall_score > 0:
+        factors.append({
+            "factor": "rainfall",
+            "value": f"{rainfall_24h:.0f}mm (24h), {rainfall_72h:.0f}mm (72h)",
+            "score": round(rainfall_score, 1),
+        })
+
+    # 2. River water level score (0-40 points)
+    river_score = 0
+    river_factor = None
+
+    # Find rivers affecting this district
+    district_rivers = [
+        r for r in river_data
+        if district in r.get("districts", [])
+    ]
+
+    if district_rivers:
+        # Use highest risk station
+        highest_pct = max(r.get("pct_to_major_flood", 0) for r in district_rivers)
+        highest_station = next(
+            (r for r in district_rivers if r.get("pct_to_major_flood", 0) == highest_pct),
+            None
+        )
+
+        if highest_pct >= 100:
+            river_score = 40  # Major flood
+        elif highest_pct >= 80:
+            river_score = 35
+        elif highest_pct >= 60:
+            river_score = 25
+        elif highest_pct >= 40:
+            river_score = 15
+        elif highest_pct >= 20:
+            river_score = 8
+        else:
+            river_score = highest_pct / 20 * 8
+
+        if highest_station and river_score > 0:
+            river_factor = {
+                "factor": "river_level",
+                "value": f"{highest_station['station']} at {highest_station['water_level_m']:.2f}m ({highest_pct:.0f}% to flood)",
+                "score": round(river_score, 1),
+                "station": highest_station["station"],
+                "river": highest_station["river"],
+            }
+            factors.append(river_factor)
+
+    # 3. Forecast score (0-30 points)
+    forecast_score = 0
+    forecast_factor = None
+
+    # Find forecast for this district
+    district_forecast = next(
+        (f for f in forecast_data if f.get("district", "").lower() == district.lower()),
+        None
+    )
+
+    if district_forecast:
+        forecast_24h = district_forecast.get("forecast_precip_24h_mm", 0) or 0
+        forecast_48h = district_forecast.get("forecast_precip_48h_mm", 0) or 0
+
+        # Next 24h forecast is most important
+        if forecast_24h >= 150:
+            forecast_score = 30
+        elif forecast_24h >= 100:
+            forecast_score = 25
+        elif forecast_24h >= 75:
+            forecast_score = 20
+        elif forecast_24h >= 50:
+            forecast_score = 15
+        elif forecast_24h >= 25:
+            forecast_score = 10
+        else:
+            forecast_score = forecast_24h / 25 * 10
+
+        if forecast_score > 0:
+            forecast_factor = {
+                "factor": "forecast",
+                "value": f"{forecast_24h:.0f}mm (next 24h), {forecast_48h:.0f}mm (next 48h)",
+                "score": round(forecast_score, 1),
+            }
+            factors.append(forecast_factor)
+
+    # Calculate total threat score
+    threat_score = rainfall_score + river_score + forecast_score
+    threat_score = min(threat_score, 100)  # Cap at 100
+
+    # Determine threat level
+    if threat_score >= 70:
+        threat_level = "CRITICAL"
+    elif threat_score >= 50:
+        threat_level = "HIGH"
+    elif threat_score >= 30:
+        threat_level = "MEDIUM"
+    else:
+        threat_level = "LOW"
+
+    return {
+        "district": district,
+        "threat_score": round(threat_score, 1),
+        "threat_level": threat_level,
+        "rainfall_score": round(rainfall_score, 1),
+        "river_score": round(river_score, 1),
+        "forecast_score": round(forecast_score, 1),
+        "factors": factors,
+        "current_alert_level": weather.get("alert_level", "green"),
+        "lat": weather.get("latitude"),
+        "lon": weather.get("longitude"),
+    }
+
+
+# ============================================================
+# Flood Pattern Analysis Endpoints (30-year historical data)
+# ============================================================
+
+@router.get("/flood-patterns")
+async def get_flood_patterns(
+    district: str = Query("Colombo", description="District to analyze"),
+    years: int = Query(30, ge=5, le=50, description="Number of years to analyze"),
+):
+    """
+    Get historical flood patterns for a district.
+
+    Analyzes 30+ years of rainfall data from Open-Meteo to identify:
+    - Monthly rainfall patterns and flood risk levels
+    - Seasonal monsoon patterns
+    - Extreme rainfall events (potential flood triggers)
+    - Year-over-year trends
+
+    This endpoint fetches historical data which may take 30-60 seconds.
+    """
+    if district not in DISTRICT_COORDS:
+        return {"error": f"Unknown district: {district}. Valid districts: {list(DISTRICT_COORDS.keys())}"}
+
+    analysis = await flood_analyzer.run_full_analysis(district, years)
+    return analysis
+
+
+@router.get("/flood-patterns/monthly")
+async def get_monthly_flood_risk(
+    district: str = Query("Colombo", description="District to analyze"),
+):
+    """
+    Get monthly flood risk assessment based on historical data.
+
+    Returns flood risk level (HIGH/MEDIUM/LOW) for each month
+    based on 30 years of rainfall patterns.
+    """
+    if district not in DISTRICT_COORDS:
+        return {"error": f"Unknown district: {district}"}
+
+    analysis = await flood_analyzer.run_full_analysis(district, years=30)
+
+    if "error" in analysis:
+        return analysis
+
+    return {
+        "district": district,
+        "period": analysis["period"],
+        "flood_risk_by_month": analysis["flood_risk_months"],
+        "peak_risk_months": [
+            m for m in analysis["flood_risk_months"]
+            if m["flood_risk"] == "HIGH"
+        ],
+        "summary": {
+            "avg_annual_rainfall_mm": analysis["summary"]["avg_annual_rainfall_mm"],
+            "extreme_rain_days_30yr": analysis["summary"]["extreme_rain_days"],
+        }
+    }
+
+
+@router.get("/flood-patterns/extreme-events")
+async def get_extreme_events(
+    district: str = Query("Colombo", description="District to analyze"),
+    threshold_mm: float = Query(100, description="Rainfall threshold in mm"),
+):
+    """
+    Get historical extreme rainfall events that could trigger floods.
+
+    Returns the top 50 highest rainfall days in the past 30 years
+    for the specified district.
+    """
+    if district not in DISTRICT_COORDS:
+        return {"error": f"Unknown district: {district}"}
+
+    coords = DISTRICT_COORDS[district]
+
+    # Fetch and analyze
+    rainfall_data = await flood_analyzer.fetch_historical_rainfall(
+        coords["lat"], coords["lon"],
+        start_year=1994, end_year=2024
+    )
+
+    extreme_events = flood_analyzer.analyze_extreme_events(rainfall_data, threshold_mm)
+
+    # Group by month to see which months have most extreme events
+    month_counts = {}
+    for event in extreme_events:
+        month = event["month"]
+        month_name = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][month]
+        month_counts[month_name] = month_counts.get(month_name, 0) + 1
+
+    return {
+        "district": district,
+        "threshold_mm": threshold_mm,
+        "total_extreme_events": len(extreme_events),
+        "events_by_month": month_counts,
+        "top_events": extreme_events[:30],
+    }
+
+
+@router.get("/flood-patterns/districts")
+async def get_available_districts():
+    """
+    Get list of available districts for flood pattern analysis.
+    """
+    flood_prone = [
+        "Colombo", "Gampaha", "Kalutara", "Ratnapura", "Kegalle",
+        "Galle", "Matara", "Batticaloa", "Ampara", "Trincomalee"
+    ]
+
+    return {
+        "total_districts": len(DISTRICT_COORDS),
+        "districts": list(DISTRICT_COORDS.keys()),
+        "flood_prone_districts": flood_prone,
+        "note": "Flood-prone districts are based on historical flood occurrence data",
+    }
+
+
+@router.get("/flood-patterns/current-risk")
+async def get_current_flood_risk_with_history():
+    """
+    Compare current conditions with historical patterns.
+
+    Combines:
+    - Current rainfall from weather API
+    - Current river levels from Irrigation Dept
+    - Historical monthly averages for context
+
+    Returns whether current conditions are above/below historical norms.
+    """
+    from datetime import datetime
+
+    current_month = datetime.now().month
+    month_name = datetime.now().strftime("%B")
+
+    # Get current weather data
+    weather_data = weather_cache.get_all_weather()
+
+    # Get current river data
+    river_data = await irrigation_fetcher.fetch_water_levels()
+
+    # Analyze a sample district for historical context
+    try:
+        historical = await flood_analyzer.run_full_analysis("Colombo", years=30)
+        historical_monthly = historical.get("monthly_patterns", {}).get(current_month, {})
+    except Exception:
+        historical_monthly = {}
+
+    # Calculate current conditions
+    current_rainfall_avg = 0
+    if weather_data:
+        rainfalls = [w.get("current_precip_mm", 0) or 0 for w in weather_data]
+        current_rainfall_avg = sum(rainfalls) / len(rainfalls) if rainfalls else 0
+
+    rivers_at_risk = len([r for r in river_data if r.get("status") in ["alert", "minor_flood", "major_flood"]])
+
+    # Compare with historical
+    historical_avg = historical_monthly.get("avg_daily_rainfall_mm", 0)
+    historical_risk = historical_monthly.get("flood_risk", "UNKNOWN")
+
+    deviation = "NORMAL"
+    if historical_avg > 0:
+        ratio = current_rainfall_avg / historical_avg
+        if ratio > 1.5:
+            deviation = "ABOVE_NORMAL"
+        elif ratio < 0.5:
+            deviation = "BELOW_NORMAL"
+
+    return {
+        "current_month": month_name,
+        "current_conditions": {
+            "avg_rainfall_today_mm": round(current_rainfall_avg, 2),
+            "rivers_at_risk": rivers_at_risk,
+            "total_rivers_monitored": len(river_data),
+        },
+        "historical_context": {
+            "avg_daily_rainfall_mm": historical_avg,
+            "historical_flood_risk": historical_risk,
+            "max_daily_rainfall_mm": historical_monthly.get("max_daily_rainfall_mm", 0),
+        },
+        "assessment": {
+            "deviation_from_normal": deviation,
+            "is_high_risk_month": historical_risk == "HIGH",
+            "rivers_at_risk_pct": round(rivers_at_risk / max(1, len(river_data)) * 100, 1),
+        },
+        "data_sources": {
+            "weather": "Open-Meteo (real-time)",
+            "rivers": "Irrigation Dept ArcGIS",
+            "historical": "Open-Meteo Archive (30 years)",
+        }
+    }
+
+
+# ============================================================
+# Environmental Data Endpoints (Deforestation & Population)
+# ============================================================
+
+@router.get("/environmental")
+async def get_environmental_data(
+    start_year: int = Query(1994, ge=1990, le=2024, description="Start year for analysis"),
+    end_year: int = Query(2024, ge=1990, le=2024, description="End year for analysis"),
+):
+    """
+    Get environmental trend data for Sri Lanka.
+
+    Includes:
+    - Forest cover changes (deforestation)
+    - Population density trends
+    - Urban population growth
+    - Agricultural land changes
+
+    Also calculates flood risk factors based on environmental changes.
+    Data is sourced from World Bank Open Data API and cached for 1 week.
+    """
+    return await environmental_service.get_environmental_trends(start_year, end_year)
+
+
+@router.get("/environmental/flood-correlation")
+async def get_flood_correlation():
+    """
+    Get correlation analysis between environmental changes and flood risk.
+
+    Shows how deforestation, population growth, and urbanization
+    have affected flood vulnerability over the past 30 years.
+    """
+    # Get environmental data
+    env_data = await environmental_service.get_environmental_trends(1994, 2024)
+
+    # Get flood pattern data for comparison
+    try:
+        flood_data = await flood_analyzer.run_full_analysis("Colombo", years=30)
+    except Exception:
+        flood_data = {}
+
+    # Prepare correlation analysis
+    correlation = {
+        "period": "1994-2024",
+        "environmental_changes": {
+            "forest_cover": env_data.get("forest_cover", {}).get("analysis", {}),
+            "population_density": env_data.get("population_density", {}).get("analysis", {}),
+            "urban_population": env_data.get("urban_population", {}).get("analysis", {}),
+        },
+        "flood_patterns": {
+            "extreme_events_trend": "increasing" if flood_data.get("climate_change", {}).get("changes", [{}])[1].get("trend") == "increasing" else "stable",
+            "rainfall_trend": flood_data.get("climate_change", {}).get("changes", [{}])[0].get("trend", "unknown"),
+        } if flood_data else {},
+        "risk_assessment": env_data.get("flood_risk_factors", {}),
+        "key_insights": [
+            f"Forest cover has changed by {env_data.get('forest_cover', {}).get('analysis', {}).get('percent_change', 0):.1f}% since 1994",
+            f"Population density increased by {env_data.get('population_density', {}).get('analysis', {}).get('percent_change', 0):.1f}%",
+            f"Urban population grew from {env_data.get('urban_population', {}).get('analysis', {}).get('first_value', 0):.1f}% to {env_data.get('urban_population', {}).get('analysis', {}).get('last_value', 0):.1f}%",
+        ],
+        "data_sources": {
+            "environmental": "World Bank Open Data API",
+            "flood_patterns": "Open-Meteo Historical Archive",
+        }
+    }
+
+    return correlation

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # Cache configuration
 CACHE_DIR = Path(__file__).parent.parent.parent / "cache"
 CACHE_FILE = CACHE_DIR / "weather_data.json"
-CACHE_DURATION_MINUTES = 30
+CACHE_DURATION_MINUTES = 30  # Refresh every 30 minutes
 
 
 class WeatherCache:
@@ -106,7 +106,7 @@ class WeatherCache:
 
     async def refresh_cache(self, force: bool = False) -> bool:
         """
-        Refresh weather data for all districts using parallel requests.
+        Refresh weather data for all districts using batched requests with rate limiting.
         Returns True if refresh was successful.
         """
         async with self._lock:
@@ -115,32 +115,42 @@ class WeatherCache:
                 logger.debug("Cache still valid, skipping refresh")
                 return True
 
-            logger.info("Refreshing weather cache for all districts (parallel)...")
+            logger.info("Refreshing weather cache for all districts (batched)...")
             districts = get_all_districts()
 
-            # Fetch all districts in parallel for much faster response
-            tasks = [self._fetch_district_weather(d) for d in districts]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
+            # Batch requests to avoid rate limiting (2 concurrent, 1s delay between batches)
+            # Open-Meteo free tier has strict rate limits (~10 requests/minute)
+            BATCH_SIZE = 2
+            BATCH_DELAY = 1.0  # 1 second delay between batches
 
             new_cache = {}
             success_count = 0
 
-            for result in results:
-                if isinstance(result, Exception):
-                    continue
-                district_name, data = result
-                if data:
-                    new_cache[district_name] = data
-                    success_count += 1
-                elif district_name in self._cache:
-                    # Keep old data if available
-                    new_cache[district_name] = self._cache[district_name]
+            for i in range(0, len(districts), BATCH_SIZE):
+                batch = districts[i:i + BATCH_SIZE]
+                tasks = [self._fetch_district_weather(d) for d in batch]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+
+                for result in results:
+                    if isinstance(result, Exception):
+                        continue
+                    district_name, data = result
+                    if data:
+                        new_cache[district_name] = data
+                        success_count += 1
+                    elif district_name in self._cache:
+                        # Keep old data if available
+                        new_cache[district_name] = self._cache[district_name]
+
+                # Small delay between batches to avoid rate limiting
+                if i + BATCH_SIZE < len(districts):
+                    await asyncio.sleep(BATCH_DELAY)
 
             if success_count > 0:
                 self._cache = new_cache
                 self._last_update = datetime.now()
                 self._save_cache_to_disk()
-                logger.info(f"Weather cache refreshed: {success_count}/{len(districts)} districts updated (parallel)")
+                logger.info(f"Weather cache refreshed: {success_count}/{len(districts)} districts updated (batched)")
                 return True
             else:
                 logger.error("Failed to refresh any district data")

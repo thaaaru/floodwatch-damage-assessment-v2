@@ -141,6 +141,118 @@ async def get_all_forecast(
     return weather_cache.get_all_forecast()
 
 
+@router.get("/yesterday/stats")
+async def get_yesterday_stats():
+    """
+    Get yesterday's weather statistics for all districts.
+    Uses Open-Meteo historical API to fetch data from yesterday.
+    Returns summary with total rainfall, districts with rain, max rainfall, etc.
+    """
+    import httpx
+    from datetime import date
+
+    yesterday = date.today() - timedelta(days=1)
+    yesterday_str = yesterday.isoformat()
+
+    districts = get_all_districts()
+
+    stats = {
+        "date": yesterday_str,
+        "total_districts": len(districts),
+        "districts_with_rain": 0,
+        "total_rainfall_mm": 0.0,
+        "avg_rainfall_mm": 0.0,
+        "max_rainfall_mm": 0.0,
+        "max_rainfall_district": None,
+        "heavy_rain_districts": [],  # >50mm
+        "moderate_rain_districts": [],  # 25-50mm
+        "light_rain_districts": [],  # >0 and <25mm
+        "dry_districts": [],  # 0mm
+        "district_data": []
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        for district in districts:
+            try:
+                params = {
+                    "latitude": district["latitude"],
+                    "longitude": district["longitude"],
+                    "start_date": yesterday_str,
+                    "end_date": yesterday_str,
+                    "daily": "precipitation_sum,rain_sum,temperature_2m_max,temperature_2m_min",
+                    "timezone": "Asia/Colombo"
+                }
+
+                resp = await client.get(
+                    "https://archive-api.open-meteo.com/v1/archive",
+                    params=params
+                )
+
+                if resp.status_code == 200:
+                    data = resp.json()
+                    daily = data.get("daily", {})
+                    precip = daily.get("precipitation_sum", [0])[0] or 0
+                    rain = daily.get("rain_sum", [0])[0] or 0
+                    rainfall = max(precip, rain)
+                    temp_max = daily.get("temperature_2m_max", [None])[0]
+                    temp_min = daily.get("temperature_2m_min", [None])[0]
+
+                    district_info = {
+                        "district": district["name"],
+                        "rainfall_mm": round(rainfall, 1),
+                        "temp_max_c": round(temp_max, 1) if temp_max else None,
+                        "temp_min_c": round(temp_min, 1) if temp_min else None
+                    }
+                    stats["district_data"].append(district_info)
+
+                    stats["total_rainfall_mm"] += rainfall
+
+                    if rainfall > 0:
+                        stats["districts_with_rain"] += 1
+
+                    if rainfall > stats["max_rainfall_mm"]:
+                        stats["max_rainfall_mm"] = rainfall
+                        stats["max_rainfall_district"] = district["name"]
+
+                    if rainfall >= 50:
+                        stats["heavy_rain_districts"].append({
+                            "district": district["name"],
+                            "rainfall_mm": round(rainfall, 1)
+                        })
+                    elif rainfall >= 25:
+                        stats["moderate_rain_districts"].append({
+                            "district": district["name"],
+                            "rainfall_mm": round(rainfall, 1)
+                        })
+                    elif rainfall > 0:
+                        stats["light_rain_districts"].append({
+                            "district": district["name"],
+                            "rainfall_mm": round(rainfall, 1)
+                        })
+                    else:
+                        stats["dry_districts"].append(district["name"])
+
+            except Exception as e:
+                # Skip failed districts
+                continue
+
+    # Calculate averages
+    if stats["district_data"]:
+        stats["avg_rainfall_mm"] = round(
+            stats["total_rainfall_mm"] / len(stats["district_data"]), 1
+        )
+
+    stats["total_rainfall_mm"] = round(stats["total_rainfall_mm"], 1)
+    stats["max_rainfall_mm"] = round(stats["max_rainfall_mm"], 1)
+
+    # Sort district data by rainfall (descending)
+    stats["district_data"].sort(key=lambda x: x["rainfall_mm"], reverse=True)
+    stats["heavy_rain_districts"].sort(key=lambda x: x["rainfall_mm"], reverse=True)
+    stats["moderate_rain_districts"].sort(key=lambda x: x["rainfall_mm"], reverse=True)
+
+    return stats
+
+
 @router.get("/{district_name}/history")
 async def get_weather_history(
     district_name: str,

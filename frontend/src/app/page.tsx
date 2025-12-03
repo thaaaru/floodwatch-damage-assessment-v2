@@ -9,34 +9,37 @@ import { MapLayer } from '@/components/Map';
 const Map = dynamic(() => import('@/components/Map'), {
   ssr: false,
   loading: () => (
-    <div className="h-full bg-gray-100 rounded-lg flex items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <div className="h-full bg-slate-100 rounded-2xl flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+        <span className="text-sm text-slate-500">Loading map...</span>
+      </div>
     </div>
   )
 });
 
-const layerOptions: { id: MapLayer; label: string; icon: string; description: string; group?: string }[] = [
+const layerOptions: { id: MapLayer; label: string; icon: string; description: string; group: string }[] = [
   { id: 'danger', label: 'Flood Risk', icon: '⚠️', description: 'Danger level based on multiple factors', group: 'current' },
   { id: 'rainfall', label: 'Rainfall', icon: '🌧️', description: 'Accumulated rainfall', group: 'current' },
-  { id: 'temperature', label: 'Temperature', icon: '🌡️', description: 'Current temperature', group: 'current' },
+  { id: 'temperature', label: 'Temp', icon: '🌡️', description: 'Current temperature', group: 'current' },
   { id: 'humidity', label: 'Humidity', icon: '💧', description: 'Relative humidity', group: 'current' },
   { id: 'wind', label: 'Wind', icon: '💨', description: 'Wind speed', group: 'current' },
   { id: 'pressure', label: 'Pressure', icon: '📊', description: 'Atmospheric pressure', group: 'current' },
   { id: 'clouds', label: 'Clouds', icon: '☁️', description: 'Cloud cover', group: 'current' },
-  { id: 'gtraffic', label: 'Traffic', icon: '🚗', description: 'Live traffic conditions from Google Maps', group: 'current' },
-  { id: 'forecast1', label: 'Day 1', icon: '📅', description: 'Forecast for tomorrow', group: 'forecast' },
-  { id: 'forecast2', label: 'Day 2', icon: '📅', description: 'Forecast for day 2', group: 'forecast' },
-  { id: 'forecast3', label: 'Day 3', icon: '📅', description: 'Forecast for day 3', group: 'forecast' },
-  { id: 'forecast4', label: 'Day 4', icon: '📅', description: 'Forecast for day 4', group: 'forecast' },
-  { id: 'forecast5', label: 'Day 5', icon: '📅', description: 'Forecast for day 5', group: 'forecast' },
+  { id: 'gtraffic', label: 'Traffic', icon: '🚗', description: 'Live traffic from Google', group: 'current' },
+  { id: 'forecast1', label: '+1 Day', icon: '📅', description: 'Tomorrow forecast', group: 'forecast' },
+  { id: 'forecast2', label: '+2 Days', icon: '📅', description: 'Day 2 forecast', group: 'forecast' },
+  { id: 'forecast3', label: '+3 Days', icon: '📅', description: 'Day 3 forecast', group: 'forecast' },
+  { id: 'forecast4', label: '+4 Days', icon: '📅', description: 'Day 4 forecast', group: 'forecast' },
+  { id: 'forecast5', label: '+5 Days', icon: '📅', description: 'Day 5 forecast', group: 'forecast' },
 ];
 
 const layerLegends: Record<MapLayer, { colors: { color: string; label: string }[] }> = {
   danger: {
     colors: [
-      { color: '#22c55e', label: 'Low (0-30)' },
-      { color: '#eab308', label: 'Medium (31-60)' },
-      { color: '#dc2626', label: 'High (61-100)' },
+      { color: '#10b981', label: 'Low' },
+      { color: '#f59e0b', label: 'Medium' },
+      { color: '#ef4444', label: 'High' },
     ]
   },
   rainfall: {
@@ -50,102 +53,53 @@ const layerLegends: Record<MapLayer, { colors: { color: string; label: string }[
   },
   temperature: {
     colors: [
-      { color: '#6366f1', label: '<20°C' },
-      { color: '#3b82f6', label: '20-24°C' },
-      { color: '#22c55e', label: '24-28°C' },
-      { color: '#eab308', label: '28-32°C' },
-      { color: '#f97316', label: '32-35°C' },
-      { color: '#dc2626', label: '>35°C' },
+      { color: '#6366f1', label: '<20°' },
+      { color: '#22c55e', label: '24-28°' },
+      { color: '#f97316', label: '32-35°' },
+      { color: '#dc2626', label: '>35°' },
     ]
   },
   humidity: {
     colors: [
       { color: '#dbeafe', label: '<50%' },
-      { color: '#93c5fd', label: '50-60%' },
       { color: '#60a5fa', label: '60-70%' },
-      { color: '#3b82f6', label: '70-80%' },
       { color: '#2563eb', label: '80-90%' },
       { color: '#1e40af', label: '>90%' },
     ]
   },
   wind: {
     colors: [
-      { color: '#86efac', label: '<10 km/h' },
-      { color: '#22c55e', label: '10-20 km/h' },
-      { color: '#eab308', label: '20-30 km/h' },
-      { color: '#f97316', label: '30-40 km/h' },
-      { color: '#dc2626', label: '40-60 km/h' },
-      { color: '#7c2d12', label: '>60 km/h' },
+      { color: '#86efac', label: '<10km/h' },
+      { color: '#eab308', label: '20-30km/h' },
+      { color: '#dc2626', label: '>40km/h' },
     ]
   },
   pressure: {
     colors: [
-      { color: '#dc2626', label: '<1000 hPa' },
-      { color: '#f97316', label: '1000-1005 hPa' },
-      { color: '#eab308', label: '1005-1010 hPa' },
-      { color: '#22c55e', label: '1010-1015 hPa' },
-      { color: '#3b82f6', label: '1015-1020 hPa' },
-      { color: '#1e40af', label: '>1020 hPa' },
+      { color: '#dc2626', label: '<1000hPa' },
+      { color: '#22c55e', label: '1010-1015' },
+      { color: '#1e40af', label: '>1020hPa' },
     ]
   },
   clouds: {
     colors: [
-      { color: '#f9fafb', label: 'Clear (<10%)' },
-      { color: '#e5e7eb', label: 'Few (10-30%)' },
-      { color: '#d1d5db', label: 'Scattered (30-50%)' },
-      { color: '#9ca3af', label: 'Broken (50-70%)' },
-      { color: '#6b7280', label: 'Mostly Cloudy (70-90%)' },
-      { color: '#374151', label: 'Overcast (>90%)' },
+      { color: '#f9fafb', label: 'Clear' },
+      { color: '#9ca3af', label: 'Partly' },
+      { color: '#374151', label: 'Overcast' },
     ]
   },
   gtraffic: {
     colors: [
-      { color: '#30ac3e', label: 'Fast / Normal' },
-      { color: '#f5a623', label: 'Slow moving' },
-      { color: '#e34133', label: 'Heavy traffic' },
-      { color: '#8b0000', label: 'Very slow / Blocked' },
+      { color: '#30ac3e', label: 'Normal' },
+      { color: '#f5a623', label: 'Slow' },
+      { color: '#e34133', label: 'Heavy' },
     ]
   },
-  forecast1: {
-    colors: [
-      { color: '#22c55e', label: 'Normal (<50mm)' },
-      { color: '#eab308', label: 'Watch (50-100mm)' },
-      { color: '#f97316', label: 'Warning (100-150mm)' },
-      { color: '#dc2626', label: 'Emergency (>150mm)' },
-    ]
-  },
-  forecast2: {
-    colors: [
-      { color: '#22c55e', label: 'Normal (<50mm)' },
-      { color: '#eab308', label: 'Watch (50-100mm)' },
-      { color: '#f97316', label: 'Warning (100-150mm)' },
-      { color: '#dc2626', label: 'Emergency (>150mm)' },
-    ]
-  },
-  forecast3: {
-    colors: [
-      { color: '#22c55e', label: 'Normal (<50mm)' },
-      { color: '#eab308', label: 'Watch (50-100mm)' },
-      { color: '#f97316', label: 'Warning (100-150mm)' },
-      { color: '#dc2626', label: 'Emergency (>150mm)' },
-    ]
-  },
-  forecast4: {
-    colors: [
-      { color: '#22c55e', label: 'Normal (<50mm)' },
-      { color: '#eab308', label: 'Watch (50-100mm)' },
-      { color: '#f97316', label: 'Warning (100-150mm)' },
-      { color: '#dc2626', label: 'Emergency (>150mm)' },
-    ]
-  },
-  forecast5: {
-    colors: [
-      { color: '#22c55e', label: 'Normal (<50mm)' },
-      { color: '#eab308', label: 'Watch (50-100mm)' },
-      { color: '#f97316', label: 'Warning (100-150mm)' },
-      { color: '#dc2626', label: 'Emergency (>150mm)' },
-    ]
-  },
+  forecast1: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
+  forecast2: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
+  forecast3: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
+  forecast4: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
+  forecast5: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
 };
 
 export type DangerFilter = 'all' | 'low' | 'medium' | 'high';
@@ -156,7 +110,6 @@ export default function Dashboard() {
   const [selectedHours, setSelectedHours] = useState<number>(24);
   const [selectedLayer, setSelectedLayer] = useState<MapLayer>('danger');
   const [loading, setLoading] = useState(true);
-  const [showLegend, setShowLegend] = useState(true);
   const [dangerFilter, setDangerFilter] = useState<DangerFilter>('all');
 
   useEffect(() => {
@@ -176,152 +129,16 @@ export default function Dashboard() {
   }, []);
 
   const currentLegend = layerLegends[selectedLayer];
+  const currentLayers = layerOptions.filter(l => l.group === 'current');
+  const forecastLayers = layerOptions.filter(l => l.group === 'forecast');
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col">
-      {/* Header */}
-      <div className="px-4 py-3 bg-white border-b">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Flood Monitoring Dashboard</h1>
-          <p className="text-sm text-gray-600">Real-time weather and flood risk for all 25 districts of Sri Lanka</p>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="px-4 py-2 bg-gray-50 border-b">
-        <div className="max-w-7xl mx-auto">
-          {/* Single Row: Current + Rainfall Period + Forecast */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Current Weather Layers */}
-            <span className="text-xs font-medium text-gray-500 shrink-0">Current:</span>
-            <div className="flex flex-wrap gap-1">
-              {layerOptions.filter(l => l.group === 'current').map((layer) => (
-                <button
-                  key={layer.id}
-                  onClick={() => setSelectedLayer(layer.id)}
-                  title={layer.description}
-                  className={`px-2 py-1 text-xs font-medium rounded transition-all flex items-center gap-1 ${
-                    selectedLayer === layer.id
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  <span>{layer.icon}</span>
-                  <span className="hidden sm:inline">{layer.label}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div className="h-6 w-px bg-gray-300 mx-1 hidden sm:block"></div>
-
-            {/* Rainfall Period */}
-            <span className="text-xs font-medium text-gray-500 shrink-0">Period:</span>
-            <div className="flex rounded overflow-hidden border border-gray-300 shadow-sm">
-              {[24, 48, 72].map((hours) => (
-                <button
-                  key={hours}
-                  onClick={() => setSelectedHours(hours)}
-                  className={`px-2 py-1 text-xs font-semibold transition-all ${
-                    selectedHours === hours
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  {hours}h
-                </button>
-              ))}
-            </div>
-
-            {/* Divider */}
-            <div className="h-6 w-px bg-gray-300 mx-1 hidden sm:block"></div>
-
-            {/* Forecast Layers */}
-            <span className="text-xs font-medium text-gray-500 shrink-0">Forecast:</span>
-            <div className="flex flex-wrap gap-1">
-              {layerOptions.filter(l => l.group === 'forecast').map((layer) => (
-                <button
-                  key={layer.id}
-                  onClick={() => setSelectedLayer(layer.id)}
-                  title={layer.description}
-                  className={`px-2 py-1 text-xs font-medium rounded transition-all flex items-center gap-1 ${
-                    selectedLayer === layer.id
-                      ? 'bg-purple-600 text-white shadow-sm'
-                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                  }`}
-                >
-                  <span className="hidden sm:inline">{layer.label}</span>
-                  <span className="sm:hidden">{layer.id.replace('forecast', 'D')}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Legend Toggle */}
-            <button
-              onClick={() => setShowLegend(!showLegend)}
-              className="text-xs text-gray-600 hover:text-gray-900 flex items-center gap-1 ml-auto"
-            >
-              {showLegend ? '▼' : '▶'} Legend
-            </button>
-          </div>
-
-          {/* Legend */}
-          {showLegend && (
-            <div className="flex flex-wrap gap-2 text-xs bg-white p-2 rounded-lg border mt-2">
-              <span className="font-medium text-gray-700 mr-2">
-                {layerOptions.find(l => l.id === selectedLayer)?.label}:
-              </span>
-              {selectedLayer === 'danger' ? (
-                <>
-                  <button
-                    onClick={() => setDangerFilter(dangerFilter === 'all' ? 'all' : 'all')}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all ${
-                      dangerFilter === 'all' ? 'bg-gray-200 ring-2 ring-gray-400' : 'hover:bg-gray-100'
-                    }`}
-                  >
-                    <span className="w-4 h-4 rounded border border-gray-300 bg-gradient-to-r from-green-500 via-yellow-500 to-red-500"></span>
-                    <span className="text-gray-600">All</span>
-                  </button>
-                  {currentLegend.colors.map((item, idx) => {
-                    const filterValue = idx === 0 ? 'low' : idx === 1 ? 'medium' : 'high';
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => setDangerFilter(dangerFilter === filterValue ? 'all' : filterValue as DangerFilter)}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded transition-all ${
-                          dangerFilter === filterValue ? 'bg-gray-200 ring-2 ring-blue-500' : 'hover:bg-gray-100'
-                        }`}
-                      >
-                        <span
-                          className="w-4 h-4 rounded border border-gray-300"
-                          style={{ backgroundColor: item.color }}
-                        ></span>
-                        <span className="text-gray-600">{item.label}</span>
-                      </button>
-                    );
-                  })}
-                </>
-              ) : (
-                currentLegend.colors.map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-1">
-                    <span
-                      className="w-4 h-4 rounded border border-gray-300"
-                      style={{ backgroundColor: item.color }}
-                    ></span>
-                    <span className="text-gray-600">{item.label}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content - Map takes full remaining height */}
-      <div className="flex-1 flex">
-        {/* Map - Full width on mobile, 3/4 on desktop */}
-        <div className="flex-1 p-4">
-          <div className="h-full bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
+      {/* Map Controls - Floating on top of map */}
+      <div className="flex-1 relative">
+        {/* Map */}
+        <div className="absolute inset-0 p-4 pb-4 lg:pr-88">
+          <div className="h-full card overflow-hidden">
             <Map
               onDistrictSelect={setSelectedDistrict}
               hours={selectedHours}
@@ -331,13 +148,141 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Alerts Sidebar - Hidden on mobile, visible on desktop */}
-        <div className="hidden lg:block w-80 p-4 pl-0">
-          <div className="h-full">
-            <AlertList
-              alerts={selectedDistrict ? alerts.filter(a => a.district === selectedDistrict) : alerts}
-              title={selectedDistrict ? `Alerts: ${selectedDistrict}` : 'Active Alerts'}
-            />
+        {/* Top Controls Overlay */}
+        <div className="absolute top-6 left-6 right-6 lg:right-[calc(22rem+1.5rem)] z-[1000] flex flex-col gap-3">
+          {/* Layer Selection */}
+          <div className="map-control p-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Current Layers */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500 hidden sm:inline">Current</span>
+                <div className="flex flex-wrap gap-1">
+                  {currentLayers.map((layer) => (
+                    <button
+                      key={layer.id}
+                      onClick={() => setSelectedLayer(layer.id)}
+                      title={layer.description}
+                      className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+                        selectedLayer === layer.id
+                          ? 'bg-brand-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      <span>{layer.icon}</span>
+                      <span className="hidden sm:inline">{layer.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-slate-200 hidden sm:block" />
+
+              {/* Time Period */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500 hidden sm:inline">Period</span>
+                <div className="flex rounded-lg overflow-hidden border border-slate-200">
+                  {[24, 48, 72].map((hours) => (
+                    <button
+                      key={hours}
+                      onClick={() => setSelectedHours(hours)}
+                      className={`px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                        selectedHours === hours
+                          ? 'bg-brand-600 text-white'
+                          : 'bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {hours}h
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-slate-200 hidden md:block" />
+
+              {/* Forecast Layers */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-slate-500 hidden md:inline">Forecast</span>
+                <div className="flex flex-wrap gap-1">
+                  {forecastLayers.map((layer) => (
+                    <button
+                      key={layer.id}
+                      onClick={() => setSelectedLayer(layer.id)}
+                      title={layer.description}
+                      className={`px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                        selectedLayer === layer.id
+                          ? 'bg-violet-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      {layer.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div className="map-control p-2.5 flex items-center gap-3 flex-wrap">
+            <span className="text-xs font-medium text-slate-600">
+              {layerOptions.find(l => l.id === selectedLayer)?.label}
+            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              {selectedLayer === 'danger' && (
+                <button
+                  onClick={() => setDangerFilter('all')}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all ${
+                    dangerFilter === 'all' ? 'bg-slate-200 ring-1 ring-slate-400' : 'hover:bg-slate-100'
+                  }`}
+                >
+                  <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500" />
+                  <span className="text-slate-600">All</span>
+                </button>
+              )}
+              {currentLegend.colors.map((item, idx) => {
+                const filterValue = selectedLayer === 'danger'
+                  ? (idx === 0 ? 'low' : idx === 1 ? 'medium' : 'high')
+                  : null;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => filterValue && setDangerFilter(dangerFilter === filterValue ? 'all' : filterValue as DangerFilter)}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all ${
+                      selectedLayer === 'danger' && dangerFilter === filterValue
+                        ? 'bg-slate-200 ring-1 ring-brand-500'
+                        : selectedLayer === 'danger' ? 'hover:bg-slate-100 cursor-pointer' : ''
+                    }`}
+                    disabled={selectedLayer !== 'danger'}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-sm border border-slate-200"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-slate-600">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Alerts Sidebar - Desktop */}
+        <div className="hidden lg:block absolute top-4 right-4 bottom-4 w-80">
+          <div className="h-full card overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-slate-200/60">
+              <h2 className="section-title">Active Alerts</h2>
+              <p className="section-subtitle mt-0.5">
+                {selectedDistrict ? `Showing ${selectedDistrict}` : 'All districts'}
+              </p>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <AlertList
+                alerts={selectedDistrict ? alerts.filter(a => a.district === selectedDistrict) : alerts}
+                compact
+              />
+            </div>
           </div>
         </div>
       </div>

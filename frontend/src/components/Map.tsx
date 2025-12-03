@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
-import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, TrafficIncident, api } from '@/lib/api';
+import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, TrafficIncident, IrrigationStation, api } from '@/lib/api';
 import { getAlertColor } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
 import GoogleMapsTraffic from './GoogleMapsTraffic';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface RadarFrame {
   time: number;
@@ -40,21 +41,10 @@ function MapController({ weatherData }: MapControllerProps) {
 
 // Color scale functions for different data types
 
-// Rainfall color: white to dark blue gradient for range 1-20mm
+// Rainfall color: very light yellow base color
 function getRainfallColor(rainfall: number | null): string {
-  if (rainfall === null || rainfall <= 0) return '#f8fafc'; // Very light (almost white)
-  if (rainfall >= 20) return '#1e3a8a'; // Dark blue (blue-900)
-
-  // Linear interpolation from white (#f8fafc) to dark blue (#1e3a8a) for 1-20mm range
-  const ratio = Math.min(rainfall / 20, 1);
-
-  // RGB values for white-ish (#f8fafc): 248, 250, 252
-  // RGB values for dark blue (#1e3a8a): 30, 58, 138
-  const r = Math.round(248 - (248 - 30) * ratio);
-  const g = Math.round(250 - (250 - 58) * ratio);
-  const b = Math.round(252 - (252 - 138) * ratio);
-
-  return `rgb(${r}, ${g}, ${b})`;
+  // Very light yellow for all rainfall values
+  return '#fef9c3'; // yellow-100
 }
 
 function getTemperatureColor(temp: number | null): string {
@@ -121,6 +111,49 @@ function getRiverStatusColor(status: string): string {
     case 'normal': return '#3b82f6';  // Blue - normal
     default: return '#9ca3af';        // Gray - unknown
   }
+}
+
+// Irrigation/Flood gauge station colors based on flood threshold status
+function getFloodGaugeColor(status: string): string {
+  switch (status) {
+    case 'major_flood': return '#7f1d1d'; // Dark red - major flood
+    case 'minor_flood': return '#dc2626'; // Red - minor flood
+    case 'alert': return '#f97316';       // Orange - alert level
+    case 'normal': return '#22c55e';      // Green - normal
+    default: return '#9ca3af';            // Gray - unknown
+  }
+}
+
+// Create custom flood gauge marker icon
+function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
+  const color = getFloodGaugeColor(status);
+  const size = 26;
+  const isFlooding = status === 'major_flood' || status === 'minor_flood';
+
+  return L.divIcon({
+    className: 'custom-flood-gauge-marker',
+    html: `<div style="
+      width: ${size}px;
+      height: ${size}px;
+      background-color: ${color};
+      border: 2px solid white;
+      border-radius: 4px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      ${isFlooding ? 'animation: pulse 1s infinite;' : ''}
+    ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1">
+        <path d="M12 2L5 12h14L12 2z" fill="${isFlooding ? 'white' : 'rgba(255,255,255,0.8)'}"/>
+        <rect x="6" y="14" width="12" height="8" rx="1" fill="rgba(255,255,255,0.6)"/>
+        <rect x="6" y="${22 - Math.min(pctToAlert, 100) * 0.08}" width="12" height="${Math.min(pctToAlert, 100) * 0.08}" fill="white"/>
+      </svg>
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
 }
 
 function getMarineRiskColor(riskLevel: string): string {
@@ -228,7 +261,7 @@ function getAlertSymbol(level: string): string {
 }
 
 // Create small custom marker icon
-function createAlertIcon(color: string, alertLevel: string): L.DivIcon {
+function createAlertIcon(color: string, alertLevel: string, borderColor: string = 'white'): L.DivIcon {
   const size = 20;
 
   return L.divIcon({
@@ -237,7 +270,7 @@ function createAlertIcon(color: string, alertLevel: string): L.DivIcon {
       width: ${size}px;
       height: ${size}px;
       background-color: ${color};
-      border: 2px solid white;
+      border: 2px solid ${borderColor};
       border-radius: 50%;
       box-shadow: 0 2px 4px rgba(0,0,0,0.3);
       cursor: pointer;
@@ -273,6 +306,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
   const [showTraffic, setShowTraffic] = useState(false);
   const [trafficIncidents, setTrafficIncidents] = useState<TrafficIncident[]>([]);
+  const [showFloodGauges, setShowFloodGauges] = useState(false);
+  const [floodGaugeStations, setFloodGaugeStations] = useState<IrrigationStation[]>([]);
 
   const isForecastLayer = layer.startsWith('forecast');
   const forecastDayIndex = isForecastLayer ? parseInt(layer.replace('forecast', '')) - 1 : 0;
@@ -366,6 +401,24 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     const interval = setInterval(fetchTrafficData, 5 * 60 * 1000); // Refresh every 5 minutes
     return () => clearInterval(interval);
   }, [showTraffic]);
+
+  // Fetch flood gauge (irrigation) data when enabled
+  useEffect(() => {
+    if (!showFloodGauges) return;
+
+    const fetchFloodGaugeData = async () => {
+      try {
+        const data = await api.getIrrigationData();
+        setFloodGaugeStations(data.stations);
+      } catch (err) {
+        console.error('Failed to fetch flood gauge data:', err);
+      }
+    };
+
+    fetchFloodGaugeData();
+    const interval = setInterval(fetchFloodGaugeData, 5 * 60 * 1000); // Refresh every 5 minutes
+    return () => clearInterval(interval);
+  }, [showFloodGauges]);
 
   // Animate overlay frames with different speeds
   useEffect(() => {
@@ -545,7 +598,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
           : district.rainfall_72h_mm;
 
       const markerColor = getMarkerColor(district);
-      const icon = createAlertIcon(markerColor, district.alert_level);
+      // Use dark yellow border for rainfall layer, white for others
+      const borderColor = layer === 'rainfall' ? '#ca8a04' : 'white';
+      const icon = createAlertIcon(markerColor, district.alert_level, borderColor);
 
       return (
         <Marker
@@ -936,6 +991,119 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     ));
   }, [showTraffic, trafficIncidents]);
 
+  // Flood gauge (irrigation station) markers
+  const floodGaugeMarkers = useMemo(() => {
+    if (!showFloodGauges || floodGaugeStations.length === 0) return null;
+
+    return floodGaugeStations.map((station) => (
+      <Marker
+        key={`flood-gauge-${station.station}`}
+        position={[station.lat, station.lon]}
+        icon={createFloodGaugeIcon(station.status, station.pct_to_alert)}
+      >
+        <Popup maxWidth={320} minWidth={280}>
+          <div className="p-1">
+            <h3 className="font-bold text-sm border-b pb-1 mb-2">
+              {station.station}
+            </h3>
+            <div className="text-xs text-gray-600 mb-2">{station.river}</div>
+
+            {/* Status badge */}
+            <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${
+              station.status === 'major_flood' ? 'bg-red-900 text-white' :
+              station.status === 'minor_flood' ? 'bg-red-100 text-red-700' :
+              station.status === 'alert' ? 'bg-orange-100 text-orange-700' :
+              'bg-green-100 text-green-700'
+            }`}>
+              {station.status.replace('_', ' ').toUpperCase()}
+            </div>
+
+            {/* Current water level */}
+            <div className="bg-blue-50 p-2 rounded text-center mb-2">
+              <div className="text-xs text-gray-500">Current Water Level</div>
+              <div className="text-xl font-bold text-blue-700">{station.water_level_m.toFixed(2)}m</div>
+            </div>
+
+            {/* Flood thresholds */}
+            <div className="text-xs font-semibold text-gray-600 mb-1">Flood Thresholds</div>
+            <div className="grid grid-cols-3 gap-1 text-xs mb-2">
+              <div className={`p-1.5 rounded text-center ${station.status === 'alert' || station.status === 'minor_flood' || station.status === 'major_flood' ? 'bg-orange-100 border border-orange-400' : 'bg-gray-50'}`}>
+                <div className="text-gray-500">Alert</div>
+                <div className="font-bold">{station.alert_level_m.toFixed(1)}m</div>
+              </div>
+              <div className={`p-1.5 rounded text-center ${station.status === 'minor_flood' || station.status === 'major_flood' ? 'bg-red-100 border border-red-400' : 'bg-gray-50'}`}>
+                <div className="text-gray-500">Minor</div>
+                <div className="font-bold">{station.minor_flood_level_m.toFixed(1)}m</div>
+              </div>
+              <div className={`p-1.5 rounded text-center ${station.status === 'major_flood' ? 'bg-red-200 border border-red-600' : 'bg-gray-50'}`}>
+                <div className="text-gray-500">Major</div>
+                <div className="font-bold">{station.major_flood_level_m.toFixed(1)}m</div>
+              </div>
+            </div>
+
+            {/* Progress to flood */}
+            <div className="text-xs font-semibold text-gray-600 mb-1">Progress to Flood Level</div>
+            <div className="space-y-1 mb-2">
+              <div className="flex items-center gap-2">
+                <span className="w-16 text-xs text-gray-500">Alert:</span>
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${station.pct_to_alert >= 100 ? 'bg-orange-500' : 'bg-orange-300'}`}
+                    style={{ width: `${Math.min(station.pct_to_alert, 100)}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium w-12 text-right">{station.pct_to_alert.toFixed(0)}%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-16 text-xs text-gray-500">Minor:</span>
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${station.pct_to_minor_flood >= 100 ? 'bg-red-500' : 'bg-red-300'}`}
+                    style={{ width: `${Math.min(station.pct_to_minor_flood, 100)}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium w-12 text-right">{station.pct_to_minor_flood.toFixed(0)}%</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-16 text-xs text-gray-500">Major:</span>
+                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full ${station.pct_to_major_flood >= 100 ? 'bg-red-700' : 'bg-red-400'}`}
+                    style={{ width: `${Math.min(station.pct_to_major_flood, 100)}%` }}
+                  />
+                </div>
+                <span className="text-xs font-medium w-12 text-right">{station.pct_to_major_flood.toFixed(0)}%</span>
+              </div>
+            </div>
+
+            {/* Districts affected */}
+            {station.districts && station.districts.length > 0 && (
+              <div className="mt-2 pt-2 border-t">
+                <div className="text-xs text-gray-500 mb-1">Districts affected:</div>
+                <div className="flex flex-wrap gap-1">
+                  {station.districts.map((d, idx) => (
+                    <span
+                      key={idx}
+                      className="text-xs px-1.5 py-0.5 rounded bg-gray-100 text-gray-700"
+                    >
+                      {d}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {station.last_updated && (
+              <div className="mt-2 pt-1 border-t text-xs text-gray-500">
+                Updated: {new Date(station.last_updated).toLocaleString()}
+              </div>
+            )}
+          </div>
+        </Popup>
+      </Marker>
+    ));
+  }, [showFloodGauges, floodGaugeStations]);
+
   if (loading && weatherData.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
@@ -1051,6 +1219,20 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             </svg>
             Traffic
           </button>
+          <button
+            onClick={() => setShowFloodGauges(!showFloodGauges)}
+            className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
+              showFloodGauges
+                ? 'bg-amber-600 text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-50'
+            }`}
+            title="Irrigation Dept. flood gauge stations"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Gauges
+          </button>
           <a
             href="https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=7.8731;x=80.7718;z=8;d=2;dl=2;dc=0;"
             target="_blank"
@@ -1165,6 +1347,31 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             <div className="text-gray-400 mt-1">{trafficIncidents.length} incidents</div>
           </div>
         )}
+
+        {showFloodGauges && (
+          <div className="bg-white rounded-lg shadow-md p-2 text-xs">
+            <div className="text-gray-600 font-medium mb-1">Flood Gauges (Irrigation Dept.)</div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#7f1d1d' }} />
+                <span className="text-gray-600">Major</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#dc2626' }} />
+                <span className="text-gray-600">Minor</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#f97316' }} />
+                <span className="text-gray-600">Alert</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#22c55e' }} />
+                <span className="text-gray-600">Normal</span>
+              </div>
+            </div>
+            <div className="text-gray-400 mt-1">{floodGaugeStations.length} stations</div>
+          </div>
+        )}
       </div>
 
       {loading && (
@@ -1197,6 +1404,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         {riverMarkers}
         {marineMarkers}
         {trafficMarkers}
+        {floodGaugeMarkers}
       </MapContainer>
     </div>
   );

@@ -122,7 +122,7 @@ class IntelEngine:
             factors = []
 
             # 1. Water level (0-40 points)
-            water_level = report.get("water_level", "UNKNOWN").upper()
+            water_level = (report.get("water_level") or "UNKNOWN").upper()
             water_score = self.WATER_LEVEL_SCORES.get(water_level, 10)
             score += water_score
             factors.append(f"water_level:{water_level}={water_score}")

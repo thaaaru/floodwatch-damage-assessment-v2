@@ -303,6 +303,128 @@ class ApiClient {
   async refreshTrafficIncidents(): Promise<{ status: string; count: number; summary: Record<string, number> }> {
     return this.fetch('/api/intel/traffic/refresh', { method: 'POST' });
   }
+
+  // Irrigation/River Water Level endpoints
+  async getIrrigationData(): Promise<IrrigationResponse> {
+    return this.fetch<IrrigationResponse>('/api/intel/irrigation');
+  }
+
+  async getIrrigationByDistrict(district: string): Promise<{
+    district: string;
+    risk_level: string;
+    risk_score: number;
+    max_pct_to_flood: number;
+    station_count: number;
+    stations: IrrigationStation[];
+  }> {
+    return this.fetch(`/api/intel/irrigation/district/${encodeURIComponent(district)}`);
+  }
+
+  async refreshIrrigationData(): Promise<{ status: string; count: number; summary: Record<string, number> }> {
+    return this.fetch('/api/intel/irrigation/refresh', { method: 'POST' });
+  }
+
+  // Flood Threat Assessment endpoint
+  async getFloodThreat(): Promise<FloodThreatResponse> {
+    return this.fetch<FloodThreatResponse>('/api/intel/flood-threat');
+  }
+
+  // Traffic Flow endpoints
+  async getTrafficFlow(): Promise<TrafficFlowResponse> {
+    return this.fetch<TrafficFlowResponse>('/api/intel/traffic-flow');
+  }
+
+  // All Facilities endpoint
+  async getAllFacilities(): Promise<AllFacilitiesResponse> {
+    return this.fetch<AllFacilitiesResponse>('/api/intel/facilities');
+  }
+
+  // Flood Pattern Analysis endpoints
+  async getFloodPatterns(district: string = 'Colombo', years: number = 10): Promise<FloodPatternsResponse> {
+    return this.fetch<FloodPatternsResponse>(`/api/intel/flood-patterns?district=${encodeURIComponent(district)}&years=${years}`);
+  }
+
+  async getFloodPatternDistricts(): Promise<{ districts: string[]; flood_prone_districts: string[] }> {
+    return this.fetch('/api/intel/flood-patterns/districts');
+  }
+
+  // Environmental Data endpoints
+  async getEnvironmentalData(startYear: number = 1994, endYear: number = 2024): Promise<EnvironmentalDataResponse> {
+    return this.fetch<EnvironmentalDataResponse>(`/api/intel/environmental?start_year=${startYear}&end_year=${endYear}`);
+  }
+
+  async getFloodCorrelation(): Promise<FloodCorrelationResponse> {
+    return this.fetch<FloodCorrelationResponse>('/api/intel/environmental/flood-correlation');
+  }
+
+  // Early Warning System endpoints (OpenWeatherMap One Call API 3.0)
+  async getEarlyWarning(): Promise<EarlyWarningResponse> {
+    return this.fetch<EarlyWarningResponse>('/early-warning/');
+  }
+
+  async getEarlyWarningDistrict(district: string): Promise<EarlyWarningDistrict> {
+    return this.fetch<EarlyWarningDistrict>(`/early-warning/district/${encodeURIComponent(district)}`);
+  }
+
+  async getEarlyWarningAlerts(): Promise<EarlyWarningAlertsResponse> {
+    return this.fetch<EarlyWarningAlertsResponse>('/early-warning/alerts');
+  }
+
+  async getEarlyWarningHighRisk(): Promise<EarlyWarningHighRiskResponse> {
+    return this.fetch<EarlyWarningHighRiskResponse>('/early-warning/high-risk');
+  }
+
+  async getEarlyWarningDailyForecast(days: number = 8): Promise<EarlyWarningDailyForecastResponse> {
+    return this.fetch<EarlyWarningDailyForecastResponse>(`/early-warning/forecast/daily?days=${days}`);
+  }
+
+  async getEarlyWarningHourlyForecast(district: string, hours: number = 48): Promise<EarlyWarningHourlyForecastResponse> {
+    return this.fetch<EarlyWarningHourlyForecastResponse>(`/early-warning/forecast/hourly/${encodeURIComponent(district)}?hours=${hours}`);
+  }
+
+  async getCacheStatus(): Promise<CacheStatus> {
+    return this.fetch<CacheStatus>('/api/weather/cache-status');
+  }
+
+  async getYesterdayStats(): Promise<YesterdayStats> {
+    return this.fetch<YesterdayStats>('/api/weather/yesterday/stats');
+  }
+}
+
+export interface CacheStatus {
+  cached_districts: number;
+  last_update: string;
+  cache_age_seconds: number;
+  is_valid: boolean;
+  next_refresh_seconds: number;
+}
+
+// Yesterday's Stats types
+export interface YesterdayDistrictData {
+  district: string;
+  rainfall_mm: number;
+  temp_max_c: number | null;
+  temp_min_c: number | null;
+}
+
+export interface YesterdayDistrictRain {
+  district: string;
+  rainfall_mm: number;
+}
+
+export interface YesterdayStats {
+  date: string;
+  total_districts: number;
+  districts_with_rain: number;
+  total_rainfall_mm: number;
+  avg_rainfall_mm: number;
+  max_rainfall_mm: number;
+  max_rainfall_district: string | null;
+  heavy_rain_districts: YesterdayDistrictRain[];
+  moderate_rain_districts: YesterdayDistrictRain[];
+  light_rain_districts: YesterdayDistrictRain[];
+  dry_districts: string[];
+  district_data: YesterdayDistrictData[];
 }
 
 // Intelligence types
@@ -599,6 +721,480 @@ export interface TrafficResponse {
     other: number;
   };
   incidents: TrafficIncident[];
+}
+
+// Irrigation/River Water Level types
+export interface IrrigationStation {
+  station: string;
+  river: string;
+  lat: number;
+  lon: number;
+  districts: string[];
+  district_ids: string[];
+  water_level_m: number;
+  alert_level_m: number;
+  minor_flood_level_m: number;
+  major_flood_level_m: number;
+  status: 'normal' | 'alert' | 'minor_flood' | 'major_flood';
+  pct_to_alert: number;
+  pct_to_minor_flood: number;
+  pct_to_major_flood: number;
+  last_updated: string;
+}
+
+export interface IrrigationResponse {
+  count: number;
+  summary: {
+    total_stations: number;
+    normal: number;
+    alert: number;
+    minor_flood: number;
+    major_flood: number;
+    highest_risk_station: IrrigationStation | null;
+  };
+  stations: IrrigationStation[];
+}
+
+// Flood Threat types
+export interface ThreatFactor {
+  factor: string;
+  value: string;
+  score: number;
+  station?: string;
+  river?: string;
+}
+
+export interface DistrictThreat {
+  district: string;
+  threat_score: number;
+  threat_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  rainfall_score: number;
+  river_score: number;
+  forecast_score: number;
+  factors: ThreatFactor[];
+  current_alert_level: string;
+  lat: number;
+  lon: number;
+}
+
+export interface FloodThreatResponse {
+  national_threat_level: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  national_threat_score: number;
+  summary: {
+    critical_districts: number;
+    high_risk_districts: number;
+    medium_risk_districts: number;
+    rivers_at_major_flood: number;
+    rivers_at_minor_flood: number;
+    rivers_at_alert: number;
+  };
+  top_risk_districts: DistrictThreat[];
+  all_districts: DistrictThreat[];
+  highest_risk_river: IrrigationStation | null;
+  analyzed_at: string;
+}
+
+// Traffic Flow types
+export interface TrafficFlowLocation {
+  name: string;
+  lat: number;
+  lon: number;
+  current_speed_kmh: number;
+  free_flow_speed_kmh: number;
+  speed_ratio: number;
+  jam_factor?: number;
+  congestion: 'free' | 'light' | 'moderate' | 'heavy' | 'severe' | 'closed' | 'unknown';
+  congestion_color: string;
+  delay_seconds?: number;
+  delay_minutes?: number;
+  road_closure?: boolean;
+  road_names?: string[];
+  segment_count?: number;
+  confidence?: number;
+  source?: string;
+}
+
+export interface TrafficFlowSummary {
+  total_locations: number;
+  free_flow: number;
+  light: number;
+  moderate: number;
+  heavy: number;
+  severe: number;
+  closed?: number;
+  avg_speed_kmh: number;
+  avg_jam_factor?: number;
+  total_delay_minutes?: number;
+}
+
+export interface TrafficFlowResponse {
+  total_locations: number;
+  combined_summary: {
+    free_flow: number;
+    light: number;
+    moderate: number;
+    heavy: number;
+    severe: number;
+    avg_speed_kmh: number;
+  };
+  here_summary: TrafficFlowSummary;
+  tomtom_summary: TrafficFlowSummary;
+  here_locations: TrafficFlowLocation[];
+  tomtom_locations: TrafficFlowLocation[];
+  congested_roads: TrafficFlowLocation[];
+}
+
+// All Facilities types
+export interface AllFacilitiesResponse {
+  hospitals: EmergencyFacility[];
+  police: EmergencyFacility[];
+  fire_stations: EmergencyFacility[];
+  shelters: EmergencyFacility[];
+  summary: {
+    hospitals: number;
+    police: number;
+    fire_stations: number;
+    shelters: number;
+  };
+  last_updated: string | null;
+}
+
+// Flood Pattern Analysis types
+export interface FloodRiskMonth {
+  month: number;
+  month_name: string;
+  flood_risk: 'HIGH' | 'MEDIUM' | 'LOW';
+  risk_score: number;
+  avg_rainfall_mm: number;
+  max_daily_mm: number;
+}
+
+export interface SeasonalPattern {
+  name: string;
+  avg_daily_mm: number;
+  total_days: number;
+  rainy_days: number;
+  heavy_rain_days: number;
+  extreme_rain_days: number;
+  max_daily_mm: number;
+}
+
+export interface ExtremeEvent {
+  date: string;
+  precipitation_mm: number;
+  month: number;
+  year: number;
+}
+
+export interface YearlyTrend {
+  year: number;
+  total_rainfall_mm: number;
+  rainy_days: number;
+  extreme_days: number;
+  max_daily_mm: number;
+}
+
+export interface DecadeStats {
+  years: string;
+  avg_annual_rainfall_mm: number;
+  avg_rainy_days: number;
+  avg_extreme_days: number;
+  total_extreme_days: number;
+  max_daily_mm: number;
+  wettest_year: YearlyTrend;
+  driest_year: YearlyTrend;
+}
+
+export interface ClimateChange {
+  metric: string;
+  first_decade: string;
+  last_decade: string;
+  change: string;
+  change_pct: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+}
+
+export interface MovingAverage {
+  year: number;
+  avg_rainfall_mm: number;
+  avg_extreme_days: number;
+}
+
+export interface ExtremeByDecade {
+  years: string;
+  count: number;
+  events: { date: string; precipitation_mm: number }[];
+}
+
+export interface ClimateChangeAnalysis {
+  period_analyzed: string;
+  decades: {
+    first: DecadeStats | null;
+    second: DecadeStats | null;
+    third: DecadeStats | null;
+  };
+  changes: ClimateChange[];
+  moving_average_5yr: MovingAverage[];
+  extreme_events_by_decade: {
+    decade1: ExtremeByDecade;
+    decade2: ExtremeByDecade;
+    decade3: ExtremeByDecade;
+  };
+  key_findings: string[];
+}
+
+export interface FloodPatternsResponse {
+  district: string;
+  coordinates: { lat: number; lon: number };
+  period: string;
+  total_days_analyzed: number;
+  summary: {
+    total_rainfall_mm: number;
+    avg_annual_rainfall_mm: number;
+    avg_daily_rainfall_mm: number;
+    max_daily_rainfall_mm: number;
+    rainy_days_total: number;
+    heavy_rain_days: number;
+    extreme_rain_days: number;
+  };
+  flood_risk_months: FloodRiskMonth[];
+  seasonal_patterns: Record<string, SeasonalPattern>;
+  extreme_events: ExtremeEvent[];
+  yearly_trends: YearlyTrend[];
+  climate_change?: ClimateChangeAnalysis;
+  analyzed_at: string;
+}
+
+// Environmental Data types
+export interface EnvironmentalTrendAnalysis {
+  first_year: number;
+  last_year: number;
+  first_value: number;
+  last_value: number;
+  absolute_change: number;
+  percent_change: number;
+  annual_rate: number;
+  trend: 'increasing' | 'decreasing' | 'stable';
+  min_value: number;
+  max_value: number;
+  avg_value: number;
+  min_year: number;
+  max_year: number;
+}
+
+export interface EnvironmentalDataPoint {
+  year: number;
+  value: number;
+}
+
+export interface EnvironmentalIndicator {
+  data: EnvironmentalDataPoint[];
+  unit: string;
+  analysis: EnvironmentalTrendAnalysis;
+}
+
+export interface FloodRiskFactor {
+  factor: string;
+  description: string;
+  impact: 'High' | 'Medium' | 'Low';
+  explanation: string;
+  risk_contribution: number;
+}
+
+export interface FloodRiskFactors {
+  overall_risk_level: 'HIGH' | 'MEDIUM' | 'LOW';
+  risk_score: number;
+  max_score: number;
+  summary: string;
+  factors: FloodRiskFactor[];
+  recommendation: string;
+}
+
+export interface EnvironmentalDataResponse {
+  country: string;
+  country_code: string;
+  period: string;
+  forest_cover: EnvironmentalIndicator;
+  population_density: EnvironmentalIndicator;
+  population_total: EnvironmentalIndicator;
+  urban_population: EnvironmentalIndicator;
+  agricultural_land: EnvironmentalIndicator;
+  flood_risk_factors: FloodRiskFactors;
+  data_source: string;
+  analyzed_at: string;
+}
+
+export interface FloodCorrelationResponse {
+  period: string;
+  environmental_changes: {
+    forest_cover: EnvironmentalTrendAnalysis;
+    population_density: EnvironmentalTrendAnalysis;
+    urban_population: EnvironmentalTrendAnalysis;
+  };
+  flood_patterns: {
+    extreme_events_trend: string;
+    rainfall_trend: string;
+  };
+  risk_assessment: FloodRiskFactors;
+  key_insights: string[];
+  data_sources: {
+    environmental: string;
+    flood_patterns: string;
+  };
+}
+
+// Early Warning System types (OpenWeatherMap One Call API 3.0)
+export interface EarlyWarningRiskFactor {
+  factor: string;
+  detail: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
+export interface EarlyWarningCurrent {
+  temp_c: number | null;
+  feels_like_c: number | null;
+  humidity: number | null;
+  pressure: number | null;
+  wind_speed_ms: number | null;
+  wind_gust_ms: number | null;
+  wind_deg: number | null;
+  clouds: number | null;
+  visibility: number | null;
+  uvi: number | null;
+  rain_1h_mm: number;
+  weather: string;
+  weather_icon: string;
+}
+
+export interface EarlyWarningHourly {
+  time: string;
+  temp_c: number | null;
+  feels_like_c: number | null;
+  humidity: number | null;
+  pressure: number | null;
+  wind_speed_ms: number | null;
+  wind_gust_ms: number | null;
+  wind_deg: number | null;
+  clouds: number | null;
+  pop: number;
+  rain_mm: number;
+  snow_mm: number;
+  uvi: number | null;
+  visibility: number | null;
+  weather: string;
+  weather_icon: string;
+}
+
+export interface EarlyWarningDaily {
+  date: string;
+  day_name: string;
+  sunrise: string;
+  sunset: string;
+  summary: string;
+  temp_day_c: number | null;
+  temp_night_c: number | null;
+  temp_min_c: number | null;
+  temp_max_c: number | null;
+  feels_like_day_c: number | null;
+  humidity: number | null;
+  pressure: number | null;
+  wind_speed_ms: number | null;
+  wind_gust_ms: number | null;
+  wind_deg: number | null;
+  clouds: number | null;
+  pop: number;
+  rain_mm: number;
+  snow_mm: number;
+  uvi: number | null;
+  weather: string;
+  weather_icon: string;
+  moon_phase: number | null;
+  alert_level: 'green' | 'yellow' | 'orange' | 'red';
+}
+
+export interface GovernmentAlert {
+  sender: string;
+  event: string;
+  start: string;
+  end: string;
+  description: string;
+  tags: string[];
+  district?: string;
+}
+
+export interface EarlyWarningDistrict {
+  district: string;
+  coordinates: { lat: number; lon: number };
+  fetched_at: string;
+  timezone: string;
+  risk_level: 'low' | 'medium' | 'high' | 'extreme' | 'unknown';
+  risk_score: number;
+  risk_factors: EarlyWarningRiskFactor[];
+  current: EarlyWarningCurrent;
+  precipitation: {
+    next_1h_mm: number;
+    next_24h_mm: number;
+    next_48h_mm: number;
+  };
+  alerts: GovernmentAlert[];
+  alert_count: number;
+  overview: string;
+  hourly_forecast: EarlyWarningHourly[];
+  daily_forecast: EarlyWarningDaily[];
+  error?: string;
+}
+
+export interface EarlyWarningSummary {
+  total_districts: number;
+  risk_distribution: {
+    extreme: number;
+    high: number;
+    medium: number;
+    low: number;
+  };
+  total_government_alerts: number;
+  districts_at_risk: number;
+}
+
+export interface EarlyWarningResponse {
+  summary: EarlyWarningSummary;
+  districts: EarlyWarningDistrict[];
+}
+
+export interface EarlyWarningAlertsResponse {
+  total_alerts: number;
+  alerts: GovernmentAlert[];
+}
+
+export interface EarlyWarningHighRiskResponse {
+  count: number;
+  districts: EarlyWarningDistrict[];
+}
+
+export interface DailyForecastByDay {
+  date: string;
+  day_name: string;
+  districts: Array<{
+    district: string;
+    temp_max_c: number | null;
+    temp_min_c: number | null;
+    rain_mm: number;
+    pop: number;
+    weather: string;
+    alert_level: string;
+    summary: string;
+  }>;
+}
+
+export interface EarlyWarningDailyForecastResponse {
+  days: number;
+  forecast: DailyForecastByDay[];
+}
+
+export interface EarlyWarningHourlyForecastResponse {
+  district: string;
+  hours: number;
+  forecast: EarlyWarningHourly[];
 }
 
 export const api = new ApiClient();
