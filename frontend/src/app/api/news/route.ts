@@ -12,17 +12,43 @@ interface NewsItem {
   severity?: 'info' | 'warning' | 'critical';
 }
 
-// Cache for news items
+// Cache for news items - longer TTL to prevent hitting API limits
 let newsCache: { items: NewsItem[]; fetchedAt: number } | null = null;
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes - reduces API calls significantly
+
+// Track last fetch time per source to prevent hammering
+const lastFetchTime: Record<string, number> = {};
+const MIN_FETCH_INTERVAL = 30 * 60 * 1000; // 30 min minimum between fetches per source
+
+function canFetchSource(source: string): boolean {
+  const lastFetch = lastFetchTime[source] || 0;
+  return Date.now() - lastFetch >= MIN_FETCH_INTERVAL;
+}
+
+function markSourceFetched(source: string): void {
+  lastFetchTime[source] = Date.now();
+}
+
+// Cache for individual source results
+let imdCache: { items: NewsItem[]; fetchedAt: number } | null = null;
+let gdacsCache: { items: NewsItem[]; fetchedAt: number } | null = null;
+let reliefwebCache: { items: NewsItem[]; fetchedAt: number } | null = null;
 
 /**
  * Fetch cyclone info from IMD RSMC
+ * Rate limited: max 1 request per 30 minutes
  */
 async function fetchIMDCycloneNews(): Promise<NewsItem[]> {
+  // Return cached data if we fetched recently
+  if (imdCache && !canFetchSource('imd')) {
+    return imdCache.items;
+  }
+
   const items: NewsItem[] = [];
 
   try {
+    markSourceFetched('imd');
+
     // Fetch RSMC New Delhi page for active cyclones
     const response = await fetch('https://rsmcnewdelhi.imd.gov.in/', {
       signal: AbortSignal.timeout(10000),
@@ -31,7 +57,9 @@ async function fetchIMDCycloneNews(): Promise<NewsItem[]> {
       }
     });
 
-    if (!response.ok) return items;
+    if (!response.ok) {
+      return imdCache?.items || items;
+    }
 
     const html = await response.text();
 
@@ -52,8 +80,12 @@ async function fetchIMDCycloneNews(): Promise<NewsItem[]> {
         severity: 'warning',
       });
     }
+
+    // Update source cache
+    imdCache = { items, fetchedAt: Date.now() };
   } catch (error) {
     console.warn('IMD fetch error:', error);
+    return imdCache?.items || items;
   }
 
   return items;
@@ -61,11 +93,19 @@ async function fetchIMDCycloneNews(): Promise<NewsItem[]> {
 
 /**
  * Fetch from GDACS API
+ * Rate limited: max 1 request per 30 minutes
  */
 async function fetchGDACSAlerts(): Promise<NewsItem[]> {
+  // Return cached data if we fetched recently
+  if (gdacsCache && !canFetchSource('gdacs')) {
+    return gdacsCache.items;
+  }
+
   const items: NewsItem[] = [];
 
   try {
+    markSourceFetched('gdacs');
+
     // GDACS RSS/API for South Asia region
     const response = await fetch(
       'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=TC,FL&country=LKA,IND,BGD,MMR&fromdate=' +
@@ -78,7 +118,9 @@ async function fetchGDACSAlerts(): Promise<NewsItem[]> {
       }
     );
 
-    if (!response.ok) return items;
+    if (!response.ok) {
+      return gdacsCache?.items || items;
+    }
 
     const data = await response.json();
 
@@ -100,8 +142,12 @@ async function fetchGDACSAlerts(): Promise<NewsItem[]> {
         });
       }
     }
+
+    // Update source cache
+    gdacsCache = { items, fetchedAt: Date.now() };
   } catch (error) {
     console.warn('GDACS fetch error:', error);
+    return gdacsCache?.items || items;
   }
 
   return items;
@@ -109,11 +155,19 @@ async function fetchGDACSAlerts(): Promise<NewsItem[]> {
 
 /**
  * Fetch from ReliefWeb API
+ * Rate limited: max 1 request per 30 minutes
  */
 async function fetchReliefWebNews(): Promise<NewsItem[]> {
+  // Return cached data if we fetched recently
+  if (reliefwebCache && !canFetchSource('reliefweb')) {
+    return reliefwebCache.items;
+  }
+
   const items: NewsItem[] = [];
 
   try {
+    markSourceFetched('reliefweb');
+
     const response = await fetch(
       'https://api.reliefweb.int/v1/reports?appname=floodwatch-lk&limit=5&filter[field]=primary_country.iso3&filter[value]=LKA&filter[field]=disaster_type.name&filter[value][]=Flood&filter[value][]=Tropical Cyclone&sort[]=date:desc',
       {
@@ -124,7 +178,9 @@ async function fetchReliefWebNews(): Promise<NewsItem[]> {
       }
     );
 
-    if (!response.ok) return items;
+    if (!response.ok) {
+      return reliefwebCache?.items || items;
+    }
 
     const data = await response.json();
 
@@ -146,8 +202,12 @@ async function fetchReliefWebNews(): Promise<NewsItem[]> {
         });
       }
     }
+
+    // Update source cache
+    reliefwebCache = { items, fetchedAt: Date.now() };
   } catch (error) {
     console.warn('ReliefWeb fetch error:', error);
+    return reliefwebCache?.items || items;
   }
 
   return items;

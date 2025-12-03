@@ -47,8 +47,8 @@ export default function NewsFeed({ maxItems = 10, compact = false }: NewsFeedPro
     };
 
     fetchNews();
-    // Refresh every 5 minutes
-    const interval = setInterval(fetchNews, 5 * 60 * 1000);
+    // Refresh every 10 minutes (server caches for 30 min anyway)
+    const interval = setInterval(fetchNews, 10 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
