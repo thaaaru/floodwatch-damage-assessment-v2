@@ -64,7 +64,6 @@ export default function WindyPage() {
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('rain');
   const [showPanel, setShowPanel] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>('Weather');
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   // Get categories
   const categories = Array.from(new Set(overlays.map(o => o.category)));
@@ -86,28 +85,11 @@ export default function WindyPage() {
     };
   }, []);
 
-  // Get user location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        () => {
-          setUserLocation(null);
-        },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
-      );
-    }
-  }, []);
-
-  const lat = userLocation?.lat ?? 7.8731;
-  const lon = userLocation?.lon ?? 80.7718;
-  const zoom = userLocation ? 9 : 7;
-  const marker = userLocation ? 'true' : '';
+  // Center of Sri Lanka for full island view
+  const lat = 7.8731; // Central Sri Lanka latitude
+  const lon = 80.7718; // Central Sri Lanka longitude
+  const zoom = 7; // Zoom level to show entire island
+  const marker = ''; // No marker for cleaner view
 
   const embedUrl = `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&detailLat=${lat}&detailLon=${lon}&zoom=${zoom}&level=surface&overlay=${activeOverlay}&product=ecmwf&menu=&message=true&marker=${marker}&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
 
@@ -123,19 +105,13 @@ export default function WindyPage() {
               </svg>
             </a>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold text-white">Windy Weather Map</h1>
+              <h1 className="text-xl font-semibold text-white">Sri Lanka Weather Map</h1>
               <span className="text-slate-400">•</span>
               <span className="text-sm text-blue-400 flex items-center gap-1">
                 {overlays.find(o => o.id === activeOverlay)?.icon}
                 <span>{overlays.find(o => o.id === activeOverlay)?.label}</span>
               </span>
             </div>
-            {userLocation && (
-              <span className="text-xs text-green-400 flex items-center gap-1 ml-2">
-                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-                Your location
-              </span>
-            )}
           </div>
           <button
             onClick={() => setShowPanel(!showPanel)}
@@ -224,7 +200,7 @@ export default function WindyPage() {
           height="100%"
           frameBorder="0"
           allowFullScreen
-          title="Windy Weather Map - Sri Lanka"
+          title="Sri Lanka Weather Map - Full Island View"
           style={{ touchAction: 'auto' }}
         />
       </div>
