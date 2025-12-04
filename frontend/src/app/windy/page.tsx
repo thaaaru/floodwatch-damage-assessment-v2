@@ -1,22 +1,98 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
-type OverlayType = 'rain' | 'wind' | 'temp' | 'clouds' | 'gust';
+type OverlayType =
+  // Weather
+  | 'rain' | 'wind' | 'temp' | 'clouds' | 'gust' | 'pressure' | 'rh' | 'visibility'
+  // Precipitation & Radar
+  | 'thunder' | 'radar' | 'satellite'
+  // Clouds & Atmosphere
+  | 'cBase' | 'lclouds' | 'mclouds' | 'hclouds' | 'cape'
+  // Marine/Ocean
+  | 'waves' | 'swell1' | 'swell2' | 'swell3' | 'wwaves' | 'currents'
+  // Air Quality
+  | 'pm2p5' | 'no2' | 'co' | 'aod550';
 
-const overlays: { id: OverlayType; label: string; icon: string }[] = [
-  { id: 'rain', label: 'Rain', icon: '🌧️' },
-  { id: 'wind', label: 'Wind', icon: '💨' },
-  { id: 'temp', label: 'Temperature', icon: '🌡️' },
-  { id: 'clouds', label: 'Clouds', icon: '☁️' },
-  { id: 'gust', label: 'Gusts', icon: '🌬️' },
+interface OverlayConfig {
+  id: OverlayType;
+  label: string;
+  icon: string;
+  category: string;
+  description: string;
+}
+
+const overlays: OverlayConfig[] = [
+  // Weather Essentials
+  { id: 'rain', label: 'Rain & Thunder', icon: '🌧️', category: 'Weather', description: 'Precipitation forecast' },
+  { id: 'wind', label: 'Wind Speed', icon: '💨', category: 'Weather', description: 'Wind speed & direction' },
+  { id: 'temp', label: 'Temperature', icon: '🌡️', category: 'Weather', description: 'Air temperature' },
+  { id: 'clouds', label: 'Cloud Cover', icon: '☁️', category: 'Weather', description: 'Total cloud coverage' },
+  { id: 'gust', label: 'Wind Gusts', icon: '🌬️', category: 'Weather', description: 'Maximum wind gusts' },
+  { id: 'pressure', label: 'Pressure', icon: '📊', category: 'Weather', description: 'Sea level pressure' },
+  { id: 'rh', label: 'Humidity', icon: '💧', category: 'Weather', description: 'Relative humidity' },
+  { id: 'visibility', label: 'Visibility', icon: '👁️', category: 'Weather', description: 'Horizontal visibility' },
+
+  // Storms & Severe Weather
+  { id: 'thunder', label: 'Lightning', icon: '⚡', category: 'Storms', description: 'Thunderstorm probability' },
+  { id: 'radar', label: 'Radar', icon: '📡', category: 'Storms', description: 'Weather radar imagery' },
+  { id: 'satellite', label: 'Satellite', icon: '🛰️', category: 'Storms', description: 'Satellite imagery' },
+  { id: 'cape', label: 'CAPE', icon: '🌪️', category: 'Storms', description: 'Storm energy potential' },
+
+  // Cloud Layers
+  { id: 'cBase', label: 'Cloud Base', icon: '☁️', category: 'Clouds', description: 'Cloud base height' },
+  { id: 'lclouds', label: 'Low Clouds', icon: '☁️', category: 'Clouds', description: 'Low-level clouds' },
+  { id: 'mclouds', label: 'Mid Clouds', icon: '☁️', category: 'Clouds', description: 'Mid-level clouds' },
+  { id: 'hclouds', label: 'High Clouds', icon: '☁️', category: 'Clouds', description: 'High-level clouds' },
+
+  // Marine & Ocean
+  { id: 'waves', label: 'Wave Height', icon: '🌊', category: 'Marine', description: 'Significant wave height' },
+  { id: 'swell1', label: 'Primary Swell', icon: '🌊', category: 'Marine', description: 'Primary swell waves' },
+  { id: 'swell2', label: 'Secondary Swell', icon: '🌊', category: 'Marine', description: 'Secondary swell waves' },
+  { id: 'swell3', label: 'Tertiary Swell', icon: '🌊', category: 'Marine', description: 'Tertiary swell waves' },
+  { id: 'wwaves', label: 'Wind Waves', icon: '🌊', category: 'Marine', description: 'Wind-generated waves' },
+  { id: 'currents', label: 'Ocean Currents', icon: '🌊', category: 'Marine', description: 'Sea surface currents' },
+
+  // Air Quality
+  { id: 'pm2p5', label: 'PM2.5', icon: '😷', category: 'Air Quality', description: 'Fine particulate matter' },
+  { id: 'no2', label: 'NO₂', icon: '🏭', category: 'Air Quality', description: 'Nitrogen dioxide' },
+  { id: 'co', label: 'CO', icon: '🏭', category: 'Air Quality', description: 'Carbon monoxide' },
+  { id: 'aod550', label: 'Aerosols', icon: '🌫️', category: 'Air Quality', description: 'Aerosol optical depth' },
 ];
 
 export default function WindyPage() {
   const [activeOverlay, setActiveOverlay] = useState<OverlayType>('rain');
   const [showPanel, setShowPanel] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>('Weather');
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
-  const embedUrl = `https://embed.windy.com/embed2.html?lat=7.8731&lon=80.7718&detailLat=6.889&detailLon=79.956&zoom=7&level=surface&overlay=${activeOverlay}&product=ecmwf&menu=&message=true&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
+  // Get categories
+  const categories = Array.from(new Set(overlays.map(o => o.category)));
+
+  // Get user location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+        },
+        () => {
+          setUserLocation(null);
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
+      );
+    }
+  }, []);
+
+  const lat = userLocation?.lat ?? 7.8731;
+  const lon = userLocation?.lon ?? 80.7718;
+  const zoom = userLocation ? 9 : 7;
+  const marker = userLocation ? 'true' : '';
+
+  const embedUrl = `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&detailLat=${lat}&detailLon=${lon}&zoom=${zoom}&level=surface&overlay=${activeOverlay}&product=ecmwf&menu=&message=true&marker=${marker}&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`;
 
   return (
     <div className="min-h-screen bg-slate-900 relative">
@@ -29,39 +105,95 @@ export default function WindyPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </a>
-            <h1 className="text-xl font-semibold text-white">Windy Weather Map</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-semibold text-white">Windy Weather Map</h1>
+              <span className="text-slate-400">•</span>
+              <span className="text-sm text-blue-400 flex items-center gap-1">
+                {overlays.find(o => o.id === activeOverlay)?.icon}
+                <span>{overlays.find(o => o.id === activeOverlay)?.label}</span>
+              </span>
+            </div>
+            {userLocation && (
+              <span className="text-xs text-green-400 flex items-center gap-1 ml-2">
+                <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+                Your location
+              </span>
+            )}
           </div>
           <button
             onClick={() => setShowPanel(!showPanel)}
-            className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+            className="text-sm text-slate-400 hover:text-white transition-colors flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-slate-700"
           >
-            <span>Layers</span>
-            <svg className={`w-4 h-4 transition-transform ${showPanel ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
+            <span>Layers</span>
+            <span className="text-xs text-slate-500">({overlays.length})</span>
           </button>
         </div>
       </div>
 
       {/* Floating Layer Panel */}
       {showPanel && (
-        <div className="absolute top-16 right-4 z-10 bg-slate-800/95 backdrop-blur-sm rounded-lg border border-slate-700 shadow-xl p-2">
-          <div className="text-xs text-slate-400 px-2 pb-2 border-b border-slate-700 mb-2">Select Layer</div>
-          <div className="flex flex-col gap-1">
-            {overlays.map((overlay) => (
-              <button
-                key={overlay.id}
-                onClick={() => setActiveOverlay(overlay.id)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-all ${
-                  activeOverlay === overlay.id
-                    ? 'bg-blue-600 text-white'
-                    : 'text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                <span>{overlay.icon}</span>
-                <span>{overlay.label}</span>
-              </button>
-            ))}
+        <div className="absolute top-16 right-4 z-10 bg-slate-800/95 backdrop-blur-sm rounded-lg border border-slate-700 shadow-xl max-w-xs w-80">
+          {/* Header */}
+          <div className="px-3 py-2 border-b border-slate-700">
+            <div className="text-xs font-semibold text-white mb-2">Weather Layers</div>
+            {/* Category Tabs */}
+            <div className="flex gap-1 overflow-x-auto pb-1">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`px-2 py-1 text-xs rounded whitespace-nowrap transition-all ${
+                    activeCategory === category
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Layer List */}
+          <div className="max-h-96 overflow-y-auto p-2">
+            <div className="flex flex-col gap-1">
+              {overlays
+                .filter(o => o.category === activeCategory)
+                .map((overlay) => (
+                  <button
+                    key={overlay.id}
+                    onClick={() => setActiveOverlay(overlay.id)}
+                    className={`flex items-start gap-2 px-3 py-2 rounded-md text-sm transition-all ${
+                      activeOverlay === overlay.id
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    <span className="text-lg flex-shrink-0 mt-0.5">{overlay.icon}</span>
+                    <div className="flex-1 text-left">
+                      <div className="font-medium">{overlay.label}</div>
+                      <div className={`text-xs mt-0.5 ${
+                        activeOverlay === overlay.id ? 'text-blue-100' : 'text-slate-400'
+                      }`}>
+                        {overlay.description}
+                      </div>
+                    </div>
+                    {activeOverlay === overlay.id && (
+                      <svg className="w-4 h-4 flex-shrink-0 mt-1" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </button>
+                ))}
+            </div>
+          </div>
+
+          {/* Footer Info */}
+          <div className="px-3 py-2 border-t border-slate-700 text-xs text-slate-400">
+            {overlays.filter(o => o.category === activeCategory).length} layers in {activeCategory}
           </div>
         </div>
       )}
