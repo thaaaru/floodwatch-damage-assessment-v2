@@ -54,22 +54,22 @@ export default function RiverNetworkStatus() {
   const chartData = [
     {
       name: 'Major Flood',
-      value: summary.rivers_at_major_flood,
+      value: summary.major_flood,
       color: 'rose',
     },
     {
       name: 'Minor Flood',
-      value: summary.rivers_at_minor_flood,
+      value: summary.minor_flood,
       color: 'orange',
     },
     {
       name: 'Alert',
-      value: summary.rivers_at_alert,
+      value: summary.alert,
       color: 'amber',
     },
     {
       name: 'Normal',
-      value: summary.rivers_at_normal,
+      value: summary.normal,
       color: 'emerald',
     },
   ].filter(item => item.value > 0);
@@ -103,7 +103,7 @@ export default function RiverNetworkStatus() {
     }
   };
 
-  const criticalCount = summary.rivers_at_major_flood + summary.rivers_at_minor_flood;
+  const criticalCount = summary.major_flood + summary.minor_flood;
 
   return (
     <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden flex flex-col" style={{ height: '380px' }}>
@@ -139,19 +139,19 @@ export default function RiverNetworkStatus() {
         <div className="grid grid-cols-2 gap-2">
           <div className={`border rounded-lg p-2.5 ${getStatusBgColor('major_flood')}`}>
             <div className="text-xs opacity-75">Major Flood</div>
-            <div className="text-xl font-bold">{summary.rivers_at_major_flood}</div>
+            <div className="text-xl font-bold">{summary.major_flood}</div>
           </div>
           <div className={`border rounded-lg p-2.5 ${getStatusBgColor('minor_flood')}`}>
             <div className="text-xs opacity-75">Minor Flood</div>
-            <div className="text-xl font-bold">{summary.rivers_at_minor_flood}</div>
+            <div className="text-xl font-bold">{summary.minor_flood}</div>
           </div>
           <div className={`border rounded-lg p-2.5 ${getStatusBgColor('alert')}`}>
             <div className="text-xs opacity-75">Alert</div>
-            <div className="text-xl font-bold">{summary.rivers_at_alert}</div>
+            <div className="text-xl font-bold">{summary.alert}</div>
           </div>
           <div className={`border rounded-lg p-2.5 ${getStatusBgColor('normal')}`}>
             <div className="text-xs opacity-75">Normal</div>
-            <div className="text-xl font-bold">{summary.rivers_at_normal}</div>
+            <div className="text-xl font-bold">{summary.normal}</div>
           </div>
         </div>
 
