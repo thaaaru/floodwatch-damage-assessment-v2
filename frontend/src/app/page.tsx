@@ -111,11 +111,7 @@ export default function Dashboard() {
   const [showForecastExpanded, setShowForecastExpanded] = useState(false);
   const [showFloodRiskExpanded, setShowFloodRiskExpanded] = useState(false);
 
-  // Show info panel by default on desktop
-  useEffect(() => {
-    const isDesktop = window.innerWidth >= 1024; // lg breakpoint
-    setShowMobilePanel(isDesktop);
-  }, []);
+  // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -202,20 +198,22 @@ export default function Dashboard() {
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
-      {/* Map Controls - Floating on top of map */}
-      <div className="flex-1 relative">
-        {/* Map - Full Screen */}
-        <div className="absolute inset-0 p-4">
-          <div className="h-full card overflow-hidden">
-            <Map
-              onDistrictSelect={setSelectedDistrict}
-              hours={selectedHours}
-              layer={selectedLayer}
-              dangerFilter={dangerFilter}
-              userLocation={userLocation}
-            />
+      {/* Desktop: Grid Layout | Mobile: Full Screen Map */}
+      <div className="flex-1 lg:grid lg:grid-cols-[1fr_400px] relative">
+        {/* Map Container */}
+        <div className="relative h-full">
+          {/* Map - Full Screen on mobile, left column on desktop */}
+          <div className="absolute inset-0 p-4">
+            <div className="h-full card overflow-hidden">
+              <Map
+                onDistrictSelect={setSelectedDistrict}
+                hours={selectedHours}
+                layer={selectedLayer}
+                dangerFilter={dangerFilter}
+                userLocation={userLocation}
+              />
+            </div>
           </div>
-        </div>
 
         {/* Top Controls Overlay */}
         <div className="absolute top-6 left-6 right-6 z-[1000] flex flex-col gap-3">
@@ -467,44 +465,44 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Windy Icon - Left Side */}
-        <a
-          href="/windy"
-          className="fixed bottom-6 left-6 z-[2000] w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-purple-300/40"
-          title="Windy Weather Map"
-        >
-          <span className="text-2xl">🌀</span>
-        </a>
-
-        {/* Floating Info Panel - Both Desktop & Mobile */}
-        <div>
-          {/* Floating Action Button */}
-          <button
-            onClick={() => setShowMobilePanel(!showMobilePanel)}
-            className="fixed bottom-16 right-6 z-[2000] w-16 h-16 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-white/30"
+          {/* Windy Icon - Left Side */}
+          <a
+            href="/windy"
+            className="fixed bottom-6 left-6 z-[2000] w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-purple-300/40"
+            title="Windy Weather Map"
           >
-            {showMobilePanel ? (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            )}
-          </button>
+            <span className="text-2xl">🌀</span>
+          </a>
 
-          {/* Floating Panel */}
-          {showMobilePanel && (
-            <>
-              {/* Backdrop */}
-              <div
-                className="fixed inset-0 bg-black/50 z-[1500] animate-in fade-in duration-200"
-                onClick={() => setShowMobilePanel(false)}
-              />
+          {/* Mobile Only: Floating Info Panel */}
+          <div className="lg:hidden">
+            {/* Floating Action Button - Mobile Only */}
+            <button
+              onClick={() => setShowMobilePanel(!showMobilePanel)}
+              className="fixed bottom-16 right-6 z-[2000] w-16 h-16 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-white/30"
+            >
+              {showMobilePanel ? (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              )}
+            </button>
 
-              {/* Panel Content - Right side on desktop, bottom on mobile */}
-              <div className="fixed lg:top-20 lg:right-6 lg:bottom-6 lg:w-96 inset-x-0 bottom-0 lg:inset-x-auto z-[1600] bg-white/95 backdrop-blur-xl lg:rounded-2xl rounded-t-3xl shadow-2xl lg:max-h-none max-h-[85vh] flex flex-col border border-slate-200 animate-in lg:slide-in-from-right slide-in-from-bottom duration-300">
+            {/* Mobile Floating Panel */}
+            {showMobilePanel && (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 bg-black/50 z-[1500] animate-in fade-in duration-200"
+                  onClick={() => setShowMobilePanel(false)}
+                />
+
+                {/* Panel Content - Bottom on mobile */}
+                <div className="fixed inset-x-0 bottom-0 z-[1600] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col border border-slate-200 animate-in slide-in-from-bottom duration-300">
                 {/* Handle */}
                 <div className="flex items-center justify-center pt-3 pb-2 lg:hidden">
                   <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
@@ -587,6 +585,88 @@ export default function Dashboard() {
               </div>
             </>
           )}
+          </div>
+        </div>
+
+        {/* Desktop Only: Fixed Sidebar */}
+        <div className="hidden lg:flex flex-col h-full bg-white/95 backdrop-blur-xl border-l border-slate-200">
+          {/* Panel Header */}
+          <div className="px-4 py-4 border-b border-slate-200">
+            <h2 className="text-lg font-bold text-slate-900">Dashboard Info</h2>
+            <p className="text-xs text-slate-600 mt-1 font-medium">Real-time flood monitoring data</p>
+          </div>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {/* River Network Status */}
+            <RiverNetworkStatus />
+
+            {/* Alerts */}
+            {alerts.length > 0 && (
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-red-50">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                    </svg>
+                    <h2 className="text-sm font-bold text-slate-900">Active Alerts</h2>
+                  </div>
+                  <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 font-bold">
+                    {alerts.length}
+                  </span>
+                </div>
+                <div className="p-3 max-h-[250px] overflow-y-auto">
+                  <AlertList
+                    alerts={selectedDistrict ? alerts.filter(a => a.district === selectedDistrict) : alerts}
+                    compact
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* No Alerts */}
+            {alerts.length === 0 && !loading && (
+              <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center gap-2 text-sm">
+                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div>
+                  <div className="font-bold text-slate-900">No Active Alerts</div>
+                  <div className="text-xs text-slate-600 font-medium">All areas currently safe</div>
+                </div>
+              </div>
+            )}
+
+            {/* News */}
+            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
+              <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-blue-50">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
+                <h2 className="text-sm font-bold text-slate-900">News & Updates</h2>
+              </div>
+              <div className="p-3 max-h-[300px] overflow-y-auto">
+                <NewsFeed maxItems={5} compact />
+              </div>
+            </div>
+
+            {/* Windy Link */}
+            <a
+              href="/windy"
+              className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🌀</span>
+                <div>
+                  <div className="text-sm font-bold text-slate-900">Windy Weather Map</div>
+                  <div className="text-xs text-slate-600 font-medium">Real-time wind & rain visualization</div>
+                </div>
+              </div>
+              <svg className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          </div>
         </div>
       </div>
     </div>
