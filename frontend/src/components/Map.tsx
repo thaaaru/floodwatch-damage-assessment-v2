@@ -889,22 +889,26 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
                   <div className="font-bold text-cyan-700">{condition.wave_height_m.toFixed(1)}m</div>
                 </div>
                 <div className="bg-blue-50 p-1.5 rounded text-center">
-                  <div className="text-gray-500">Wind Speed</div>
-                  <div className="font-bold text-blue-700">{condition.wind_speed_kmh.toFixed(0)} km/h</div>
+                  <div className="text-gray-500">Wind Waves</div>
+                  <div className="font-bold text-blue-700">{condition.wind_wave_height_m.toFixed(1)}m</div>
                 </div>
+                <div className="bg-purple-50 p-1.5 rounded text-center">
+                  <div className="text-gray-500">Swell Waves</div>
+                  <div className="font-bold text-purple-700">{condition.swell_wave_height_m.toFixed(1)}m</div>
+                </div>
+                {condition.sea_surface_temp_c && (
+                  <div className="bg-orange-50 p-1.5 rounded text-center">
+                    <div className="text-gray-500">Sea Temp</div>
+                    <div className="font-bold text-orange-700">{condition.sea_surface_temp_c.toFixed(1)}°C</div>
+                  </div>
+                )}
               </div>
 
-              {/* Advisory */}
-              {condition.advisory && (
+              {/* Risk Factors */}
+              {condition.risk_factors && condition.risk_factors.length > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 p-1.5 rounded text-xs mt-2">
-                  <div className="font-semibold text-yellow-800 mb-0.5">Advisory:</div>
-                  <div className="text-gray-700">{condition.advisory}</div>
-                </div>
-              )}
-
-              {condition.last_updated && (
-                <div className="mt-2 pt-1 border-t text-xs text-gray-500">
-                  Updated: {condition.last_updated}
+                  <div className="font-semibold text-yellow-800 mb-0.5">Risk Factors:</div>
+                  <div className="text-gray-700">{condition.risk_factors.join(', ')}</div>
                 </div>
               )}
             </div>
