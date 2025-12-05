@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Card, DonutChart, BarList } from '@tremor/react';
-import { api, IrrigationData } from '@/lib/api';
+import { api, IrrigationResponse } from '@/lib/api';
 
 interface RiverStatusSummary {
   total: number;
@@ -13,7 +13,7 @@ interface RiverStatusSummary {
 }
 
 export default function RiverNetworkStatus() {
-  const [data, setData] = useState<IrrigationData | null>(null);
+  const [data, setData] = useState<IrrigationResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
