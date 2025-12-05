@@ -32,10 +32,10 @@ export default function RiverNetworkStatus() {
 
   if (loading) {
     return (
-      <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden flex flex-col" style={{ height: '320px' }}>
-        <div className="px-4 py-3 border-b border-white/20 flex items-center gap-2 bg-blue-500/10">
+      <div className="bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 overflow-hidden flex flex-col" style={{ height: '320px' }}>
+        <div className="px-4 py-3 border-b border-white/30 flex items-center gap-2 bg-blue-500/20">
           <span className="text-lg">🌊</span>
-          <h2 className="text-sm font-semibold text-slate-800">River Network Status</h2>
+          <h2 className="text-sm font-bold text-slate-900">River Network Status</h2>
         </div>
         <div className="flex-1 flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -106,15 +106,15 @@ export default function RiverNetworkStatus() {
   const criticalCount = summary.major_flood + summary.minor_flood;
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 overflow-hidden flex flex-col" style={{ height: '380px' }}>
+    <div className="bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 overflow-hidden flex flex-col" style={{ height: '380px' }}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-white/20 flex items-center justify-between bg-blue-500/10">
+      <div className="px-4 py-3 border-b border-white/30 flex items-center justify-between bg-blue-500/20">
         <div className="flex items-center gap-2">
           <span className="text-lg">🌊</span>
-          <h2 className="text-sm font-semibold text-slate-800">River Network Status</h2>
+          <h2 className="text-sm font-bold text-slate-900">River Network Status</h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-blue-800 bg-blue-100/50 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-bold text-blue-900 bg-blue-200 px-2 py-0.5 rounded-full">
             {summary.total_stations} stations
           </span>
         </div>
@@ -158,15 +158,15 @@ export default function RiverNetworkStatus() {
         {/* Top Risk Stations */}
         {topRiskRivers.length > 0 && (
           <div>
-            <div className="text-xs font-semibold text-slate-600 mb-2">Top Risk Stations</div>
+            <div className="text-xs font-bold text-slate-900 mb-2">Top Risk Stations</div>
             <div className="space-y-1">
               {topRiskRivers.map((river, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs py-1 px-2 bg-white/20 rounded">
-                  <span className="text-slate-800 truncate flex-1">{river.name}</span>
+                <div key={idx} className="flex items-center justify-between text-xs py-1 px-2 bg-white/30 rounded">
+                  <span className="text-slate-900 font-medium truncate flex-1">{river.name}</span>
                   <span className={`font-bold ml-2 ${
-                    river.value >= 100 ? 'text-rose-600' :
-                    river.value >= 80 ? 'text-orange-600' :
-                    river.value >= 60 ? 'text-amber-600' : 'text-emerald-600'
+                    river.value >= 100 ? 'text-rose-700' :
+                    river.value >= 80 ? 'text-orange-700' :
+                    river.value >= 60 ? 'text-amber-700' : 'text-emerald-700'
                   }`}>
                     {river.value.toFixed(0)}%
                   </span>
@@ -179,7 +179,7 @@ export default function RiverNetworkStatus() {
         {/* View All Link */}
         <a
           href="/rivers"
-          className="block text-center text-xs text-blue-700 hover:text-blue-800 font-medium py-2 hover:bg-white/20 rounded-lg transition-colors"
+          className="block text-center text-xs text-blue-800 hover:text-blue-900 font-bold py-2 hover:bg-white/30 rounded-lg transition-colors"
         >
           View all stations →
         </a>
