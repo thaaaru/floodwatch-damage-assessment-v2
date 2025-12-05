@@ -281,11 +281,11 @@ export default function Dashboard() {
                 <button
                   onClick={() => setDangerFilter('all')}
                   className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all ${
-                    dangerFilter === 'all' ? 'bg-slate-200 ring-1 ring-slate-400' : 'hover:bg-slate-100'
+                    dangerFilter === 'all' ? 'bg-white ring-1 ring-slate-900' : 'hover:bg-white/60'
                   }`}
                 >
-                  <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500" />
-                  <span className="text-slate-600">All</span>
+                  <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500 border border-slate-300" />
+                  <span className="text-slate-900 font-bold">All</span>
                 </button>
               )}
               {currentLegend.colors.map((item, idx) => {
@@ -298,16 +298,16 @@ export default function Dashboard() {
                     onClick={() => filterValue && setDangerFilter(dangerFilter === filterValue ? 'all' : filterValue as DangerFilter)}
                     className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all ${
                       selectedLayer === 'danger' && dangerFilter === filterValue
-                        ? 'bg-slate-200 ring-1 ring-brand-500'
-                        : selectedLayer === 'danger' ? 'hover:bg-slate-100 cursor-pointer' : ''
+                        ? 'bg-white ring-1 ring-brand-600'
+                        : selectedLayer === 'danger' ? 'hover:bg-white/60 cursor-pointer' : 'bg-white/40'
                     }`}
                     disabled={selectedLayer !== 'danger'}
                   >
                     <span
-                      className="w-3 h-3 rounded-sm border border-slate-300"
+                      className="w-3 h-3 rounded-sm border border-slate-400"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-slate-900 font-medium">{item.label}</span>
+                    <span className="text-slate-900 font-bold">{item.label}</span>
                   </button>
                 );
               })}

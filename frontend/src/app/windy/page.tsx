@@ -112,6 +112,15 @@ export default function WindyPage() {
         </div>
       </div>
 
+      {/* Backdrop */}
+      {showPanel && (
+        <div
+          className="absolute inset-0 z-9 bg-black/30"
+          onClick={() => setShowPanel(false)}
+          style={{ touchAction: 'auto' }}
+        />
+      )}
+
       {/* Floating Layer Panel */}
       {showPanel && (
         <div className="absolute top-12 right-4 z-10 bg-slate-800/10 backdrop-blur-md rounded-lg border border-slate-700/50 shadow-xl max-w-xs w-80 max-h-[60vh] flex flex-col overflow-hidden" style={{ touchAction: 'auto' }}>

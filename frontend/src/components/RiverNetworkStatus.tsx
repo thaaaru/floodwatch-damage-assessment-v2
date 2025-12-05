@@ -15,6 +15,7 @@ interface RiverStatusSummary {
 export default function RiverNetworkStatus() {
   const [data, setData] = useState<IrrigationResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showAllStations, setShowAllStations] = useState(false);
 
   useEffect(() => {
     const fetchRiverData = async () => {
@@ -176,14 +177,95 @@ export default function RiverNetworkStatus() {
           </div>
         )}
 
-        {/* View All Link */}
-        <a
-          href="/rivers"
-          className="block text-center text-xs text-blue-800 hover:text-blue-900 font-bold py-2 hover:bg-white/30 rounded-lg transition-colors"
+        {/* View All Button */}
+        <button
+          onClick={() => setShowAllStations(true)}
+          className="block w-full text-center text-xs text-blue-800 hover:text-blue-900 font-bold py-2 hover:bg-white/30 rounded-lg transition-colors"
         >
           View all stations →
-        </a>
+        </button>
       </div>
+
+      {/* Floating All Stations Panel */}
+      {showAllStations && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50 z-[3000] animate-in fade-in duration-200"
+            onClick={() => setShowAllStations(false)}
+          />
+
+          {/* Panel */}
+          <div className="fixed inset-4 md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:w-[600px] md:max-h-[80vh] z-[3001] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-300 flex flex-col animate-in slide-in-from-bottom duration-300">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-blue-500/10">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">🌊</span>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">All River Stations</h2>
+                  <p className="text-xs text-slate-600 mt-0.5">{summary.total_stations} monitoring stations</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowAllStations(false)}
+                className="p-2 hover:bg-slate-200 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-2">
+                {data.stations
+                  .sort((a, b) => {
+                    const statusPriority: Record<string, number> = {
+                      'major_flood': 4,
+                      'minor_flood': 3,
+                      'alert': 2,
+                      'normal': 1,
+                    };
+                    return (statusPriority[b.status] || 0) - (statusPriority[a.status] || 0);
+                  })
+                  .map((station, idx) => {
+                    const statusColor =
+                      station.status === 'major_flood' ? 'bg-rose-100 border-rose-300 text-rose-800' :
+                      station.status === 'minor_flood' ? 'bg-orange-100 border-orange-300 text-orange-800' :
+                      station.status === 'alert' ? 'bg-amber-100 border-amber-300 text-amber-800' :
+                      'bg-emerald-100 border-emerald-300 text-emerald-800';
+
+                    const pctColor =
+                      station.pct_to_alert >= 100 ? 'text-rose-700' :
+                      station.pct_to_alert >= 80 ? 'text-orange-700' :
+                      station.pct_to_alert >= 60 ? 'text-amber-700' : 'text-emerald-700';
+
+                    return (
+                      <div key={idx} className={`border rounded-lg p-3 ${statusColor}`}>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1">
+                            <div className="font-bold text-sm">{station.station}</div>
+                            <div className="text-xs opacity-75 mt-0.5">{station.river}</div>
+                            <div className="text-xs mt-1">
+                              Districts: {station.districts.join(', ')}
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`text-2xl font-bold ${pctColor}`}>{station.pct_to_alert.toFixed(0)}%</div>
+                            <div className="text-xs opacity-75 mt-0.5">
+                              {station.water_level_m.toFixed(2)}m / {station.alert_level_m.toFixed(2)}m
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
