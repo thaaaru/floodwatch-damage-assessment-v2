@@ -387,7 +387,9 @@ export default function Dashboard() {
                   }`}
                   title="Toggle forecast days"
                 >
-                  <span className="text-base">📅</span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
                   <span>Forecast</span>
                   <svg className={`w-3 h-3 transition-transform ${showForecastExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -415,13 +417,16 @@ export default function Dashboard() {
                               setShowForecastExpanded(false);
                             }}
                             title={layer.description}
-                            className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-all text-left ${
+                            className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-all text-left flex items-center gap-2 ${
                               selectedLayer === layer.id
                                 ? 'bg-violet-600 text-white shadow-sm'
                                 : 'bg-white text-slate-900 hover:bg-violet-50 border border-slate-200'
                             }`}
                           >
-                            📅 {layer.label}
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>{layer.label}</span>
                           </button>
                         ))}
                       </div>
@@ -470,7 +475,7 @@ export default function Dashboard() {
           {/* Floating Action Button */}
           <button
             onClick={() => setShowMobilePanel(!showMobilePanel)}
-            className="fixed bottom-6 right-6 z-[2000] w-16 h-16 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-white/30"
+            className="fixed bottom-16 right-6 z-[2000] w-16 h-16 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-white/30"
           >
             {showMobilePanel ? (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
