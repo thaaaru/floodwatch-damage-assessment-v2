@@ -33,8 +33,8 @@ export default function RiverNetworkStatus() {
 
   if (loading) {
     return (
-      <div className="bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 overflow-hidden flex flex-col" style={{ height: '320px' }}>
-        <div className="px-4 py-3 border-b border-white/30 flex items-center gap-2 bg-blue-500/20">
+      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: '320px' }}>
+        <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-blue-50">
           <span className="text-lg">🌊</span>
           <h2 className="text-sm font-bold text-slate-900">River Network Status</h2>
         </div>
@@ -107,15 +107,15 @@ export default function RiverNetworkStatus() {
   const criticalCount = summary.major_flood + summary.minor_flood;
 
   return (
-    <div className="bg-white/20 backdrop-blur-sm rounded-xl border border-white/30 overflow-hidden flex flex-col" style={{ height: '380px' }}>
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: '380px' }}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-white/30 flex items-center justify-between bg-blue-500/20">
+      <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-blue-50">
         <div className="flex items-center gap-2">
           <span className="text-lg">🌊</span>
           <h2 className="text-sm font-bold text-slate-900">River Network Status</h2>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-blue-900 bg-blue-200 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full">
             {summary.total_stations} stations
           </span>
         </div>
@@ -125,7 +125,7 @@ export default function RiverNetworkStatus() {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* Critical Alert Banner */}
         {criticalCount > 0 && (
-          <div className="bg-rose-500/20 border border-rose-300/50 rounded-lg p-3 flex items-center gap-3">
+          <div className="bg-rose-50 border border-rose-200 rounded-lg p-3 flex items-center gap-3">
             <span className="text-2xl">⚠️</span>
             <div>
               <div className="text-sm font-bold text-rose-900">
@@ -162,7 +162,7 @@ export default function RiverNetworkStatus() {
             <div className="text-xs font-bold text-slate-900 mb-2">Top Risk Stations</div>
             <div className="space-y-1">
               {topRiskRivers.map((river, idx) => (
-                <div key={idx} className="flex items-center justify-between text-xs py-1 px-2 bg-white/30 rounded">
+                <div key={idx} className="flex items-center justify-between text-xs py-1 px-2 bg-slate-50 rounded border border-slate-200">
                   <span className="text-slate-900 font-medium truncate flex-1">{river.name}</span>
                   <span className={`font-bold ml-2 ${
                     river.value >= 100 ? 'text-rose-700' :
@@ -180,7 +180,7 @@ export default function RiverNetworkStatus() {
         {/* View All Button */}
         <button
           onClick={() => setShowAllStations(true)}
-          className="block w-full text-center text-xs text-blue-800 hover:text-blue-900 font-bold py-2 hover:bg-white/30 rounded-lg transition-colors"
+          className="block w-full text-center text-xs text-blue-700 hover:text-blue-900 font-bold py-2 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200"
         >
           View all stations →
         </button>

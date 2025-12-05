@@ -148,19 +148,19 @@ function NewsCard({ item, compact }: { item: NewsItem; compact: boolean }) {
 
         <div className="flex-1 min-w-0">
           {/* Title */}
-          <h4 className={`font-medium text-slate-800 leading-tight ${compact ? 'text-sm' : 'text-sm'} line-clamp-2`}>
+          <h4 className={`font-medium text-slate-900 leading-tight ${compact ? 'text-sm' : 'text-sm'} line-clamp-2`}>
             {item.title}
           </h4>
 
           {/* Summary - only in non-compact mode */}
           {!compact && (
-            <p className="text-xs text-slate-500 mt-1 line-clamp-2">
+            <p className="text-xs text-slate-600 mt-1 line-clamp-2">
               {item.summary}
             </p>
           )}
 
           {/* Meta */}
-          <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-400">
+          <div className="flex items-center gap-2 mt-1.5 text-xs text-slate-500">
             <span className="flex items-center gap-1">
               <span>{item.sourceIcon}</span>
               <span>{item.source}</span>
