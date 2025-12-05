@@ -2,10 +2,9 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
-import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, TrafficIncident, IrrigationStation, api } from '@/lib/api';
+import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, IrrigationStation, api } from '@/lib/api';
 import { getAlertColor } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
-import GoogleMapsTraffic from './GoogleMapsTraffic';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -25,7 +24,7 @@ interface SatelliteData {
 
 type OverlayType = 'radar' | 'satellite' | 'none';
 
-export type MapLayer = 'rainfall' | 'danger' | 'temperature' | 'humidity' | 'wind' | 'pressure' | 'clouds' | 'forecast1' | 'forecast2' | 'forecast3' | 'forecast4' | 'forecast5' | 'gtraffic';
+export type MapLayer = 'rainfall' | 'danger' | 'temperature' | 'humidity' | 'wind' | 'pressure' | 'forecast1' | 'forecast2' | 'forecast3' | 'forecast4' | 'forecast5';
 
 interface MapControllerProps {
   weatherData: WeatherSummary[];
@@ -41,10 +40,17 @@ function MapController({ weatherData }: MapControllerProps) {
 
 // Color scale functions for different data types
 
-// Rainfall color: very light yellow base color
+// Rainfall color: gradient from white (dry) to dark blue (heavy rain)
 function getRainfallColor(rainfall: number | null): string {
-  // Very light yellow for all rainfall values
-  return '#fef9c3'; // yellow-100
+  if (rainfall === null || rainfall === 0) return '#ffffff'; // white - dry
+  if (rainfall < 1) return '#e0f2fe';    // sky-100 - trace rainfall
+  if (rainfall < 5) return '#bae6fd';    // sky-200 - very light
+  if (rainfall < 10) return '#7dd3fc';   // sky-300 - light
+  if (rainfall < 25) return '#38bdf8';   // sky-400 - light-moderate
+  if (rainfall < 50) return '#0ea5e9';   // sky-500 - moderate
+  if (rainfall < 100) return '#0284c7';  // sky-600 - moderate-heavy
+  if (rainfall < 150) return '#0369a1';  // sky-700 - heavy
+  return '#0c4a6e';                       // sky-900 - extreme (dark blue)
 }
 
 function getTemperatureColor(temp: number | null): string {
@@ -87,16 +93,6 @@ function getPressureColor(pressure: number | null): string {
   return '#dc2626';
 }
 
-function getCloudColor(cover: number | null): string {
-  if (cover === null) return '#9ca3af';
-  if (cover >= 90) return '#374151';
-  if (cover >= 70) return '#6b7280';
-  if (cover >= 50) return '#9ca3af';
-  if (cover >= 30) return '#d1d5db';
-  if (cover >= 10) return '#e5e7eb';
-  return '#f9fafb';
-}
-
 function getDangerColor(level: string): string {
   if (level === 'high') return '#dc2626';
   if (level === 'medium') return '#eab308';
@@ -116,10 +112,10 @@ function getRiverStatusColor(status: string): string {
 // Irrigation/Flood gauge station colors based on flood threshold status
 function getFloodGaugeColor(status: string): string {
   switch (status) {
-    case 'major_flood': return '#7f1d1d'; // Dark red - major flood
-    case 'minor_flood': return '#dc2626'; // Red - minor flood
-    case 'alert': return '#f97316';       // Orange - alert level
-    case 'normal': return '#22c55e';      // Green - normal
+    case 'major_flood': return '#7c2d12'; // Dark brown - major flood
+    case 'minor_flood': return '#c2410c'; // Orange-red - minor flood
+    case 'alert': return '#ea580c';       // Orange - alert level
+    case 'normal': return '#65a30d';      // Lime green - normal
     default: return '#9ca3af';            // Gray - unknown
   }
 }
@@ -158,9 +154,9 @@ function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
 
 function getMarineRiskColor(riskLevel: string): string {
   switch (riskLevel) {
-    case 'high': return '#dc2626';    // Red - dangerous waves
-    case 'medium': return '#f97316';  // Orange - moderate waves
-    case 'low': return '#22c55e';     // Green - calm seas
+    case 'high': return '#0369a1';    // Dark cyan/blue - dangerous waves
+    case 'medium': return '#0891b2';  // Cyan - moderate waves
+    case 'low': return '#06b6d4';     // Light cyan - calm seas
     default: return '#9ca3af';        // Gray - unknown
   }
 }
@@ -195,54 +191,6 @@ function createMarineIcon(riskLevel: string): L.DivIcon {
   });
 }
 
-// Traffic incident colors and icons
-function getTrafficIncidentColor(category: number): string {
-  switch (category) {
-    case 8: return '#dc2626';   // Road Closed - red
-    case 1: return '#f97316';   // Accident - orange
-    case 11: return '#3b82f6';  // Flooding - blue
-    case 9: return '#eab308';   // Road Works - yellow
-    case 6: return '#9333ea';   // Jam - purple
-    default: return '#6b7280';  // Other - gray
-  }
-}
-
-function getTrafficIncidentIcon(category: number): string {
-  switch (category) {
-    case 8: return '🚫';  // Road Closed
-    case 1: return '⚠️';   // Accident
-    case 11: return '🌊'; // Flooding
-    case 9: return '🚧';  // Road Works
-    case 6: return '🚗';  // Jam
-    default: return '⚡';  // Other
-  }
-}
-
-function createTrafficIcon(category: number): L.DivIcon {
-  const color = getTrafficIncidentColor(category);
-  const icon = getTrafficIncidentIcon(category);
-  const size = 28;
-
-  return L.divIcon({
-    className: 'custom-traffic-marker',
-    html: `<div style="
-      width: ${size}px;
-      height: ${size}px;
-      background-color: ${color};
-      border: 2px solid white;
-      border-radius: 50%;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 14px;
-    ">${icon}</div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-}
-
 function getForecastAlertColor(level: string): string {
   if (level === 'red') return '#dc2626';
   if (level === 'orange') return '#f97316';
@@ -262,7 +210,7 @@ function getAlertSymbol(level: string): string {
 
 // Create small custom marker icon
 function createAlertIcon(color: string, alertLevel: string, borderColor: string = 'white'): L.DivIcon {
-  const size = 20;
+  const size = 14;
 
   return L.divIcon({
     className: 'custom-alert-marker',
@@ -270,14 +218,54 @@ function createAlertIcon(color: string, alertLevel: string, borderColor: string 
       width: ${size}px;
       height: ${size}px;
       background-color: ${color};
-      border: 2px solid ${borderColor};
+      border: 1.5px solid ${borderColor};
       border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
       cursor: pointer;
       transition: transform 0.15s ease;
     "></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
+  });
+}
+
+// Create marker icon with rainfall text
+function createRainfallMarker(color: string, rainfallMm: number, borderColor: string = 'white'): L.DivIcon {
+  const circleSize = 18;
+  const rainfallText = Math.round(rainfallMm);
+
+  return L.divIcon({
+    className: 'custom-rainfall-marker',
+    html: `<div style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    ">
+      <div style="
+        width: ${circleSize}px;
+        height: ${circleSize}px;
+        background-color: ${color};
+        border: 2px solid ${borderColor};
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      "></div>
+      <div style="
+        margin-top: 3px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: ${rainfallMm > 50 ? '#dc2626' : rainfallMm > 25 ? '#f97316' : rainfallMm > 10 ? '#3b82f6' : '#64748b'};
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+      ">${rainfallText}mm</div>
+    </div>`,
+    iconSize: [50, 40],
+    iconAnchor: [25, 20],
   });
 }
 
@@ -288,9 +276,10 @@ interface MapProps {
   hours: number;
   layer: MapLayer;
   dangerFilter?: DangerFilter;
+  userLocation?: { lat: number; lon: number } | null;
 }
 
-export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all' }: MapProps) {
+export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation }: MapProps) {
   const [weatherData, setWeatherData] = useState<WeatherSummary[]>([]);
   const [forecastData, setForecastData] = useState<DistrictForecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -302,11 +291,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [isAnimating, setIsAnimating] = useState(true);
   const [showRivers, setShowRivers] = useState(false);
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
-  const [showMarine, setShowMarine] = useState(false);
+  const [showMarine, setShowMarine] = useState(true); // Show marine by default
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
-  const [showTraffic, setShowTraffic] = useState(false);
-  const [trafficIncidents, setTrafficIncidents] = useState<TrafficIncident[]>([]);
-  const [showFloodGauges, setShowFloodGauges] = useState(false);
+  const [showFloodGauges, setShowFloodGauges] = useState(true); // Show flood gauges by default
   const [floodGaugeStations, setFloodGaugeStations] = useState<IrrigationStation[]>([]);
 
   const isForecastLayer = layer.startsWith('forecast');
@@ -334,8 +321,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     };
 
     fetchOverlayData();
-    const interval = setInterval(fetchOverlayData, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    // No auto-refresh - data is cached on backend
   }, [overlayType]);
 
   // Get current frames based on overlay type
@@ -362,8 +348,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     };
 
     fetchRiverData();
-    const interval = setInterval(fetchRiverData, 5 * 60 * 1000); // Refresh every 5 minutes
-    return () => clearInterval(interval);
+    // No auto-refresh - data is cached on backend
   }, [showRivers]);
 
   // Fetch marine data when enabled
@@ -380,27 +365,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     };
 
     fetchMarineData();
-    const interval = setInterval(fetchMarineData, 30 * 60 * 1000); // Refresh every 30 minutes
-    return () => clearInterval(interval);
+    // No auto-refresh - data is cached on backend
   }, [showMarine]);
-
-  // Fetch traffic incidents when enabled
-  useEffect(() => {
-    if (!showTraffic) return;
-
-    const fetchTrafficData = async () => {
-      try {
-        const data = await api.getTrafficIncidents();
-        setTrafficIncidents(data.incidents);
-      } catch (err) {
-        console.error('Failed to fetch traffic data:', err);
-      }
-    };
-
-    fetchTrafficData();
-    const interval = setInterval(fetchTrafficData, 5 * 60 * 1000); // Refresh every 5 minutes
-    return () => clearInterval(interval);
-  }, [showTraffic]);
 
   // Fetch flood gauge (irrigation) data when enabled
   useEffect(() => {
@@ -416,8 +382,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     };
 
     fetchFloodGaugeData();
-    const interval = setInterval(fetchFloodGaugeData, 5 * 60 * 1000); // Refresh every 5 minutes
-    return () => clearInterval(interval);
+    // No auto-refresh - data is cached on backend
   }, [showFloodGauges]);
 
   // Animate overlay frames with different speeds
@@ -544,8 +509,6 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         return getWindColor(district.wind_speed_kmh);
       case 'pressure':
         return getPressureColor(district.pressure_hpa);
-      case 'clouds':
-        return getCloudColor(district.cloud_cover_percent);
       default:
         return getAlertColor(district.alert_level);
     }
@@ -556,7 +519,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     if (isForecastLayer) {
       const forecast = forecastByDistrict[district.district];
       if (forecast && forecast.forecast_daily[forecastDayIndex]) {
-        return `${forecast.forecast_daily[forecastDayIndex].total_rainfall_mm.toFixed(0)}`;
+        return `${Math.round(Number(forecast.forecast_daily[forecastDayIndex].total_rainfall_mm) || 0)}`;
       }
       return '-';
     }
@@ -564,19 +527,17 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     switch (layer) {
       case 'rainfall':
         const rainfall = hours === 24 ? district.rainfall_24h_mm : hours === 48 ? district.rainfall_48h_mm : district.rainfall_72h_mm;
-        return `${rainfall?.toFixed(0) || 0}`;
+        return `${Math.round(Number(rainfall || 0))}`;
       case 'danger':
         return `${district.danger_score}`;
       case 'temperature':
-        return `${district.temperature_c?.toFixed(0) || '-'}`;
+        return district.temperature_c != null ? `${Math.round(Number(district.temperature_c))}` : '-';
       case 'humidity':
-        return `${district.humidity_percent?.toFixed(0) || '-'}`;
+        return district.humidity_percent != null ? `${Math.round(Number(district.humidity_percent))}` : '-';
       case 'wind':
-        return `${district.wind_speed_kmh?.toFixed(0) || '-'}`;
+        return district.wind_speed_kmh != null ? `${Math.round(Number(district.wind_speed_kmh))}` : '-';
       case 'pressure':
-        return `${district.pressure_hpa?.toFixed(0) || '-'}`;
-      case 'clouds':
-        return `${district.cloud_cover_percent?.toFixed(0) || '-'}`;
+        return district.pressure_hpa != null ? `${Math.round(Number(district.pressure_hpa))}` : '-';
       default:
         return '';
     }
@@ -589,7 +550,32 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   }, [weatherData, dangerFilter]);
 
   const markers = useMemo(() => {
-    return filteredWeatherData.map((district) => {
+    // Sort by priority: green < yellow < orange < red (so red renders on top)
+    const alertPriority: Record<string, number> = {
+      'green': 0,
+      'yellow': 1,
+      'orange': 2,
+      'red': 3
+    };
+
+    const dangerPriority: Record<string, number> = {
+      'low': 0,
+      'moderate': 1,
+      'medium': 1,
+      'high': 2,
+      'critical': 3
+    };
+
+    const sortedData = [...filteredWeatherData].sort((a, b) => {
+      // Primary sort by alert level
+      const alertDiff = (alertPriority[a.alert_level] || 0) - (alertPriority[b.alert_level] || 0);
+      if (alertDiff !== 0) return alertDiff;
+
+      // Secondary sort by danger level
+      return (dangerPriority[a.danger_level] || 0) - (dangerPriority[b.danger_level] || 0);
+    });
+
+    return sortedData.map((district, index) => {
       const forecast = forecastByDistrict[district.district];
       const rainfallValue = hours === 24
         ? district.rainfall_24h_mm
@@ -598,15 +584,25 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
           : district.rainfall_72h_mm;
 
       const markerColor = getMarkerColor(district);
-      // Use dark yellow border for rainfall layer, white for others
-      const borderColor = layer === 'rainfall' ? '#ca8a04' : 'white';
-      const icon = createAlertIcon(markerColor, district.alert_level, borderColor);
+      // Use dark blue border for rainfall layer to match the blue gradient
+      const borderColor = layer === 'rainfall' ? '#0c4a6e' : 'white'; // sky-900
+      // Use rainfall marker for rainfall and danger layers, otherwise use alert icon
+      const icon = (layer === 'rainfall' || layer === 'danger')
+        ? createRainfallMarker(markerColor, rainfallValue || 0, borderColor)
+        : createAlertIcon(markerColor, district.alert_level, borderColor);
+
+      // Calculate z-index for weather markers (1000-1999 range, below flood gauges)
+      const baseZIndex = 1000;
+      const alertValue = alertPriority[district.alert_level] || 0;
+      const dangerValue = dangerPriority[district.danger_level] || 0;
+      const zIndex = baseZIndex + (alertValue * 100) + (dangerValue * 10) + index;
 
       return (
         <Marker
           key={`${district.district}-${hours}-${layer}-${rainfallValue}`}
           position={[district.latitude, district.longitude]}
           icon={icon}
+          zIndexOffset={zIndex}
           eventHandlers={{
             click: () => onDistrictSelect?.(district.district),
           }}
@@ -654,19 +650,15 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
                   <div className="grid grid-cols-2 gap-1 text-xs">
                     <div className="bg-orange-50 p-1 rounded text-center">
                       <div className="text-gray-500">Temp</div>
-                      <div className="font-bold">{district.temperature_c?.toFixed(1) || '-'}°C</div>
+                      <div className="font-bold">{district.temperature_c != null ? Number(district.temperature_c).toFixed(1) : '-'}°C</div>
                     </div>
                     <div className="bg-blue-50 p-1 rounded text-center">
                       <div className="text-gray-500">Humidity</div>
-                      <div className="font-bold">{district.humidity_percent?.toFixed(0) || '-'}%</div>
+                      <div className="font-bold">{district.humidity_percent != null ? Math.round(Number(district.humidity_percent)) : '-'}%</div>
                     </div>
                     <div className="bg-cyan-50 p-1 rounded text-center">
                       <div className="text-gray-500">Wind</div>
-                      <div className="font-bold">{district.wind_speed_kmh?.toFixed(0) || '-'} km/h</div>
-                    </div>
-                    <div className="bg-gray-100 p-1 rounded text-center">
-                      <div className="text-gray-500">Clouds</div>
-                      <div className="font-bold">{district.cloud_cover_percent?.toFixed(0) || '-'}%</div>
+                      <div className="font-bold">{district.wind_speed_kmh != null ? Math.round(Number(district.wind_speed_kmh)) : '-'} km/h</div>
                     </div>
                   </div>
 
@@ -676,15 +668,15 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
                     <div className="grid grid-cols-3 gap-1 text-center">
                       <div className={hours === 24 ? 'font-bold text-blue-700' : ''}>
                         <div className="text-gray-500">24h</div>
-                        <div>{district.rainfall_24h_mm?.toFixed(1) || 0}</div>
+                        <div>{Number(district.rainfall_24h_mm || 0).toFixed(1)}</div>
                       </div>
                       <div className={hours === 48 ? 'font-bold text-blue-700' : ''}>
                         <div className="text-gray-500">48h</div>
-                        <div>{district.rainfall_48h_mm?.toFixed(1) || 0}</div>
+                        <div>{Number(district.rainfall_48h_mm || 0).toFixed(1)}</div>
                       </div>
                       <div className={hours === 72 ? 'font-bold text-blue-700' : ''}>
                         <div className="text-gray-500">72h</div>
-                        <div>{district.rainfall_72h_mm?.toFixed(1) || 0}</div>
+                        <div>{Number(district.rainfall_72h_mm || 0).toFixed(1)}</div>
                       </div>
                     </div>
                   </div>
@@ -710,7 +702,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
                             <span className="font-medium w-12 truncate">{day.day_name.slice(0, 3)}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-blue-600 font-semibold">{day.total_rainfall_mm.toFixed(0)}mm</span>
+                            <span className="text-blue-600 font-semibold">{Math.round(Number(day.total_rainfall_mm) || 0)}mm</span>
                             <span className="text-gray-500">{day.max_precipitation_probability}%</span>
                           </div>
                         </div>
@@ -723,8 +715,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
                   {/* Next 24h forecast summary */}
                   <div className="bg-purple-50 p-1.5 rounded text-xs text-center">
                     <div className="text-gray-600">Next 24h</div>
-                    <div className="font-bold text-purple-700">{district.forecast_precip_24h_mm?.toFixed(1) || 0}mm</div>
-                    <div className="text-gray-500">{district.precipitation_probability?.toFixed(0) || 0}% prob</div>
+                    <div className="font-bold text-purple-700">{Number(district.forecast_precip_24h_mm || 0).toFixed(1)}mm</div>
+                    <div className="text-gray-500">{Math.round(Number(district.precipitation_probability || 0))}% prob</div>
                   </div>
                 </div>
               </div>
@@ -856,12 +848,30 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const marineMarkers = useMemo(() => {
     if (!showMarine || marineConditions.length === 0) return null;
 
-    return marineConditions.map((condition) => (
-      <Marker
-        key={`marine-${condition.location}`}
-        position={[condition.lat, condition.lon]}
-        icon={createMarineIcon(condition.risk_level)}
-      >
+    // Sort by risk level: low < medium < high (so high risk renders on top)
+    const riskPriority: Record<string, number> = {
+      'low': 0,
+      'medium': 1,
+      'high': 2
+    };
+
+    const sortedConditions = [...marineConditions].sort((a, b) => {
+      return (riskPriority[a.risk_level] || 0) - (riskPriority[b.risk_level] || 0);
+    });
+
+    return sortedConditions.map((condition, index) => {
+      // Calculate z-index for marine markers
+      const baseZIndex = 500;
+      const riskValue = riskPriority[condition.risk_level] || 0;
+      const zIndex = baseZIndex + (riskValue * 100) + index;
+
+      return (
+        <Marker
+          key={`marine-${condition.location}`}
+          position={[condition.lat, condition.lon]}
+          icon={createMarineIcon(condition.risk_level)}
+          zIndexOffset={zIndex}
+        >
         <Popup maxWidth={300} minWidth={250}>
           <div className="p-1">
             <h3 className="font-bold text-sm border-b pb-1 mb-2">
@@ -917,90 +927,39 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
           </div>
         </Popup>
       </Marker>
-    ));
-  }, [showMarine, marineConditions]);
-
-  // Traffic incident markers
-  const trafficMarkers = useMemo(() => {
-    if (!showTraffic || trafficIncidents.length === 0) return null;
-
-    return trafficIncidents.map((incident) => (
-      <Marker
-        key={`traffic-${incident.id}`}
-        position={[incident.lat, incident.lon]}
-        icon={createTrafficIcon(incident.icon_category)}
-      >
-        <Popup maxWidth={300} minWidth={250}>
-          <div className="p-1">
-            <h3 className="font-bold text-sm border-b pb-1 mb-2">
-              {incident.category}
-            </h3>
-            <div className="text-xs text-gray-600 mb-2">{incident.road_name}</div>
-
-            {/* Severity badge */}
-            <div className={`inline-block px-2 py-1 rounded text-xs font-bold mb-2 ${
-              incident.severity === 'critical' ? 'bg-red-100 text-red-700' :
-              incident.severity === 'major' ? 'bg-orange-100 text-orange-700' :
-              incident.severity === 'moderate' ? 'bg-yellow-100 text-yellow-700' :
-              'bg-gray-100 text-gray-700'
-            }`}>
-              {incident.severity.toUpperCase()}
-            </div>
-
-            {/* Description */}
-            {incident.description && (
-              <div className="text-xs text-gray-700 mb-2 bg-gray-50 p-2 rounded">
-                {incident.description}
-              </div>
-            )}
-
-            {/* Location info */}
-            <div className="grid grid-cols-2 gap-1 text-xs mb-2">
-              {incident.from_location && (
-                <div className="bg-blue-50 p-1.5 rounded">
-                  <span className="text-gray-500">From: </span>
-                  <span className="font-medium">{incident.from_location}</span>
-                </div>
-              )}
-              {incident.to_location && (
-                <div className="bg-blue-50 p-1.5 rounded">
-                  <span className="text-gray-500">To: </span>
-                  <span className="font-medium">{incident.to_location}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Delay and length */}
-            <div className="grid grid-cols-2 gap-1 text-xs">
-              {incident.delay_minutes > 0 && (
-                <div className="bg-orange-50 p-1.5 rounded text-center">
-                  <div className="text-gray-500">Delay</div>
-                  <div className="font-bold text-orange-700">{incident.delay_minutes} min</div>
-                </div>
-              )}
-              {incident.length_km > 0 && (
-                <div className="bg-gray-50 p-1.5 rounded text-center">
-                  <div className="text-gray-500">Length</div>
-                  <div className="font-medium">{incident.length_km} km</div>
-                </div>
-              )}
-            </div>
-          </div>
-        </Popup>
-      </Marker>
-    ));
-  }, [showTraffic, trafficIncidents]);
+    );
+  });
+}, [showMarine, marineConditions]);
 
   // Flood gauge (irrigation station) markers
   const floodGaugeMarkers = useMemo(() => {
     if (!showFloodGauges || floodGaugeStations.length === 0) return null;
 
-    return floodGaugeStations.map((station) => (
-      <Marker
-        key={`flood-gauge-${station.station}`}
-        position={[station.lat, station.lon]}
-        icon={createFloodGaugeIcon(station.status, station.pct_to_alert)}
-      >
+    // Sort by flood severity: normal < alert < minor_flood < major_flood (so major renders on top)
+    const statusPriority: Record<string, number> = {
+      'normal': 0,
+      'alert': 1,
+      'minor_flood': 2,
+      'major_flood': 3
+    };
+
+    const sortedStations = [...floodGaugeStations].sort((a, b) => {
+      return (statusPriority[a.status] || 0) - (statusPriority[b.status] || 0);
+    });
+
+    return sortedStations.map((station, index) => {
+      // Calculate z-index: higher priority status gets higher z-index
+      const baseZIndex = 2000; // Start high to be above weather markers
+      const statusPriorityValue = statusPriority[station.status] || 0;
+      const zIndex = baseZIndex + (statusPriorityValue * 100) + index;
+
+      return (
+        <Marker
+          key={`flood-gauge-${station.station}`}
+          position={[station.lat, station.lon]}
+          icon={createFloodGaugeIcon(station.status, station.pct_to_alert)}
+          zIndexOffset={zIndex}
+        >
         <Popup maxWidth={320} minWidth={280}>
           <div className="p-1">
             <h3 className="font-bold text-sm border-b pb-1 mb-2">
@@ -1101,8 +1060,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
           </div>
         </Popup>
       </Marker>
-    ));
-  }, [showFloodGauges, floodGaugeStations]);
+    );
+  });
+}, [showFloodGauges, floodGaugeStations]);
 
   if (loading && weatherData.length === 0) {
     return (
@@ -1123,74 +1083,17 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     );
   }
 
-  // Show Google Maps Traffic when gtraffic layer is selected
-  if (layer === 'gtraffic') {
-    return <GoogleMapsTraffic />;
-  }
-
   const sriLankaCenter: [number, number] = [7.8731, 80.7718];
+  const mapCenter: [number, number] = userLocation
+    ? [userLocation.lat, userLocation.lon]
+    : sriLankaCenter;
+  const mapZoom = userLocation ? 10 : 7;
 
   return (
     <div className="relative h-full w-full">
       {/* Weather overlay toggles - positioned bottom-left to avoid zoom controls */}
       <div className="absolute bottom-6 left-2 z-[1000] flex flex-col gap-2">
         <div className="flex gap-1 flex-wrap">
-          <button
-            onClick={() => {
-              if (overlayType !== 'radar') {
-                setShowRivers(false); // Turn off Rivers when showing Rain
-              }
-              setOverlayType(overlayType === 'radar' ? 'none' : 'radar');
-            }}
-            className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
-              overlayType === 'radar'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M4.5 13.5C4.5 15.433 6.067 17 8 17h8c2.21 0 4-1.79 4-4 0-1.86-1.28-3.41-3-3.86V9c0-2.76-2.24-5-5-5-2.42 0-4.44 1.72-4.9 4-.46-.06-.94-.1-1.1-.1C4.07 7.9 2.5 9.6 2.5 11.5c0 1.1.5 2 1.3 2.6-.2.4-.3.9-.3 1.4z"/>
-              <path d="M8 19l-1 3M12 19l-1 3M16 19l-1 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            Rain
-          </button>
-          <button
-            onClick={() => {
-              if (overlayType !== 'satellite') {
-                setShowRivers(false); // Turn off Rivers when showing Cloud
-              }
-              setOverlayType(overlayType === 'satellite' ? 'none' : 'satellite');
-            }}
-            className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
-              overlayType === 'satellite'
-                ? 'bg-purple-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            Cloud
-          </button>
-          <button
-            onClick={() => {
-              if (!showRivers) {
-                setOverlayType('none'); // Turn off Rain/Cloud when showing Rivers
-              }
-              setShowRivers(!showRivers);
-            }}
-            className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
-              showRivers
-                ? 'bg-cyan-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-            title="River water levels"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
-            </svg>
-            Rivers
-          </button>
           <button
             onClick={() => setShowMarine(!showMarine)}
             className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
@@ -1206,20 +1109,6 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             Marine
           </button>
           <button
-            onClick={() => setShowTraffic(!showTraffic)}
-            className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
-              showTraffic
-                ? 'bg-red-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            }`}
-            title="Road incidents & closures"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-            Traffic
-          </button>
-          <button
             onClick={() => setShowFloodGauges(!showFloodGauges)}
             className={`px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium transition-colors ${
               showFloodGauges
@@ -1233,118 +1122,26 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             </svg>
             Gauges
           </button>
-          <a
-            href="https://www.lightningmaps.org/?lang=en#m=oss;t=3;s=0;o=0;b=;ts=0;y=7.8731;x=80.7718;z=8;d=2;dl=2;dc=0;"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="px-3 py-2 rounded-lg shadow-md flex items-center gap-2 text-sm font-medium bg-yellow-500 text-white hover:bg-yellow-600 transition-colors"
-            title="Live lightning strikes"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-            Lightning
-          </a>
         </div>
-
-        {overlayType !== 'none' && currentFrames.length > 0 && (
-          <div className="bg-white rounded-lg shadow-md p-2 text-xs">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-gray-600 font-medium">{overlayTimestamp}</span>
-              <button
-                onClick={() => setIsAnimating(!isAnimating)}
-                className={`px-2 py-1 rounded ${isAnimating ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}
-              >
-                {isAnimating ? '⏸' : '▶'}
-              </button>
-            </div>
-            {overlayType === 'radar' ? (
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#00ff00' }} />
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ffff00' }} />
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ff8800' }} />
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ff0000' }} />
-                <span className="text-gray-500 ml-1">Rain intensity</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ffffff' }} />
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#888888' }} />
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#333333' }} />
-                <span className="text-gray-500 ml-1">Cloud cover (IR)</span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {showRivers && (
-          <div className="bg-white rounded-lg shadow-md p-2 text-xs">
-            <div className="text-gray-600 font-medium mb-1">River Gauges</div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#dc2626' }} />
-                <span className="text-gray-600">Alert</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }} />
-                <span className="text-gray-600">Rising</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
-                <span className="text-gray-600">Falling</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#3b82f6' }} />
-                <span className="text-gray-600">Normal</span>
-              </div>
-            </div>
-            <div className="text-gray-400 mt-1">{riverStations.length} stations</div>
-          </div>
-        )}
 
         {showMarine && (
           <div className="bg-white rounded-lg shadow-md p-2 text-xs">
             <div className="text-gray-600 font-medium mb-1">Coastal Conditions</div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#dc2626' }} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#0369a1' }} />
                 <span className="text-gray-600">High Risk</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#f97316' }} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#0891b2' }} />
                 <span className="text-gray-600">Medium</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#22c55e' }} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#06b6d4' }} />
                 <span className="text-gray-600">Low</span>
               </div>
             </div>
             <div className="text-gray-400 mt-1">{marineConditions.length} coastal points</div>
-          </div>
-        )}
-
-        {showTraffic && (
-          <div className="bg-white rounded-lg shadow-md p-2 text-xs">
-            <div className="text-gray-600 font-medium mb-1">Road Incidents</div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <div className="flex items-center gap-1">
-                <span>🚫</span>
-                <span className="text-gray-600">Closed</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>⚠️</span>
-                <span className="text-gray-600">Accident</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>🌊</span>
-                <span className="text-gray-600">Flooding</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>🚧</span>
-                <span className="text-gray-600">Works</span>
-              </div>
-            </div>
-            <div className="text-gray-400 mt-1">{trafficIncidents.length} incidents</div>
           </div>
         )}
 
@@ -1353,19 +1150,19 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             <div className="text-gray-600 font-medium mb-1">Flood Gauges (Irrigation Dept.)</div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#7f1d1d' }} />
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#7c2d12' }} />
                 <span className="text-gray-600">Major</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#dc2626' }} />
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#c2410c' }} />
                 <span className="text-gray-600">Minor</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#f97316' }} />
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ea580c' }} />
                 <span className="text-gray-600">Alert</span>
               </div>
               <div className="flex items-center gap-1">
-                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#22c55e' }} />
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: '#65a30d' }} />
                 <span className="text-gray-600">Normal</span>
               </div>
             </div>
@@ -1381,8 +1178,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         </div>
       )}
       <MapContainer
-        center={sriLankaCenter}
-        zoom={8}
+        center={mapCenter}
+        zoom={mapZoom}
         className="h-full w-full rounded-lg"
         scrollWheelZoom={true}
       >
@@ -1399,12 +1196,27 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             attribution='<a href="https://rainviewer.com">RainViewer</a>'
           />
         )}
-        {markers}
         {riverLines}
         {riverMarkers}
         {marineMarkers}
-        {trafficMarkers}
+        {markers}
         {floodGaugeMarkers}
+        {userLocation && (
+          <CircleMarker
+            center={[userLocation.lat, userLocation.lon]}
+            radius={8}
+            pathOptions={{
+              fillColor: '#3b82f6',
+              fillOpacity: 1,
+              color: '#ffffff',
+              weight: 3,
+            }}
+          >
+            <Tooltip permanent direction="top" offset={[0, -10]}>
+              <span className="font-medium">Your Location</span>
+            </Tooltip>
+          </CircleMarker>
+        )}
       </MapContainer>
     </div>
   );

@@ -11,33 +11,61 @@ from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# Sri Lanka district centers for weather data
+# Sri Lanka district centers and major cities for weather data
 SRI_LANKA_LOCATIONS = [
+    # Western Province
     {"name": "Colombo", "lat": 6.9271, "lon": 79.8612},
     {"name": "Gampaha", "lat": 7.0917, "lon": 80.0000},
     {"name": "Kalutara", "lat": 6.5833, "lon": 79.9500},
+    {"name": "Negombo", "lat": 7.2092, "lon": 79.8358},
+    {"name": "Horana", "lat": 6.7158, "lon": 80.0631},
+
+    # Central Province
     {"name": "Kandy", "lat": 7.2906, "lon": 80.6337},
     {"name": "Matale", "lat": 7.4667, "lon": 80.6167},
     {"name": "Nuwara Eliya", "lat": 6.9697, "lon": 80.7700},
+    {"name": "Dambulla", "lat": 7.8731, "lon": 80.6514},
+    {"name": "Hatton", "lat": 6.8920, "lon": 80.5960},
+
+    # Southern Province
     {"name": "Galle", "lat": 6.0535, "lon": 80.2210},
     {"name": "Matara", "lat": 5.9485, "lon": 80.5353},
     {"name": "Hambantota", "lat": 6.1241, "lon": 81.1185},
+    {"name": "Tangalle", "lat": 6.0242, "lon": 80.7981},
+
+    # Northern Province
     {"name": "Jaffna", "lat": 9.6615, "lon": 80.0255},
     {"name": "Kilinochchi", "lat": 9.3803, "lon": 80.3770},
     {"name": "Mannar", "lat": 8.9810, "lon": 79.9044},
     {"name": "Vavuniya", "lat": 8.7542, "lon": 80.4982},
     {"name": "Mullaitivu", "lat": 9.2671, "lon": 80.8142},
+
+    # Eastern Province
     {"name": "Batticaloa", "lat": 7.7310, "lon": 81.6747},
     {"name": "Ampara", "lat": 7.2975, "lon": 81.6820},
     {"name": "Trincomalee", "lat": 8.5874, "lon": 81.2152},
+    {"name": "Kalmunai", "lat": 7.4089, "lon": 81.8250},
+
+    # North Western Province
     {"name": "Kurunegala", "lat": 7.4863, "lon": 80.3647},
     {"name": "Puttalam", "lat": 8.0362, "lon": 79.8283},
+    {"name": "Chilaw", "lat": 7.5758, "lon": 79.7953},
+
+    # North Central Province
     {"name": "Anuradhapura", "lat": 8.3114, "lon": 80.4037},
     {"name": "Polonnaruwa", "lat": 7.9403, "lon": 81.0188},
+
+    # Uva Province
     {"name": "Badulla", "lat": 6.9934, "lon": 81.0550},
     {"name": "Monaragala", "lat": 6.8728, "lon": 81.3507},
+    {"name": "Bandarawela", "lat": 6.8333, "lon": 80.9833},
+    {"name": "Wellawaya", "lat": 6.7333, "lon": 81.1000},
+
+    # Sabaragamuwa Province
     {"name": "Ratnapura", "lat": 6.6828, "lon": 80.3992},
     {"name": "Kegalle", "lat": 7.2513, "lon": 80.3464},
+    {"name": "Balangoda", "lat": 6.6525, "lon": 80.6925},
+    {"name": "Embilipitiya", "lat": 6.3428, "lon": 80.8508},
 ]
 
 

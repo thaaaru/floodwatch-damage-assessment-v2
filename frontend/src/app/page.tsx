@@ -26,8 +26,6 @@ const layerOptions: { id: MapLayer; label: string; icon: string; description: st
   { id: 'humidity', label: 'Humidity', icon: '💧', description: 'Relative humidity', group: 'current' },
   { id: 'wind', label: 'Wind', icon: '💨', description: 'Wind speed', group: 'current' },
   { id: 'pressure', label: 'Pressure', icon: '📊', description: 'Atmospheric pressure', group: 'current' },
-  { id: 'clouds', label: 'Clouds', icon: '☁️', description: 'Cloud cover', group: 'current' },
-  { id: 'gtraffic', label: 'Traffic', icon: '🚗', description: 'Live traffic from Google', group: 'current' },
   { id: 'forecast1', label: '+1 Day', icon: '📅', description: 'Tomorrow forecast', group: 'forecast' },
   { id: 'forecast2', label: '+2 Days', icon: '📅', description: 'Day 2 forecast', group: 'forecast' },
   { id: 'forecast3', label: '+3 Days', icon: '📅', description: 'Day 3 forecast', group: 'forecast' },
@@ -45,11 +43,11 @@ const layerLegends: Record<MapLayer, { colors: { color: string; label: string }[
   },
   rainfall: {
     colors: [
-      { color: '#f8fafc', label: '0mm' },
-      { color: '#bfdbfe', label: '5mm' },
-      { color: '#60a5fa', label: '10mm' },
-      { color: '#2563eb', label: '15mm' },
-      { color: '#1e3a8a', label: '20mm+' },
+      { color: '#ffffff', label: '0' },
+      { color: '#bae6fd', label: '1-5' },
+      { color: '#38bdf8', label: '10-25' },
+      { color: '#0284c7', label: '50-100' },
+      { color: '#0c4a6e', label: '>150mm' },
     ]
   },
   temperature: {
@@ -82,20 +80,6 @@ const layerLegends: Record<MapLayer, { colors: { color: string; label: string }[
       { color: '#1e40af', label: '>1020hPa' },
     ]
   },
-  clouds: {
-    colors: [
-      { color: '#f9fafb', label: 'Clear' },
-      { color: '#9ca3af', label: 'Partly' },
-      { color: '#374151', label: 'Overcast' },
-    ]
-  },
-  gtraffic: {
-    colors: [
-      { color: '#30ac3e', label: 'Normal' },
-      { color: '#f5a623', label: 'Slow' },
-      { color: '#e34133', label: 'Heavy' },
-    ]
-  },
   forecast1: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
   forecast2: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
   forecast3: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
@@ -105,6 +89,14 @@ const layerLegends: Record<MapLayer, { colors: { color: string; label: string }[
 
 export type DangerFilter = 'all' | 'low' | 'medium' | 'high';
 
+interface RainSummary {
+  districtsWithRain: number;
+  totalDistricts: number;
+  maxRainfall: number;
+  maxRainfallDistrict: string;
+  totalRainfall: number;
+}
+
 export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
@@ -112,6 +104,8 @@ export default function Dashboard() {
   const [selectedLayer, setSelectedLayer] = useState<MapLayer>('danger');
   const [loading, setLoading] = useState(true);
   const [dangerFilter, setDangerFilter] = useState<DangerFilter>('all');
+  const [rainSummary, setRainSummary] = useState<RainSummary | null>(null);
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -125,9 +119,58 @@ export default function Dashboard() {
       }
     };
     fetchAlerts();
-    const interval = setInterval(fetchAlerts, 60000);
-    return () => clearInterval(interval);
+    // No auto-refresh - data is cached on backend, manual refresh only
   }, []);
+
+  // Get user location for Windy map focus
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+        },
+        () => {
+          // User denied or error - use default Sri Lanka center
+          setUserLocation(null);
+        },
+        { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
+      );
+    }
+  }, []);
+
+  // Fetch rain summary
+  useEffect(() => {
+    const fetchRainSummary = async () => {
+      try {
+        const weatherData = await api.getAllWeather(selectedHours);
+        if (!weatherData || weatherData.length === 0) return;
+
+        const rainfallKey = selectedHours === 24 ? 'rainfall_24h_mm' :
+                          selectedHours === 48 ? 'rainfall_48h_mm' : 'rainfall_72h_mm';
+
+        const districtsWithRain = weatherData.filter((d: any) => (d[rainfallKey] || 0) > 0);
+        const maxDistrict = weatherData.reduce((max: any, d: any) =>
+          (d[rainfallKey] || 0) > (max[rainfallKey] || 0) ? d : max, weatherData[0]);
+        const totalRainfall = weatherData.reduce((sum: number, d: any) =>
+          sum + (d[rainfallKey] || 0), 0);
+
+        setRainSummary({
+          districtsWithRain: districtsWithRain.length,
+          totalDistricts: weatherData.length,
+          maxRainfall: Number(maxDistrict?.[rainfallKey]) || 0,
+          maxRainfallDistrict: maxDistrict?.district || 'Unknown',
+          totalRainfall: totalRainfall,
+        });
+      } catch (err) {
+        console.error('Failed to fetch rain summary:', err);
+      }
+    };
+    fetchRainSummary();
+    // No auto-refresh - data is cached on backend for 60 minutes
+  }, [selectedHours]);
 
   const currentLegend = layerLegends[selectedLayer];
   const currentLayers = layerOptions.filter(l => l.group === 'current');
@@ -135,6 +178,47 @@ export default function Dashboard() {
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
+      {/* New Feature Announcement Banner */}
+      <a
+        href="/windy"
+        className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 flex items-center justify-center gap-3 text-sm hover:from-purple-700 hover:to-indigo-700 transition-all cursor-pointer"
+      >
+        <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-bold">NEW</span>
+        <span className="font-medium">Windy Weather Map - Real-time wind, rain & cloud visualization</span>
+        <span className="text-purple-200">Click to explore →</span>
+      </a>
+
+      {/* Rain Alert Banner */}
+      {rainSummary && rainSummary.districtsWithRain > 0 && (
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 flex items-center justify-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">🌧️</span>
+            <span className="font-medium">
+              Rain detected in {rainSummary.districtsWithRain} locations
+            </span>
+          </div>
+          <span className="text-blue-200">|</span>
+          <div className="flex items-center gap-1">
+            <span className="text-blue-200">Highest:</span>
+            <span className="font-bold">{Number(rainSummary.maxRainfall || 0).toFixed(1)}mm</span>
+            <span className="text-blue-200">in</span>
+            <span className="font-medium">{rainSummary.maxRainfallDistrict}</span>
+          </div>
+          <span className="text-blue-200">|</span>
+          <div className="flex items-center gap-1">
+            <span className="text-blue-200">Last {selectedHours}h</span>
+          </div>
+        </div>
+      )}
+
+      {/* No Rain Banner */}
+      {rainSummary && rainSummary.districtsWithRain === 0 && (
+        <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm">
+          <span className="text-lg">☀️</span>
+          <span className="font-medium">No rainfall recorded across Sri Lanka in the last {selectedHours} hours</span>
+        </div>
+      )}
+
       {/* Map Controls - Floating on top of map */}
       <div className="flex-1 relative">
         {/* Map */}
@@ -145,6 +229,7 @@ export default function Dashboard() {
               hours={selectedHours}
               layer={selectedLayer}
               dangerFilter={dangerFilter}
+              userLocation={userLocation}
             />
           </div>
         </div>
@@ -284,6 +369,43 @@ export default function Dashboard() {
                 <NewsFeed maxItems={alerts.length === 0 ? 10 : 4} compact />
               </div>
             </div>
+
+            {/* Windy Mini Map Section */}
+            <a
+              href="/windy"
+              className="card overflow-hidden flex flex-col group hover:ring-2 hover:ring-purple-400 transition-all cursor-pointer"
+              style={{ height: '240px' }}
+            >
+              <div className="px-4 py-2 border-b border-slate-200/60 flex items-center justify-between bg-gradient-to-r from-purple-50 to-indigo-50">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🌀</span>
+                  <h2 className="text-sm font-semibold text-slate-800">Windy Weather</h2>
+                  {userLocation && (
+                    <span className="text-xs text-green-600 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                      Your location
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-purple-600 group-hover:text-purple-700 flex items-center gap-1">
+                  Open full map
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
+              <div className="flex-1 relative">
+                <iframe
+                  src={`https://embed.windy.com/embed2.html?lat=${userLocation?.lat ?? 7.8731}&lon=${userLocation?.lon ?? 80.7718}&zoom=${userLocation ? 9 : 6}&level=surface&overlay=rain&product=ecmwf&menu=&message=&marker=${userLocation ? 'true' : ''}&calendar=&pressure=&type=map&location=coordinates&detail=&metricWind=km%2Fh&metricTemp=%C2%B0C&radarRange=-1`}
+                  width="100%"
+                  height="100%"
+                  frameBorder="0"
+                  title="Windy Mini Map"
+                  className="pointer-events-none"
+                />
+                <div className="absolute inset-0 bg-transparent group-hover:bg-purple-500/10 transition-colors" />
+              </div>
+            </a>
 
             {/* Alerts Section - Only show if there are alerts */}
             {alerts.length > 0 && (
