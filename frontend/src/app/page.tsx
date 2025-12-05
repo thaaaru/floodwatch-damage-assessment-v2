@@ -108,6 +108,8 @@ export default function Dashboard() {
   const [rainSummary, setRainSummary] = useState<RainSummary | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
+  const [showForecastExpanded, setShowForecastExpanded] = useState(false);
+  const [showFloodRiskExpanded, setShowFloodRiskExpanded] = useState(false);
 
   useEffect(() => {
     const fetchAlerts = async () => {
@@ -178,6 +180,20 @@ export default function Dashboard() {
   const currentLayers = layerOptions.filter(l => l.group === 'current');
   const forecastLayers = layerOptions.filter(l => l.group === 'forecast');
 
+  // Get forecast dates
+  const getForecastDate = (dayOffset: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + dayOffset);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  // Update forecast labels with actual dates
+  const forecastLayersWithDates = forecastLayers.map((layer, idx) => ({
+    ...layer,
+    label: getForecastDate(idx + 1),
+    shortLabel: `D+${idx + 1}`
+  }));
+
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
       {/* Map Controls - Floating on top of map */}
@@ -202,9 +218,8 @@ export default function Dashboard() {
             <div className="flex flex-wrap items-center gap-3">
               {/* Current Layers */}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900 hidden sm:inline">Current</span>
                 <div className="flex flex-wrap gap-1">
-                  {currentLayers.map((layer) => (
+                  {currentLayers.filter(l => l.id !== 'danger').map((layer) => (
                     <button
                       key={layer.id}
                       onClick={() => setSelectedLayer(layer.id)}
@@ -213,7 +228,7 @@ export default function Dashboard() {
                         selectedLayer === layer.id
                           ? 'bg-brand-600 text-white shadow-sm'
                           : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                      } ${layer.id === 'danger' ? 'hidden sm:flex' : ''}`}
+                      }`}
                     >
                       <span className="text-base">{layer.icon}</span>
                       <span className="hidden sm:inline">{layer.label}</span>
@@ -248,72 +263,197 @@ export default function Dashboard() {
               {/* Divider */}
               <div className="h-6 w-px bg-slate-200 hidden md:block" />
 
-              {/* Forecast Layers */}
+              {/* Flood Risk - Always show on mobile, expandable on desktop */}
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900 hidden md:inline">Forecast</span>
-                <div className="flex flex-wrap gap-1">
-                  {forecastLayers.map((layer) => (
+                {/* Desktop: Expandable button */}
+                <button
+                  onClick={() => setShowFloodRiskExpanded(!showFloodRiskExpanded)}
+                  className={`hidden md:flex px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all items-center gap-1.5 ${
+                    selectedLayer === 'danger'
+                      ? 'bg-brand-600 text-white shadow-sm'
+                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                  }`}
+                  title="Toggle Flood Risk options"
+                >
+                  <span className="text-base">⚠️</span>
+                  <span>Flood Risk</span>
+                  <svg className={`w-3 h-3 transition-transform ${showFloodRiskExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Mobile: Always show all options with colors */}
+                <div className="flex md:hidden gap-1 flex-wrap">
+                  <button
+                    onClick={() => { setSelectedLayer('danger'); setDangerFilter('all'); }}
+                    className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                      selectedLayer === 'danger' && dangerFilter === 'all'
+                        ? 'bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500 text-white'
+                        : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                    }`}
+                  >
+                    ⚠️ All
+                  </button>
+                  <button
+                    onClick={() => { setSelectedLayer('danger'); setDangerFilter('low'); }}
+                    className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                      selectedLayer === 'danger' && dangerFilter === 'low'
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                    }`}
+                  >
+                    Low
+                  </button>
+                  <button
+                    onClick={() => { setSelectedLayer('danger'); setDangerFilter('medium'); }}
+                    className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                      selectedLayer === 'danger' && dangerFilter === 'medium'
+                        ? 'bg-amber-600 text-white'
+                        : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                    }`}
+                  >
+                    Med
+                  </button>
+                  <button
+                    onClick={() => { setSelectedLayer('danger'); setDangerFilter('high'); }}
+                    className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                      selectedLayer === 'danger' && dangerFilter === 'high'
+                        ? 'bg-red-600 text-white'
+                        : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                    }`}
+                  >
+                    High
+                  </button>
+                </div>
+
+                {/* Desktop: Flood Risk Dropdown */}
+                {showFloodRiskExpanded && (
+                  <div className="hidden md:flex gap-1">
                     <button
-                      key={layer.id}
-                      onClick={() => setSelectedLayer(layer.id)}
-                      title={layer.description}
-                      className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                        selectedLayer === layer.id
-                          ? 'bg-violet-600 text-white shadow-sm'
+                      onClick={() => { setSelectedLayer('danger'); setDangerFilter('all'); }}
+                      className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        selectedLayer === 'danger' && dangerFilter === 'all'
+                          ? 'bg-brand-600 text-white'
                           : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
                       }`}
                     >
-                      <span className="text-base">{layer.icon}</span>
-                      <span>{layer.label}</span>
+                      All Levels
                     </button>
-                  ))}
-                </div>
+                    <button
+                      onClick={() => { setSelectedLayer('danger'); setDangerFilter('low'); }}
+                      className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        selectedLayer === 'danger' && dangerFilter === 'low'
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                      }`}
+                    >
+                      Low
+                    </button>
+                    <button
+                      onClick={() => { setSelectedLayer('danger'); setDangerFilter('medium'); }}
+                      className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        selectedLayer === 'danger' && dangerFilter === 'medium'
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                      }`}
+                    >
+                      Medium
+                    </button>
+                    <button
+                      onClick={() => { setSelectedLayer('danger'); setDangerFilter('high'); }}
+                      className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        selectedLayer === 'danger' && dangerFilter === 'high'
+                          ? 'bg-red-600 text-white'
+                          : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                      }`}
+                    >
+                      High
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-slate-200 hidden md:block" />
+
+              {/* Forecast - Dropdown Menu */}
+              <div className="relative flex items-center gap-2">
+                <button
+                  onClick={() => setShowForecastExpanded(!showForecastExpanded)}
+                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                    selectedLayer.startsWith('forecast')
+                      ? 'bg-violet-600 text-white shadow-sm'
+                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                  }`}
+                  title="Toggle forecast days"
+                >
+                  <span className="text-base">📅</span>
+                  <span>Forecast</span>
+                  <svg className={`w-3 h-3 transition-transform ${showForecastExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Forecast Floating Dropdown */}
+                {showForecastExpanded && (
+                  <>
+                    {/* Backdrop to close menu */}
+                    <div
+                      className="fixed inset-0 z-[900]"
+                      onClick={() => setShowForecastExpanded(false)}
+                    />
+
+                    {/* Dropdown Menu - Drops down vertically */}
+                    <div className="absolute top-full left-0 right-0 sm:left-0 sm:right-auto mt-2 z-[1001] bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/60 p-3 w-full sm:min-w-[280px] sm:w-auto max-w-[320px]">
+                      <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-2">Select Forecast Day</div>
+                      <div className="flex flex-col gap-2">
+                        {forecastLayersWithDates.map((layer) => (
+                          <button
+                            key={layer.id}
+                            onClick={() => {
+                              setSelectedLayer(layer.id);
+                              setShowForecastExpanded(false);
+                            }}
+                            title={layer.description}
+                            className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-all text-left ${
+                              selectedLayer === layer.id
+                                ? 'bg-violet-600 text-white shadow-sm'
+                                : 'bg-white text-slate-900 hover:bg-violet-50 border border-slate-200'
+                            }`}
+                          >
+                            📅 {layer.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Legend */}
-          <div className="bg-white/30 backdrop-blur-xl rounded-xl shadow-lg border border-white/40 p-2.5 flex items-center gap-3 flex-wrap">
-            <span className="text-xs font-bold text-slate-900">
-              {layerOptions.find(l => l.id === selectedLayer)?.label}
-            </span>
-            <div className="flex items-center gap-2 flex-wrap">
-              {selectedLayer === 'danger' && (
-                <button
-                  onClick={() => setDangerFilter('all')}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all ${
-                    dangerFilter === 'all' ? 'bg-white ring-1 ring-slate-900' : 'hover:bg-white/60'
-                  }`}
-                >
-                  <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500 border border-slate-300" />
-                  <span className="text-slate-900 font-bold">All</span>
-                </button>
-              )}
-              {currentLegend.colors.map((item, idx) => {
-                const filterValue = selectedLayer === 'danger'
-                  ? (idx === 0 ? 'low' : idx === 1 ? 'medium' : 'high')
-                  : null;
-                return (
-                  <button
+          {/* Legend - Only show for non-danger layers */}
+          {selectedLayer !== 'danger' && (
+            <div className="bg-white/30 backdrop-blur-xl rounded-xl shadow-lg border border-white/40 p-2.5 flex items-center gap-3 flex-wrap">
+              <span className="text-xs font-bold text-slate-900">
+                {layerOptions.find(l => l.id === selectedLayer)?.label}
+              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                {currentLegend.colors.map((item, idx) => (
+                  <div
                     key={idx}
-                    onClick={() => filterValue && setDangerFilter(dangerFilter === filterValue ? 'all' : filterValue as DangerFilter)}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-all ${
-                      selectedLayer === 'danger' && dangerFilter === filterValue
-                        ? 'bg-white ring-1 ring-brand-600'
-                        : selectedLayer === 'danger' ? 'hover:bg-white/60 cursor-pointer' : 'bg-white/40'
-                    }`}
-                    disabled={selectedLayer !== 'danger'}
+                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs bg-white/40"
                   >
                     <span
                       className="w-3 h-3 rounded-sm border border-slate-400"
                       style={{ backgroundColor: item.color }}
                     />
                     <span className="text-slate-900 font-bold">{item.label}</span>
-                  </button>
-                );
-              })}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Windy Icon - Left Side */}
