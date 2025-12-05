@@ -19,19 +19,19 @@ export default function EmergencyAlert() {
   // Critical alerts - in a real app, this would come from an API
   const alerts: Alert[] = [
     {
-      id: 'cyclone-ditwah-aftermath',
+      id: 'nbro-landslide-warning-dec5',
       severity: 'critical',
-      title: 'Post-Cyclone Emergency: Ongoing Flood & Landslide Crisis',
-      message: 'Cyclone Ditwah has caused Sri Lanka\'s worst disaster in decades. Over 480 deaths, 350+ missing, 1.4M affected.',
+      title: 'NBRO Red Alert: Critical Landslide Warning - Immediate Evacuation Required',
+      message: 'Level 3 (Red) evacuation alerts issued for Kandy, Nuwara Eliya, Ratnapura and Kegalle districts. 40 District Secretariat Divisions affected.',
       details: [
-        '233,000 people displaced in 1,441 shelters',
-        'Multiple cities remain flooded (Kelani River overflow)',
-        'NBRO Red Alert: Landslide warnings for 4 districts',
-        'Continued rain expected Dec 6-13 in Southern & Central Provinces',
+        'Valid: 4:00 PM Dec 5 to 4:00 PM Dec 6, 2025',
+        'Highland areas recorded over 500mm rainfall - soil saturation beyond critical limits',
+        'Residents on slopes, near cut slopes, and steep roads must evacuate immediately',
+        'Red alert extended to 40 District Secretariat Divisions in 4 districts',
       ],
-      source: 'WHO, UN News, Daily Mirror',
-      sourceUrl: 'https://www.who.int/southeastasia/news/detail/02-12-2025-sri-lanka-ditwah25',
-      updatedAt: 'Dec 5, 2025',
+      source: 'NBRO, Newswire',
+      sourceUrl: 'https://www.newswire.lk/2025/12/05/nbro-issues-updated-landslide-warnings-for-several-districts/',
+      updatedAt: 'Dec 5, 4:00 PM',
     },
   ];
 
