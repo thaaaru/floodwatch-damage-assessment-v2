@@ -34,60 +34,6 @@ const layerOptions: { id: MapLayer; label: string; icon: string; description: st
   { id: 'forecast5', label: '+5 Days', icon: '📅', description: 'Day 5 forecast', group: 'forecast' },
 ];
 
-const layerLegends: Record<MapLayer, { colors: { color: string; label: string }[] }> = {
-  danger: {
-    colors: [
-      { color: '#10b981', label: 'Low' },
-      { color: '#f59e0b', label: 'Medium' },
-      { color: '#ef4444', label: 'High' },
-    ]
-  },
-  rainfall: {
-    colors: [
-      { color: '#ffffff', label: '0' },
-      { color: '#bae6fd', label: '1-5' },
-      { color: '#38bdf8', label: '10-25' },
-      { color: '#0284c7', label: '50-100' },
-      { color: '#0c4a6e', label: '>150mm' },
-    ]
-  },
-  temperature: {
-    colors: [
-      { color: '#6366f1', label: '<20°' },
-      { color: '#22c55e', label: '24-28°' },
-      { color: '#f97316', label: '32-35°' },
-      { color: '#dc2626', label: '>35°' },
-    ]
-  },
-  humidity: {
-    colors: [
-      { color: '#dbeafe', label: '<50%' },
-      { color: '#60a5fa', label: '60-70%' },
-      { color: '#2563eb', label: '80-90%' },
-      { color: '#1e40af', label: '>90%' },
-    ]
-  },
-  wind: {
-    colors: [
-      { color: '#86efac', label: '<10km/h' },
-      { color: '#eab308', label: '20-30km/h' },
-      { color: '#dc2626', label: '>40km/h' },
-    ]
-  },
-  pressure: {
-    colors: [
-      { color: '#dc2626', label: '<1000hPa' },
-      { color: '#22c55e', label: '1010-1015' },
-      { color: '#1e40af', label: '>1020hPa' },
-    ]
-  },
-  forecast1: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
-  forecast2: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
-  forecast3: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
-  forecast4: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
-  forecast5: { colors: [{ color: '#22c55e', label: 'Normal' }, { color: '#eab308', label: 'Watch' }, { color: '#dc2626', label: 'Warning' }] },
-};
-
 export type DangerFilter = 'all' | 'low' | 'medium' | 'high';
 
 interface RainSummary {
@@ -177,7 +123,6 @@ export default function Dashboard() {
     // No auto-refresh - data is cached on backend for 60 minutes
   }, [selectedHours]);
 
-  const currentLegend = layerLegends[selectedLayer];
   const currentLayers = layerOptions.filter(l => l.group === 'current');
   const forecastLayers = layerOptions.filter(l => l.group === 'forecast');
 
@@ -375,29 +320,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-
-          {/* Legend - Only show for non-danger layers */}
-          {selectedLayer !== 'danger' && (
-            <div className="bg-white/30 backdrop-blur-xl rounded-xl shadow-lg border border-white/40 p-2.5 flex items-center gap-3 flex-wrap">
-              <span className="text-xs font-bold text-slate-900">
-                {layerOptions.find(l => l.id === selectedLayer)?.label}
-              </span>
-              <div className="flex items-center gap-2 flex-wrap">
-                {currentLegend.colors.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-1.5 px-2 py-1 rounded-md text-xs bg-white/40"
-                  >
-                    <span
-                      className="w-3 h-3 rounded-sm border border-slate-400"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-slate-900 font-bold">{item.label}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
           {/* Windy Icon - Left Side */}
