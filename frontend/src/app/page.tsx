@@ -457,23 +457,9 @@ export default function Dashboard() {
                     {yesterdayStats ? (
                       <div className="space-y-3">
                         {/* Summary Stats */}
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center">
-                            <div className="text-lg font-bold text-blue-600">{fmt(yesterdayStats.total_rainfall_mm)}</div>
-                            <div className="text-[10px] text-blue-700 font-medium">Total Rainfall (mm)</div>
-                          </div>
-                          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-center">
-                            <div className="text-lg font-bold text-cyan-600">{fmt(yesterdayStats.avg_rainfall_mm, 1)}</div>
-                            <div className="text-[10px] text-cyan-700 font-medium">Avg per District (mm)</div>
-                          </div>
-                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
-                            <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
-                            <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
-                          </div>
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
-                            <div className="text-lg font-bold text-green-600">{yesterdayStats.districts_with_rain}</div>
-                            <div className="text-[10px] text-green-700 font-medium">Districts with Rain</div>
-                          </div>
+                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
+                          <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
+                          <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
                         </div>
 
                         {/* Max rainfall district */}
@@ -603,23 +589,9 @@ export default function Dashboard() {
               {yesterdayStats ? (
                 <div className="space-y-3">
                   {/* Summary Stats */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-blue-600">{fmt(yesterdayStats.total_rainfall_mm)}</div>
-                      <div className="text-[10px] text-blue-700 font-medium">Total Rainfall (mm)</div>
-                    </div>
-                    <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-cyan-600">{fmt(yesterdayStats.avg_rainfall_mm, 1)}</div>
-                      <div className="text-[10px] text-cyan-700 font-medium">Avg per District (mm)</div>
-                    </div>
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
-                      <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
-                    </div>
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
-                      <div className="text-lg font-bold text-green-600">{yesterdayStats.districts_with_rain}</div>
-                      <div className="text-[10px] text-green-700 font-medium">Districts with Rain</div>
-                    </div>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
+                    <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
+                    <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
                   </div>
 
                   {/* Max rainfall district */}
