@@ -11,6 +11,9 @@ ENV/
 
 # Environment files with secrets
 .env
+.env.production
+.env.local
+.env.development
 !.env.example
 
 # Database
@@ -49,3 +52,4 @@ htmlcov/
 nohup.out
 cache/*.json
 tsconfig.tsbuildinfo
+.env*.local

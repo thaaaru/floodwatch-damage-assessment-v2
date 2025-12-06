@@ -1,0 +1,513 @@
+/**
+ * Mobile-First CSS Optimizations
+ * For disaster relief map and touch-optimized interfaces
+ */
+
+/* ===== ROOT VARIABLES ===== */
+:root {
+  /* Header heights */
+  --mobile-header-height: 56px;
+  --tablet-header-height: 64px;
+
+  /* Touch targets (iOS/Android guidelines) */
+  --touch-target-min: 44px;
+  --touch-target-comfortable: 48px;
+  --touch-target-large: 56px;
+
+  /* Bottom sheet */
+  --sheet-collapsed-height: 72px;
+  --sheet-half-height: 60vh;
+  --sheet-full-height: 90vh;
+
+  /* Z-index layers */
+  --z-map: 10;
+  --z-controls: 30;
+  --z-sheet-backdrop: 40;
+  --z-sheet: 50;
+  --z-header: 60;
+  --z-modal: 70;
+
+  /* Typography - mobile-first */
+  --text-xs: 0.75rem;   /* 12px */
+  --text-sm: 0.875rem;  /* 14px */
+  --text-base: 1rem;    /* 16px */
+  --text-lg: 1.125rem;  /* 18px */
+  --text-xl: 1.25rem;   /* 20px */
+  --text-2xl: 1.5rem;   /* 24px */
+
+  /* Spacing - thumb zones */
+  --thumb-zone-bottom: 120px; /* Bottom area easy to reach */
+  --thumb-zone-side: 16px;    /* Side margins for comfort */
+
+  /* Animation */
+  --duration-fast: 150ms;
+  --duration-normal: 300ms;
+  --duration-slow: 500ms;
+  --easing-smooth: cubic-bezier(0.32, 0.72, 0, 1);
+  --easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ===== GLOBAL MOBILE OPTIMIZATIONS ===== */
+
+/* Prevent text size adjustment on iOS */
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Smooth scrolling but respect reduced motion */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Fix 100vh on mobile (account for browser chrome) */
+.h-screen-mobile {
+  height: 100vh;
+  height: 100dvh; /* Dynamic viewport height (newer browsers) */
+}
+
+/* Disable pull-to-refresh on mobile */
+body {
+  overscroll-behavior-y: contain;
+}
+
+/* Prevent tap highlight on mobile */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== TOUCH-OPTIMIZED COMPONENTS ===== */
+
+/* Base touch target */
+.touch-target {
+  min-width: var(--touch-target-min);
+  min-height: var(--touch-target-min);
+  position: relative;
+  cursor: pointer;
+}
+
+/* Increase hit area without changing visual size */
+.touch-target::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  z-index: -1;
+}
+
+/* Large touch target for primary actions */
+.touch-target-lg {
+  min-width: var(--touch-target-large);
+  min-height: var(--touch-target-large);
+}
+
+/* Active state for touch feedback */
+.touch-active:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+/* ===== MAP CONTAINER ===== */
+
+/* Full-screen map on mobile */
+.map-container-mobile {
+  position: relative;
+  width: 100vw;
+  height: calc(100vh - var(--mobile-header-height));
+  height: calc(100dvh - var(--mobile-header-height));
+}
+
+/* Disable scroll on map (use pinch-zoom instead) */
+.map-container-mobile .leaflet-container {
+  touch-action: pan-x pan-y;
+}
+
+/* Hide zoom controls on small screens (use pinch-zoom) */
+@media (max-width: 640px) {
+  .leaflet-control-zoom {
+    display: none;
+  }
+}
+
+/* ===== BOTTOM SHEET ===== */
+
+/* Bottom sheet base */
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  transition: transform var(--duration-normal) var(--easing-smooth);
+  will-change: transform;
+  z-index: var(--z-sheet);
+  max-height: 95vh;
+  overflow: hidden;
+}
+
+/* Safe area padding for devices with notch */
+.bottom-sheet {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Sheet states */
+.bottom-sheet.collapsed {
+  transform: translateY(calc(100% - var(--sheet-collapsed-height)));
+}
+
+.bottom-sheet.half {
+  transform: translateY(calc(100% - var(--sheet-half-height)));
+}
+
+.bottom-sheet.full {
+  transform: translateY(calc(100% - var(--sheet-full-height)));
+}
+
+/* Disable transition when dragging */
+.bottom-sheet.dragging {
+  transition: none;
+}
+
+/* Handle bar */
+.sheet-handle {
+  width: 48px;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 2px;
+  margin: 12px auto;
+  cursor: grab;
+}
+
+.sheet-handle:active {
+  cursor: grabbing;
+}
+
+/* Sheet content - scrollable */
+.sheet-content {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+/* Hide scrollbar on mobile for cleaner look */
+@media (max-width: 768px) {
+  .sheet-content::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sheet-content {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ===== FLOATING CONTROLS ===== */
+
+/* Floating button cluster */
+.floating-controls {
+  position: fixed;
+  z-index: var(--z-controls);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  touch-action: auto;
+}
+
+/* Bottom-right (most common for maps) */
+.floating-controls.bottom-right {
+  bottom: calc(var(--sheet-collapsed-height) + 16px);
+  right: 16px;
+}
+
+/* Bottom-left */
+.floating-controls.bottom-left {
+  bottom: calc(var(--sheet-collapsed-height) + 16px);
+  left: 16px;
+}
+
+/* Top-right */
+.floating-controls.top-right {
+  top: calc(var(--mobile-header-height) + 16px);
+  right: 16px;
+}
+
+/* Floating button */
+.floating-button {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.floating-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+/* Primary CTA */
+.primary-cta {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  right: 16px;
+  z-index: var(--z-controls);
+  height: var(--touch-target-large);
+  border-radius: 28px;
+  background: var(--color-primary, #2563eb);
+  color: white;
+  font-weight: 700;
+  font-size: var(--text-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  transition: all var(--duration-fast);
+  touch-action: auto;
+}
+
+.primary-cta:active {
+  transform: scale(0.98);
+}
+
+/* ===== MOBILE HEADER ===== */
+
+.mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  height: var(--mobile-header-height);
+  background: white;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+}
+
+/* Safe area for devices with notch */
+.mobile-header {
+  padding-top: env(safe-area-inset-top);
+}
+
+/* ===== BACKDROP ===== */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: var(--z-sheet-backdrop);
+  animation: fade-in var(--duration-normal);
+  touch-action: auto;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===== PERFORMANCE OPTIMIZATIONS ===== */
+
+/* GPU acceleration for animations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-opacity {
+  will-change: opacity;
+}
+
+/* Prevent layout shift */
+.content-visibility-auto {
+  content-visibility: auto;
+}
+
+/* Reduce repaints */
+.contain-layout {
+  contain: layout;
+}
+
+.contain-paint {
+  contain: paint;
+}
+
+/* ===== SKELETON LOADERS ===== */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #f0f0f0 25%,
+    #e0e0e0 50%,
+    #f0f0f0 75%
+  );
+  background-size: 200% 100%;
+  animation: loading 1.5s ease-in-out infinite;
+}
+
+@keyframes loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  outline: 2px solid var(--color-primary, #2563eb);
+  outline-offset: 2px;
+}
+
+/* Hide focus outline on mouse/touch */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Screen reader only content */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* ===== RESPONSIVE BREAKPOINTS ===== */
+
+/* Tablet and up: convert to sidebar layout */
+@media (min-width: 768px) {
+  .map-container-mobile {
+    width: calc(100vw - 400px);
+    height: 100vh;
+  }
+
+  .bottom-sheet {
+    position: relative;
+    transform: none !important;
+    border-radius: 0;
+    max-height: none;
+    box-shadow: none;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  .floating-controls.bottom-right {
+    bottom: 16px;
+  }
+
+  .primary-cta {
+    position: static;
+    width: auto;
+    margin: 16px;
+  }
+}
+
+/* Large screens: adjust spacing */
+@media (min-width: 1024px) {
+  :root {
+    --touch-target-min: 40px; /* Smaller for mouse */
+  }
+
+  .map-container-mobile {
+    width: calc(100vw - 480px);
+  }
+}
+
+/* ===== PRINT STYLES ===== */
+
+@media print {
+  .mobile-header,
+  .floating-controls,
+  .primary-cta,
+  .bottom-sheet {
+    display: none !important;
+  }
+
+  .map-container-mobile {
+    width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+  }
+}
+
+/* ===== DARK MODE ===== */
+
+@media (prefers-color-scheme: dark) {
+  .bottom-sheet {
+    background: #1f2937;
+    color: white;
+  }
+
+  .floating-button {
+    background: #374151;
+    border-color: #4b5563;
+  }
+
+  .mobile-header {
+    background: #111827;
+    border-bottom-color: #374151;
+    color: white;
+  }
+
+  .backdrop {
+    background: rgba(0, 0, 0, 0.7);
+  }
+}
+
+/* ===== OFFLINE INDICATOR ===== */
+
+.offline-banner {
+  position: fixed;
+  top: var(--mobile-header-height);
+  left: 0;
+  right: 0;
+  background: #f59e0b;
+  color: white;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  z-index: var(--z-header);
+  animation: slide-down var(--duration-normal) var(--easing-smooth);
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}

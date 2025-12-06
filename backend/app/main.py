@@ -11,7 +11,7 @@ from slowapi.errors import RateLimitExceeded
 
 from .config import get_settings
 from .database import engine, Base
-from .routers import weather, alerts, subscribers, districts, intel, whatsapp
+from .routers import weather, alerts, subscribers, districts, intel, whatsapp, early_warning, flood_map, wind
 from .jobs.scheduler import start_scheduler, stop_scheduler
 from .schemas import HealthResponse
 
@@ -69,6 +69,8 @@ allowed_origins = [
     "http://127.0.0.1:3001",
     "https://frontend-iltbjzuqs-thaaarus-projects.vercel.app",
     "https://frontend-thaaarus-projects.vercel.app",
+    "https://floodwatch-lk.vercel.app",
+    "https://floodwatch.vercel.app",
     "https://staging-floodwatch.vercel.app",
     "https://weather.hackandbuild.dev",
 ]
@@ -76,10 +78,11 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://.*(-thaaarus-projects)?\.vercel\.app",
+    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Include routers
@@ -89,6 +92,9 @@ app.include_router(subscribers.router)
 app.include_router(districts.router)
 app.include_router(intel.router)
 app.include_router(whatsapp.router)
+app.include_router(early_warning.router)
+app.include_router(flood_map.router)
+app.include_router(wind.router)
 
 
 @app.get("/api/health", response_model=HealthResponse)

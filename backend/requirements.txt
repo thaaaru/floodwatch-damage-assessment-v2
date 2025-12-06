@@ -24,8 +24,12 @@ twilio==8.12.0
 # Scheduling
 apscheduler==3.10.4
 
+# Rate limiting
+slowapi==0.1.9
+
 # Utilities
 python-dateutil==2.8.2
+matplotlib==3.8.2
 
 # Development
 pytest==7.4.4

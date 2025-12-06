@@ -1,15 +1,16 @@
 """
 Weather data caching service.
-Fetches data from Open-Meteo every 30 minutes and serves cached data to users.
+Now uses HERE Weather API as primary source (more generous rate limits).
+Falls back to Open-Meteo if HERE fails.
 """
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
 import asyncio
 
-from .open_meteo import OpenMeteoService
+from .here_weather import here_weather_service, SRI_LANKA_LOCATIONS
 from .districts_service import get_all_districts
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,13 @@ logger = logging.getLogger(__name__)
 # Cache configuration
 CACHE_DIR = Path(__file__).parent.parent.parent / "cache"
 CACHE_FILE = CACHE_DIR / "weather_data.json"
-CACHE_DURATION_MINUTES = 30
+CACHE_DURATION_MINUTES = 60  # Refresh every 60 minutes to reduce API calls
+
+# Weather source: "here" or "open_meteo"
+WEATHER_SOURCE = "here"
+
+# FREEZE MODE: When True, always serve cached data and never refresh
+CACHE_FREEZE_MODE = False
 
 
 class WeatherCache:
@@ -27,7 +34,6 @@ class WeatherCache:
     _lock = asyncio.Lock()
 
     def __init__(self):
-        self.weather_service = OpenMeteoService()
         self._cache: dict = {}
         self._last_update: Optional[datetime] = None
         self._ensure_cache_dir()
@@ -54,6 +60,9 @@ class WeatherCache:
                     last_update_str = data.get("last_update")
                     if last_update_str:
                         self._last_update = datetime.fromisoformat(last_update_str)
+                        # Ensure timezone awareness - if no timezone, assume UTC
+                        if self._last_update.tzinfo is None:
+                            self._last_update = self._last_update.replace(tzinfo=timezone.utc)
                     logger.info(f"Loaded weather cache from disk, last update: {self._last_update}")
         except Exception as e:
             logger.warning(f"Failed to load cache from disk: {e}")
@@ -74,73 +83,162 @@ class WeatherCache:
 
     def is_cache_valid(self) -> bool:
         """Check if cache is still valid (less than 30 minutes old)."""
+        if CACHE_FREEZE_MODE and self._cache:
+            return True
         if not self._last_update or not self._cache:
             return False
-        age = datetime.now() - self._last_update
+        age = datetime.now(timezone.utc) - self._last_update.replace(tzinfo=timezone.utc)
         return age < timedelta(minutes=CACHE_DURATION_MINUTES)
 
     def get_cache_age_seconds(self) -> int:
         """Get age of cache in seconds."""
         if not self._last_update:
             return -1
-        return int((datetime.now() - self._last_update).total_seconds())
+        last = self._last_update.replace(tzinfo=timezone.utc) if self._last_update.tzinfo is None else self._last_update
+        return int((datetime.now(timezone.utc) - last).total_seconds())
+
+    async def _fetch_here_weather(self) -> dict:
+        """Fetch weather data from HERE Weather API for all locations."""
+        new_cache = {}
+
+        # Fetch observations for all locations (parallel)
+        observations = await here_weather_service.fetch_all_observations()
+
+        # Fetch forecasts for all locations (parallel)
+        forecasts = await here_weather_service.fetch_all_forecasts()
+
+        # Build forecast lookup
+        forecast_by_location = {f["location"]: f for f in forecasts}
+
+        for obs in observations:
+            location_name = obs["location"]
+            forecast = forecast_by_location.get(location_name, {})
+            forecast_daily = forecast.get("forecasts", [])
+
+            # Calculate rainfall totals from forecast
+            rainfall_24h = sum(f.get("precipitation_mm", 0) or 0 for f in forecast_daily[:1])
+            rainfall_48h = sum(f.get("precipitation_mm", 0) or 0 for f in forecast_daily[:2])
+            rainfall_72h = sum(f.get("precipitation_mm", 0) or 0 for f in forecast_daily[:3])
+
+            # Get forecast precipitation probability
+            precip_prob = forecast_daily[0].get("precipitation_probability", 0) if forecast_daily else 0
+
+            # Calculate danger level based on conditions
+            danger_score = 0
+            danger_factors = []
+
+            if rainfall_24h > 100:
+                danger_score += 40
+                danger_factors.append("Heavy rainfall >100mm")
+            elif rainfall_24h > 50:
+                danger_score += 25
+                danger_factors.append("Moderate rainfall >50mm")
+            elif rainfall_24h > 25:
+                danger_score += 10
+                danger_factors.append("Light rainfall >25mm")
+
+            if precip_prob > 80:
+                danger_score += 15
+                danger_factors.append("High precipitation probability")
+
+            # Wind danger
+            wind_speed = obs.get("wind_speed_kmh", 0) or 0
+            if wind_speed > 60:
+                danger_score += 20
+                danger_factors.append("Strong winds >60km/h")
+            elif wind_speed > 40:
+                danger_score += 10
+                danger_factors.append("Moderate winds >40km/h")
+
+            danger_level = "critical" if danger_score >= 50 else "high" if danger_score >= 30 else "moderate" if danger_score >= 15 else "low"
+
+            new_cache[location_name] = {
+                "district": location_name,
+                "latitude": obs["lat"],
+                "longitude": obs["lon"],
+                "data": {
+                    "temperature_c": obs.get("temperature_c"),
+                    "humidity_percent": obs.get("humidity_percent"),
+                    "pressure_hpa": obs.get("pressure_hpa"),
+                    "pressure_trend": 0,  # HERE doesn't provide this directly
+                    "cloud_cover_percent": None,
+                    "wind_speed_kmh": obs.get("wind_speed_kmh"),
+                    "wind_gusts_kmh": obs.get("wind_gust_kmh"),
+                    "wind_direction": obs.get("wind_direction"),
+                    "rainfall_24h_mm": obs.get("precipitation_24h_mm", 0) or rainfall_24h,
+                    "rainfall_48h_mm": rainfall_48h,
+                    "rainfall_72h_mm": rainfall_72h,
+                    "forecast_precip_24h_mm": rainfall_24h,
+                    "forecast_precip_48h_mm": rainfall_48h,
+                    "precipitation_probability": precip_prob,
+                    "danger_level": danger_level,
+                    "danger_score": danger_score,
+                    "danger_factors": danger_factors,
+                    "forecast_daily": forecast_daily,
+                    "description": obs.get("description"),
+                    "source": "here"
+                },
+                "fetched_at": datetime.now(timezone.utc).isoformat()
+            }
+
+        return new_cache
 
     async def refresh_cache(self, force: bool = False) -> bool:
         """
         Refresh weather data for all districts.
-        Returns True if refresh was successful.
+        Uses HERE Weather API as primary source.
         """
         async with self._lock:
-            # Skip if cache is still valid and not forced
             if not force and self.is_cache_valid():
                 logger.debug("Cache still valid, skipping refresh")
                 return True
 
-            logger.info("Refreshing weather cache for all districts...")
-            districts = get_all_districts()
-            new_cache = {}
-            success_count = 0
+            logger.info(f"Refreshing weather cache using {WEATHER_SOURCE}...")
 
-            for district in districts:
-                try:
-                    # Fetch weather data for all time periods
-                    weather_data = await self.weather_service.get_weather(
-                        district["latitude"],
-                        district["longitude"],
-                        hours=72  # Get max period, we can extract 24/48/72 from it
-                    )
+            try:
+                if WEATHER_SOURCE == "here":
+                    new_cache = await self._fetch_here_weather()
+                else:
+                    # Fallback to Open-Meteo (original implementation)
+                    from .open_meteo import OpenMeteoService
+                    weather_service = OpenMeteoService()
+                    districts = get_all_districts()
+                    new_cache = {}
 
-                    new_cache[district["name"]] = {
-                        "district": district["name"],
-                        "latitude": district["latitude"],
-                        "longitude": district["longitude"],
-                        "data": weather_data,
-                        "fetched_at": datetime.now().isoformat()
-                    }
-                    success_count += 1
+                    for district in districts[:25]:  # Limit to avoid rate limits
+                        try:
+                            data = await weather_service.get_weather(
+                                district["latitude"],
+                                district["longitude"],
+                                hours=72
+                            )
+                            new_cache[district["name"]] = {
+                                "district": district["name"],
+                                "latitude": district["latitude"],
+                                "longitude": district["longitude"],
+                                "data": data,
+                                "fetched_at": datetime.now(timezone.utc).isoformat()
+                            }
+                        except Exception as e:
+                            logger.error(f"Failed to fetch weather for {district['name']}: {e}")
+                        await asyncio.sleep(1.5)  # Rate limiting - Open-Meteo needs longer delays
 
-                    # Small delay to avoid rate limiting
-                    await asyncio.sleep(0.1)
+                if new_cache:
+                    self._cache = new_cache
+                    self._last_update = datetime.now(timezone.utc)
+                    self._save_cache_to_disk()
+                    logger.info(f"Weather cache refreshed: {len(new_cache)} locations updated via {WEATHER_SOURCE}")
+                    return True
+                else:
+                    logger.error("Failed to refresh any weather data")
+                    return False
 
-                except Exception as e:
-                    logger.error(f"Failed to fetch weather for {district['name']}: {e}")
-                    # Keep old data if available
-                    if district["name"] in self._cache:
-                        new_cache[district["name"]] = self._cache[district["name"]]
-
-            if success_count > 0:
-                self._cache = new_cache
-                self._last_update = datetime.now()
-                self._save_cache_to_disk()
-                logger.info(f"Weather cache refreshed: {success_count}/{len(districts)} districts updated")
-                return True
-            else:
-                logger.error("Failed to refresh any district data")
+            except Exception as e:
+                logger.error(f"Weather cache refresh failed: {e}")
                 return False
 
     def get_all_weather(self, hours: int = 24) -> list[dict]:
         """Get weather data for all districts from cache."""
-        from .open_meteo import OpenMeteoService
         from ..routers.weather import get_alert_level
 
         result = []
@@ -218,6 +316,8 @@ class WeatherCache:
             "last_update": self._last_update.isoformat() if self._last_update else None,
             "cache_age_seconds": self.get_cache_age_seconds(),
             "is_valid": self.is_cache_valid(),
+            "freeze_mode": CACHE_FREEZE_MODE,
+            "weather_source": WEATHER_SOURCE,
             "next_refresh_seconds": max(0, CACHE_DURATION_MINUTES * 60 - self.get_cache_age_seconds()) if self._last_update else 0
         }
 

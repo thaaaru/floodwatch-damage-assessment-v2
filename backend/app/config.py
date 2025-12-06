@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     weatherapi_key: str = ""  # WeatherAPI.com key for alerts
     tomtom_api_key: str = ""  # TomTom Traffic API key
     here_api_key: str = ""  # HERE Traffic API key
+    openweathermap_api_key: str = ""  # OpenWeatherMap One Call API 3.0 key
 
     # Application
     alert_check_interval_minutes: int = 15
