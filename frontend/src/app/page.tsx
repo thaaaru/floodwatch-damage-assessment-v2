@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
-import { api, Alert } from '@/lib/api';
+import { api, Alert, YesterdayStats } from '@/lib/api';
 import AlertList from '@/components/AlertList';
 import NewsFeed from '@/components/NewsFeed';
 import RiverNetworkStatus from '@/components/RiverNetworkStatus';
@@ -44,6 +44,12 @@ interface RainSummary {
   totalRainfall: number;
 }
 
+// Safe number formatting helper
+const fmt = (v: any, d: number = 0): string => {
+  if (v === null || v === undefined || isNaN(Number(v))) return '0';
+  return Number(v).toFixed(d);
+};
+
 export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
@@ -55,6 +61,8 @@ export default function Dashboard() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [showForecastExpanded, setShowForecastExpanded] = useState(false);
+  const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
+  const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
 
   // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
 
@@ -122,6 +130,23 @@ export default function Dashboard() {
     fetchRainSummary();
     // No auto-refresh - data is cached on backend for 60 minutes
   }, [selectedHours]);
+
+  // Fetch yesterday's stats
+  useEffect(() => {
+    const fetchYesterdayStats = async () => {
+      setLoadingYesterdayStats(true);
+      try {
+        const stats = await api.getYesterdayStats();
+        setYesterdayStats(stats);
+      } catch (err) {
+        console.error('Failed to fetch yesterday stats:', err);
+      } finally {
+        setLoadingYesterdayStats(false);
+      }
+    };
+    fetchYesterdayStats();
+    // Data is cached for the entire day on backend
+  }, []);
 
   const currentLayers = layerOptions.filter(l => l.group === 'current');
   const forecastLayers = layerOptions.filter(l => l.group === 'forecast');
@@ -422,6 +447,67 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  {/* Yesterday's Weather Summary */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-4">
+                    <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+                      <span>📅</span> Yesterday&apos;s Weather Summary
+                      {loadingYesterdayStats && <span className="text-xs text-slate-400 font-normal">(Loading...)</span>}
+                    </h2>
+
+                    {yesterdayStats ? (
+                      <div className="space-y-3">
+                        {/* Summary Stats */}
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center">
+                            <div className="text-lg font-bold text-blue-600">{fmt(yesterdayStats.total_rainfall_mm)}</div>
+                            <div className="text-[10px] text-blue-700 font-medium">Total Rainfall (mm)</div>
+                          </div>
+                          <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-center">
+                            <div className="text-lg font-bold text-cyan-600">{fmt(yesterdayStats.avg_rainfall_mm, 1)}</div>
+                            <div className="text-[10px] text-cyan-700 font-medium">Avg per District (mm)</div>
+                          </div>
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
+                            <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
+                            <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
+                          </div>
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                            <div className="text-lg font-bold text-green-600">{yesterdayStats.districts_with_rain}</div>
+                            <div className="text-[10px] text-green-700 font-medium">Districts with Rain</div>
+                          </div>
+                        </div>
+
+                        {/* Max rainfall district */}
+                        {yesterdayStats.max_rainfall_district && yesterdayStats.max_rainfall_mm > 0 && (
+                          <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-2">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <div className="text-[10px] text-slate-600 font-medium">Highest Rainfall</div>
+                                <div className="text-xs font-bold text-slate-900">{yesterdayStats.max_rainfall_district}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-xl font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
+                                <div className="text-[10px] text-orange-700 font-medium">mm</div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Footer with date */}
+                        <div className="text-[10px] text-slate-500 text-center">
+                          Data for {new Date(yesterdayStats.date + 'T00:00:00').toLocaleDateString('en-LK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                        </div>
+                      </div>
+                    ) : loadingYesterdayStats ? (
+                      <div className="text-center py-6">
+                        <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                      </div>
+                    ) : (
+                      <div className="text-center text-slate-500 py-6 text-xs">
+                        Unable to load yesterday&apos;s stats
+                      </div>
+                    )}
+                  </div>
+
                   {/* Windy Link */}
                   <a
                     href="/windy"
@@ -505,6 +591,67 @@ export default function Dashboard() {
               <div className="p-3 max-h-[300px] overflow-y-auto">
                 <NewsFeed maxItems={5} compact />
               </div>
+            </div>
+
+            {/* Yesterday's Weather Summary */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
+                <span>📅</span> Yesterday&apos;s Weather Summary
+                {loadingYesterdayStats && <span className="text-xs text-slate-400 font-normal">(Loading...)</span>}
+              </h2>
+
+              {yesterdayStats ? (
+                <div className="space-y-3">
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 text-center">
+                      <div className="text-lg font-bold text-blue-600">{fmt(yesterdayStats.total_rainfall_mm)}</div>
+                      <div className="text-[10px] text-blue-700 font-medium">Total Rainfall (mm)</div>
+                    </div>
+                    <div className="bg-cyan-50 border border-cyan-200 rounded-lg p-2 text-center">
+                      <div className="text-lg font-bold text-cyan-600">{fmt(yesterdayStats.avg_rainfall_mm, 1)}</div>
+                      <div className="text-[10px] text-cyan-700 font-medium">Avg per District (mm)</div>
+                    </div>
+                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
+                      <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
+                      <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
+                    </div>
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-2 text-center">
+                      <div className="text-lg font-bold text-green-600">{yesterdayStats.districts_with_rain}</div>
+                      <div className="text-[10px] text-green-700 font-medium">Districts with Rain</div>
+                    </div>
+                  </div>
+
+                  {/* Max rainfall district */}
+                  {yesterdayStats.max_rainfall_district && yesterdayStats.max_rainfall_mm > 0 && (
+                    <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-[10px] text-slate-600 font-medium">Highest Rainfall</div>
+                          <div className="text-xs font-bold text-slate-900">{yesterdayStats.max_rainfall_district}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
+                          <div className="text-[10px] text-orange-700 font-medium">mm</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer with date */}
+                  <div className="text-[10px] text-slate-500 text-center">
+                    Data for {new Date(yesterdayStats.date + 'T00:00:00').toLocaleDateString('en-LK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                  </div>
+                </div>
+              ) : loadingYesterdayStats ? (
+                <div className="text-center py-6">
+                  <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
+                </div>
+              ) : (
+                <div className="text-center text-slate-500 py-6 text-xs">
+                  Unable to load yesterday&apos;s stats
+                </div>
+              )}
             </div>
 
             {/* Windy Link */}
