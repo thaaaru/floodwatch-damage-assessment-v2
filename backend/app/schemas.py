@@ -101,3 +101,45 @@ class HealthResponse(BaseModel):
     status: str
     version: str
     timestamp: datetime
+
+
+# River schemas
+class WaterReadingResponse(BaseModel):
+    id: int
+    station_id: int
+    water_level_m: float
+    rainfall_24h_mm: float
+    status: str
+    recorded_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class StationResponse(BaseModel):
+    id: int
+    river_id: int
+    name: str
+    alert_level_m: Optional[float]
+    minor_flood_m: Optional[float]
+    major_flood_m: Optional[float]
+    latitude: Optional[float]
+    longitude: Optional[float]
+    current_reading: Optional[WaterReadingResponse]
+
+    class Config:
+        from_attributes = True
+
+
+class RiverWithStations(BaseModel):
+    id: int
+    name: str
+    code: Optional[str]
+    river_type: Optional[str]
+    basin_number: Optional[int]
+    navy_url: Optional[str]
+    created_at: datetime
+    stations: list[StationResponse]
+
+    class Config:
+        from_attributes = True

@@ -10,6 +10,7 @@ const navigation = [
   { name: 'Early Warning', href: '/early-warning' },
   { name: 'Flood Info', href: '/flood-info' },
   { name: 'Intel', href: '/intel' },
+  { name: 'External Links', href: '/external-links' },
   { name: 'Contacts', href: '/contacts' },
 ];
 
