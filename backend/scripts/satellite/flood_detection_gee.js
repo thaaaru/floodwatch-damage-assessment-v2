@@ -35,18 +35,24 @@ Map.centerObject(aoi, 10);
  * Load cloud-free Sentinel-2 imagery for a date range
  */
 function loadSentinel2(startDate, endDate, aoi) {
-  return ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+  var collection = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
     .filterBounds(aoi)
     .filterDate(startDate, endDate)
-    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 20)) // Max 20% clouds
-    .median(); // Take median to reduce noise
+    .filter(ee.Filter.lt('CLOUDY_PIXEL_PERCENTAGE', 30)); // Increased to 30% for more coverage
+
+  // Check if collection is empty
+  var count = collection.size();
+  print('Found', count, 'scenes for', startDate, 'to', endDate);
+
+  return collection.median(); // Take median to reduce noise
 }
 
-// BEFORE: November 1-27, 2024 (before the floods)
-var beforeImage = loadSentinel2('2024-11-01', '2024-11-27', aoi);
+// BEFORE: Use wider date range to ensure coverage
+// October-November (before the floods)
+var beforeImage = loadSentinel2('2024-10-01', '2024-11-27', aoi);
 
-// AFTER: November 29 - December 10, 2024 (after the floods)
-var afterImage = loadSentinel2('2024-11-29', '2024-12-10', aoi);
+// AFTER: November 29 - December 31, 2024 (after the floods)
+var afterImage = loadSentinel2('2024-11-29', '2024-12-31', aoi);
 
 // ============================================
 // 3. CALCULATE NDWI (Water Index)

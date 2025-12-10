@@ -16,6 +16,11 @@ ENV/
 .env.development
 !.env.example
 
+# Google Cloud credentials
+google-credentials.json
+gcloud-key.json
+*-credentials.json
+
 # Database
 *.db
 *.sqlite3
