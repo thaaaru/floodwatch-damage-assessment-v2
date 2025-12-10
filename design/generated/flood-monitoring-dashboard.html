@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sri Lanka Flood Monitoring Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="flood-monitoring-dashboard.css" />
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <div class="page">
+    <header class="top-header" role="banner">
+      <div class="top-header__inner">
+        <div class="brand-block">
+          <div class="brand-mark" aria-hidden="true">SL</div>
+          <div class="brand-text">
+            <div class="brand-title">Sri Lanka Flood Monitor</div>
+            <div class="brand-subtitle">River Levels &amp; Flood Alerts</div>
+          </div>
+        </div>
+
+        <div class="header-meta">
+          <div class="national-status" aria-live="polite">
+            <!-- change class: status-normal / status-watch / status-warning / status-severe -->
+            <span class="status-pill status-warning" role="status">
+              <span class="status-pill__icon" aria-hidden="true">!</span>
+              <span class="status-pill__text">
+                National Flood Status: Warning
+              </span>
+            </span>
+          </div>
+
+          <div class="header-meta__details">
+            <div class="meta-item">
+              <span class="meta-label">Last updated:</span>
+              <span class="meta-value">
+                5 minutes ago · 07 Dec 2025, 08:30
+              </span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Data sources:</span>
+              <span class="meta-value">
+                River sensors, rainfall gauges, hydrological models
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content" class="main">
+      <div class="container">
+        <!-- Alert banner -->
+        <section
+          class="alert-banner"
+          aria-label="Current flood alert headline"
+          role="status"
+        >
+          <div class="alert-banner__inner">
+            <div class="alert-banner__icon" aria-hidden="true">⚠</div>
+            <div class="alert-banner__content">
+              <div class="alert-banner__title">
+                Heavy rainfall expected in Western &amp; Sabaragamuwa provinces
+              </div>
+              <p class="alert-banner__text">
+                Monitor Kelani, Kalu and Attanagalu Oya levels closely for
+                rapid rises in the next 6 hours.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Map + station panel -->
+        <section
+          class="layout-primary"
+          aria-label="Interactive map and station details"
+        >
+          <div class="layout-primary__main">
+            <header class="section-header">
+              <h1 class="section-title">River Monitoring Map</h1>
+              <p class="section-subtitle">
+                Click a station marker or select a river from the list to view
+                current status.
+              </p>
+            </header>
+
+            <div class="map-card">
+              <div
+                class="map-legend"
+                aria-label="River status legend"
+                role="list"
+              >
+                <div class="legend-item" role="listitem">
+                  <span
+                    class="legend-dot legend-dot--normal"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="legend-text">Normal</span>
+                </div>
+                <div class="legend-item" role="listitem">
+                  <span
+                    class="legend-dot legend-dot--watch"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="legend-text">Watch</span>
+                </div>
+                <div class="legend-item" role="listitem">
+                  <span
+                    class="legend-dot legend-dot--warning"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="legend-text">Warning</span>
+                </div>
+                <div class="legend-item" role="listitem">
+                  <span
+                    class="legend-dot legend-dot--severe"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="legend-text">Severe</span>
+                </div>
+              </div>
+
+              <div
+                class="map-placeholder"
+                role="img"
+                aria-label="Map of Sri Lanka showing river basins and monitoring stations"
+              >
+                <!-- Simple river basin labels for context -->
+                <div class="basin-label basin-label--kelani">
+                  Kelani Basin
+                </div>
+                <div class="basin-label basin-label--kalu">Kalu Basin</div>
+                <div class="basin-label basin-label--mahaweli">
+                  Mahaweli Basin
+                </div>
+                <div class="basin-label basin-label--gin">Gin Basin</div>
+                <div class="basin-label basin-label--nilwala">
+                  Nilwala Basin
+                </div>
+
+                <!-- Monitoring stations (absolute positioned for mockup) -->
+                <!-- Kelani - Hanwella -->
+                <button
+                  type="button"
+                  class="station-marker station-marker--warning station-marker--pulse is-active"
+                  data-station-id="kelani-hanwella"
+                  data-river="Kelani Ganga"
+                  data-town="Hanwella"
+                  data-level="7.2"
+                  data-threshold-normal="0 - 4.5 m"
+                  data-threshold-alert="4.5 - 6.0 m"
+                  data-threshold-danger="&gt; 6.0 m"
+                  data-status="Warning"
+                  data-status-key="warning"
+                  data-trend="Rising"
+                  aria-label="Kelani Ganga at Hanwella, status Warning, level 7.2 meters"
+                >
+                  <span class="marker-core" aria-hidden="true"></span>
+                </button>
+
+                <!-- Kelani - Nagalagam Street -->
+                <button
+                  type="button"
+                  class="station-marker station-marker--watch station-marker--pulse"
+                  data-station-id="kelani-nagalagam"
+                  data-river="Kelani Ganga"
+                  data-town="Nagalagam Street"
+                  data-level="5.8"
+                  data-threshold-normal="0 - 4.0 m"
+                  data-threshold-alert="4.0 - 5.5 m"
+                  data-threshold-danger="&gt; 5.5 m"
+                  data-status="Watch"
+                  data-status-key="watch"
+                  data-trend="Rising"
+                  aria-label="Kelani Ganga at Nagalagam Street, status Watch, level 5.8 meters"
+                >
+                  <span class="marker-core" aria-hidden="true"></span>
+                </button>
+
+                <!-- Kalu - Ratnapura -->
+                <button
+                  type="button"
+                  class="station-marker station-marker--severe station-marker--pulse"
+                  data-station-id="kalu-ratnapura"
+                  data-river="Kalu Ganga"
+                  data-town="Ratnapura"
+                  data-level="9.4"
+                  data-threshold-normal="0 - 5.0 m"
+                  data-threshold-alert="5.0 - 7.0 m"
+                  data-threshold-danger="&gt; 7.0 m"
+                  data-status="Severe"
+                  data-status-key="severe"
+                  data-trend="Rising rapidly"
+                  aria-label="Kalu Ganga at Ratnapura, status Severe, level 9.4 meters"
+                >
+                  <span class="marker-core" aria-hidden="true"></span>
+                </button>
+
+                <!-- Mahaweli - Peradeniya -->
+                <button
+                  type="button"
+                  class="station-marker station-marker--normal"
+                  data-station-id="mahaweli-peradeniya"
+                  data-river="Mahaweli Ganga"
+                  data-town="Peradeniya"
+                  data-level="1.8"
+                  data-threshold-normal="0 - 3.0 m"
+                  data-threshold-alert="3.0 - 4.5 m"
+                  data-threshold-danger="&gt; 4.5 m"
+                  data-status="Normal"
+                  data-status-key="normal"
+                  data-trend="Stable"
+                  aria-label="Mahaweli Ganga at Peradeniya, status Normal, level 1.8 meters"
+                >
+                  <span class="marker-core" aria-hidden="true"></span>
+                </button>
+
+                <!-- Gin - Baddegama -->
+                <button
+                  type="button"
+                  class="station-marker station-marker--watch station-marker--pulse"
+                  data-station-id="gin-baddegama"
+                  data-river="Gin Ganga"
+                  data-town="Baddegama"
+                  data-level="5.1"
+                  data-threshold-normal="0 - 4.0 m"
+                  data-threshold-alert="4.0 - 5.0 m"
+                  data-threshold-danger="&gt; 5.0 m"
+                  data-status="Watch"
+                  data-status-key="watch"
+                  data-trend="Rising"
+                  aria-label="Gin Ganga at Baddegama, status Watch, level 5.1 meters"
+                >
+                  <span class="marker-core" aria-hidden="true"></span>
+                </button>
+
+                <!-- Nilwala - Matara -->
+                <button
+                  type="button"
+                  class="station-marker station-marker--normal"
+                  data-station-id="nilwala-matara"
+                  data-river="Nilwala Ganga"
+                  data-town="Matara"
+                  data-level="1.2"
+                  data-threshold-normal="0 - 2.5 m"
+                  data-threshold-alert="2.5 - 3.5 m"
+                  data-threshold-danger="&gt; 3.5 m"
+                  data-status="Normal"
+                  data-status-key="normal"
+                  data-trend="Falling"
+                  aria-label="Nilwala Ganga at Matara, status Normal, level 1.2 meters"
+                >
+                  <span class="marker-core" aria-hidden="true"></span>
+                </button>
+
+                <!-- Attanagalu Oya - Gampaha -->
+                <button
+                  type="button"
+                  class="station-marker station-marker--warning station-marker--pulse"
+                  data-station-id="attanagalu-gampaha"
+                  data-river="Attanagalu Oya"
+                  data-town="Gampaha"
+                  data-level="6.3"
+                  data-threshold-normal="0 - 3.5 m"
+                  data-threshold-alert="3.5 - 5.0 m"
+                  data-threshold-danger="&gt; 5.0 m"
+                  data-status="Warning"
+                  data-status-key="warning"
+                  data-trend="Rising"
+                  aria-label="Attanagalu Oya at Gampaha, status Warning, level 6.3 meters"
+                >
+                  <span class="marker-core" aria-hidden="true"></span>
+                </button>
+              </div>
+
+              <!-- Keyboard-friendly station list (mirrors markers) -->
+              <div
+                class="station-list-access"
+                aria-label="Monitoring stations list"
+              >
+                <h2 class="station-list-access__title">
+                  Stations (keyboard navigation)
+                </h2>
+                <ul class="station-list-access__items">
+                  <li>
+                    <button
+                      type="button"
+                      class="station-access-btn is-active"
+                      data-station-id="kelani-hanwella"
+                    >
+                      Kelani Ganga – Hanwella
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      class="station-access-btn"
+                      data-station-id="kelani-nagalagam"
+                    >
+                      Kelani Ganga – Nagalagam Street
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      class="station-access-btn"
+                      data-station-id="kalu-ratnapura"
+                    >
+                      Kalu Ganga – Ratnapura
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      class="station-access-btn"
+                      data-station-id="mahaweli-peradeniya"
+                    >
+                      Mahaweli Ganga – Peradeniya
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      class="station-access-btn"
+                      data-station-id="gin-baddegama"
+                    >
+                      Gin Ganga – Baddegama
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      class="station-access-btn"
+                      data-station-id="nilwala-matara"
+                    >
+                      Nilwala Ganga – Matara
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      class="station-access-btn"
+                      data-station-id="attanagalu-gampaha"
+                    >
+                      Attanagalu Oya – Gampaha
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Station detail panel -->
+          <aside
+            class="station-panel"
+            aria-label="Selected river station details"
+          >
+            <header class="station-panel__header">
+              <div>
+                <div class="station-panel__eyebrow">Selected station</div>
+                <h2
+                  class="station-panel__title"
+                  id="station-name"
+                >
+                  Kelani Ganga – Hanwella
+                </h2>
+                <div class="station-panel__meta">
+                  <span id="station-river">Kelani Ganga</span> ·
+                  <span id="station-town">Hanwella</span>
+                </div>
+              </div>
+              <div class="station-panel__status-wrap">
+                <span
+                  id="station-status-pill"
+                  class="status-pill status-warning"
+                >
+                  <span
+                    class="status-pill__icon"
+                    aria-hidden="true"
+                  >
+                    !
+                  </span>
+                  <span
+                    class="status-pill__text"
+                    id="station-status-text"
+                  >
+                    Warning
+                  </span>
+                </span>
+              </div>
+            </header>
+
+            <div class="station-panel__body">
+              <div class="station-panel__metric-grid">
+                <div class="metric-card" aria-label="Current water level">
+                  <div class="metric-label">Current level</div>
+                  <div class="metric-value">
+                    <span id="station-level">7.2</span>
+                    <span class="metric-unit">m</span>
+                  </div>
+                  <div class="metric-footer">
+                    <span
+                      id="station-trend"
+                      class="trend trend--rising"
+                    >
+                      ↑ Rising
+                    </span>
+                  </div>
+                </div>
+
+                <div
+                  class="metric-card metric-card--thresholds"
+                  aria-label="Thresholds for this station"
+                >
+                  <div class="metric-label">Thresholds</div>
+                  <ul class="threshold-list">
+                    <li>
+                      <span class="threshold-label">Normal</span>
+                      <span
+                        class="threshold-value"
+                        id="station-threshold-normal"
+                      >
+                        0 – 4.5 m
+                      </span>
+                    </li>
+                    <li>
+                      <span class="threshold-label">Alert</span>
+                      <span
+                        class="threshold-value"
+                        id="station-threshold-alert"
+                      >
+                        4.5 – 6.0 m
+                      </span>
+                    </li>
+                    <li>
+                      <span class="threshold-label">Danger</span>
+                      <span
+                        class="threshold-value"
+                        id="station-threshold-danger"
+                      >
+                        &gt; 6.0 m
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div
+                class="sparkline-card"
+                aria-label="Water level trend for the last 24 hours"
+              >
+                <div class="sparkline-header">
+                  <div class="sparkline-title">Last 24 hours</div>
+                  <div class="sparkline-description">
+                    Hourly water level trend (illustrative)
+                  </div>
+                </div>
+                <svg
+                  class="sparkline"
+                  viewBox="0 0 160 40"
+                  role="img"
+                  aria-hidden="true"
+                >
+                  <polyline
+                    id="station-sparkline-path"
+                    class="sparkline-path"
+                    points="0,30 20,28 40,26 60,24 80,22 100,20 120,16 140,12 160,10"
+                  />
+                  <line
+                    x1="0"
+                    y1="30"
+                    x2="160"
+                    y2="30"
+                    class="sparkline-baseline"
+                  />
+                </svg>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <!-- River status list -->
+        <section
+          class="river-status-section"
+          aria-label="River status list"
+        >
+          <header class="section-header section-header--compact">
+            <h2 class="section-title">
+              River Status – Key Locations
+            </h2>
+            <p class="section-subtitle">
+              Sorted by highest risk. Values are indicative and refreshed
+              regularly.
+            </p>
+          </header>
+
+          <div class="table-responsive">
+            <table class="river-table">
+              <caption class="sr-only">
+                Current status of monitored rivers and locations in Sri
+                Lanka
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">River</th>
+                  <th scope="col">Nearest town</th>
+                  <th scope="col">Current level (m)</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Trend</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="row-severe">
+                  <td>Kalu Ganga</td>
+                  <td>Ratnapura</td>
+                  <td>9.4</td>
+                  <td>
+                    <span class="status-chip status-chip--severe">
+                      <span
+                        class="status-chip__icon"
+                        aria-hidden="true"
+                      >
+                        !
+                      </span>
+                      <span class="status-chip__text">
+                        Severe
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="trend trend--rising">
+                      ↑ Rising rapidly
+                    </span>
+                  </td>
+                </tr>
+                <tr class="row-warning">
+                  <td>Attanagalu Oya</td>
+                  <td>Gampaha</td>
+                  <td>6.3</td>
+                  <td>
+                    <span class="status-chip status-chip--warning">
+                      <span
+                        class="status-chip__icon"
+                        aria-hidden="true"
+                      >
+                        !
+                      </span>
+                      <span class="status-chip__text">
+                        Warning
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="trend trend--rising">
+                      ↑ Rising
+                    </span>
+                  </td>
+                </tr>
+                <tr class="row-warning">
+                  <td>Kelani Ganga</td>
+                  <td>Hanwella</td>
+                  <td>7.2</td>
+                  <td>
+                    <span class="status-chip status-chip--warning">
+                      <span
+                        class="status-chip__icon"
+                        aria-hidden="true"
+                      >
+                        !
+                      </span>
+                      <span class="status-chip__text">
+                        Warning
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="trend trend--rising">
+                      ↑ Rising
+                    </span>
+                  </td>
+                </tr>
+                <tr class="row-watch">
+                  <td>Kelani Ganga</td>
+                  <td>Nagalagam Street</td>
+                  <td>5.8</td>
+                  <td>
+                    <span class="status-chip status-chip--watch">
+                      <span
+                        class="status-chip__icon"
+                        aria-hidden="true"
+                      >
+                        !
+                      </span>
+                      <span class="status-chip__text">
+                        Watch
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="trend trend--rising">
+                      ↑ Rising
+                    </span>
+                  </td>
+                </tr>
+                <tr class="row-watch">
+                  <td>Gin Ganga</td>
+                  <td>Baddegama</td>
+                  <td>5.1</td>
+                  <td>
+                    <span class="status-chip status-chip--watch">
+                      <span
+                        class="status-chip__icon"
+                        aria-hidden="true"
+                      >
+                        !
+                      </span>
+                      <span class="status-chip__text">
+                        Watch
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="trend trend--rising">
+                      ↑ Rising
+                    </span>
+                  </td>
+                </tr>
+                <tr class="row-normal">
+                  <td>Mahaweli Ganga</td>
+                  <td>Peradeniya</td>
+                  <td>1.8</td>
+                  <td>
+                    <span class="status-chip status-chip--normal">
+                      <span
+                        class="status-chip__icon"
+                        aria-hidden="true"
+                      >
+                        ✓
+                      </span>
+                      <span class="status-chip__text">
+                        Normal
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="trend trend--stable">
+                      → Stable
+                    </span>
+                  </td>
+                </tr>
+                <tr class="row-normal">
+                  <td>Nilwala Ganga</td>
+                  <td>Matara</td>
+                  <td>1.2</td>
+                  <td>
+                    <span class="status-chip status-chip--normal">
+                      <span
+                        class="status-chip__icon"
+                        aria-hidden="true"
+                      >
+                        ✓
+                      </span>
+                      <span class="status-chip__text">
+                        Normal
+                      </span>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="trend trend--falling">
+                      ↓ Falling
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Persistent alert dock -->
+    <section
+      class="alert-dock"
+      aria-label="Urgent flood alert"
+      aria-live="assertive"
+    >
+      <div class="alert-dock__inner">
+        <div class="alert-dock__icon" aria-hidden="true">🚨</div>
+        <div class="alert-dock__content">
+          <p class="alert-dock__message">
+            Kelani &amp; Kalu rivers above danger level in multiple areas.
+          </p>
+        </div>
+        <div class="alert-dock__actions">
+          <button
+            type="button"
+            class="btn btn-primary"
+          >
+            View affected areas
+          </button>
+          <button
+            type="button"
+            class="btn btn-ghost alert-ack-btn"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <div class="container page-footer__inner">
+        <p class="footer-text">
+          For emergencies, contact your local Disaster Management Centre or
+          117. This dashboard is for situational awareness and does not replace
+          official evacuation orders.
+        </p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Minimal JS for interactions -->
+  <script>
+    (function () {
+      const panel = {
+        name: document.getElementById("station-name"),
+        river: document.getElementById("station-river"),
+        town: document.getElementById("station-town"),
+        level: document.getElementById("station-level"),
+        statusPill: document.getElementById("station-status-pill"),
+        statusText: document.getElementById("station-status-text"),
+        trend: document.getElementById("station-trend"),
+        thrNormal: document.getElementById("station-threshold-normal"),
+        thrAlert: document.getElementById("station-threshold-alert"),
+        thrDanger: document.getElementById("station-threshold-danger"),
+      };
+
+      function setStatusPillClass(statusKey) {
+        const base = "status-pill";
+        panel.statusPill.className = base;
+        if (statusKey === "normal") {
+          panel.statusPill.classList.add("status-normal");
+        } else if (statusKey === "watch") {
+          panel.statusPill.classList.add("status-watch");
+        } else if (statusKey === "warning") {
+          panel.statusPill.classList.add("status-warning");
+        } else if (statusKey === "severe") {
+          panel.statusPill.classList.add("status-severe");
+        }
+      }
+
+      function setTrendClass(trendText) {
+        panel.trend.className = "trend";
+        const lower = trendText.toLowerCase();
+        if (lower.includes("rising")) {
+          panel.trend.classList.add("trend--rising");
+        } else if (lower.includes("falling")) {
+          panel.trend.classList.add("trend--falling");
+        } else {
+          panel.trend.classList.add("trend--stable");
+        }
+      }
+
+      function selectStation(stationId) {
+        const marker = document.querySelector(
+          '.station-marker[data-station-id="' + stationId + '"]'
+        );
+        if (!marker) return;
+
+        const river = marker.getAttribute("data-river");
+        const town = marker.getAttribute("data-town");
+        const level = marker.getAttribute("data-level");
+        const status = marker.getAttribute("data-status");
+        const statusKey = marker.getAttribute("data-status-key");
+        const trend = marker.getAttribute("data-trend");
+        const thrNormal = marker.getAttribute("data-threshold-normal");
+        const thrAlert = marker.getAttribute("data-threshold-alert");
+        const thrDanger = marker.getAttribute("data-threshold-danger");
+
+        panel.name.textContent = river + " – " + town;
+        panel.river.textContent = river;
+        panel.town.textContent = town;
+        panel.level.textContent = level;
+        panel.statusText.textContent = status;
+        panel.thrNormal.innerHTML = thrNormal;
+        panel.thrAlert.innerHTML = thrAlert;
+        panel.thrDanger.innerHTML = thrDanger;
+        panel.trend.textContent =
+          (trend.toLowerCase().startsWith("rising")
+            ? "↑ "
+            : trend.toLowerCase().startsWith("falling")
+            ? "↓ "
+            : "→ ") + trend;
+
+        setStatusPillClass(statusKey);
+        setTrendClass(trend);
+
+        document
+          .querySelectorAll(".station-marker.is-active")
+          .forEach(function (el) {
+            el.classList.remove("is-active");
+          });
+        marker.classList.add("is-active");
+
+        document
+          .querySelectorAll(".station-access-btn.is-active")
+          .forEach(function (el) {
+            el.classList.remove("is-active");
+          });
+        const accessBtn = document.querySelector(
+          '.station-access-btn[data-station-id="' + stationId + '"]'
+        );
+        if (accessBtn) {
+          accessBtn.classList.add("is-active");
+        }
+      }
+
+      // Attach handlers to markers
+      document
+        .querySelectorAll(".station-marker")
+        .forEach(function (marker) {
+          marker.addEventListener("click", function () {
+            const id = marker.getAttribute("data-station-id");
+            selectStation(id);
+          });
+        });
+
+      // Attach handlers to keyboard-accessible list
+      document
+        .querySelectorAll(".station-access-btn")
+        .forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            const id = btn.getAttribute("data-station-id");
+            selectStation(id);
+          });
+        });
+
+      // Alert dock acknowledgement with simple localStorage
+      const ALERT_KEY = "slfm-alert-ack";
+      const alertDock = document.querySelector(".alert-dock");
+      const ackBtn = document.querySelector(".alert-ack-btn");
+
+      if (alertDock && ackBtn && window.localStorage) {
+        try {
+          const isAck = localStorage.getItem(ALERT_KEY) === "1";
+          if (isAck) {
+            alertDock.classList.add("is-acknowledged");
+          }
+
+          ackBtn.addEventListener("click", function () {
+            alertDock.classList.add("is-acknowledged");
+            localStorage.setItem(ALERT_KEY, "1");
+          });
+        } catch (e) {
+          // fail gracefully on localStorage errors
+        }
+      }
+    })();
+  </script>
+</body>
+</html>
+

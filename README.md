@@ -1,4 +1,30 @@
-# FloodWatch LK - Sri Lanka Flood Monitoring & Alert System
+# FloodWatch LK - Damage Assessment Module 🔒
+
+**Private Development Repository**
+
+This is a private development fork of FloodWatch LK focused on satellite-based damage assessment and flood visualization capabilities. Inspired by Microsoft AI for Good's Cyclone Ditwah damage assessment visualizer.
+
+**Parent Repository:** https://github.com/thaaaru/floodwatch-lk (Public, Apache 2.0)
+**Status:** Experimental - Active Development
+
+---
+
+## What's Being Developed
+
+- 🛰️ Satellite imagery-based damage assessment
+- 📊 Before/after imagery comparison with side-by-side slider
+- 🏗️ AI-powered building damage classification
+- 🌊 Flood extent prediction mapping
+- 🗺️ Interactive Leaflet-based visualization
+- 📍 Geocoding search for rapid location assessment
+
+**Reference:** https://visualizers.aiforgood.ai/damage-assessment/srilanka_cyclone_ditwah_11_30_2025.html
+
+See [DAMAGE_ASSESSMENT_PLAN.md](DAMAGE_ASSESSMENT_PLAN.md) for detailed implementation plan.
+
+---
+
+## Original FloodWatch LK Description
 
 Real-time flood monitoring and early warning system for Sri Lanka that sends SMS alerts to subscribers when flood conditions are detected.
 
