@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Sri Lanka major river paths (simplified coordinates)
 // These rivers are monitored by the Navy flood monitoring system
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Rivers API Router
 Provides river and station data with current water levels

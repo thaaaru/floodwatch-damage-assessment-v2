@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * GFS Wind Data Provider
  * Uses Open-Meteo API as a JSON interface to GFS data

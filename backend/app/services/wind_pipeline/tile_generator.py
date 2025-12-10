@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Wind Tile Generator
 Creates vector tiles and raster tiles for wind visualization.

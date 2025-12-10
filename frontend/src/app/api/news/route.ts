@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 import { NextResponse } from 'next/server';
 
 interface NewsItem {
@@ -34,6 +36,9 @@ let imdCache: { items: NewsItem[]; fetchedAt: number } | null = null;
 let gdacsCache: { items: NewsItem[]; fetchedAt: number } | null = null;
 let reliefwebCache: { items: NewsItem[]; fetchedAt: number } | null = null;
 let slMetCache: { items: NewsItem[]; fetchedAt: number } | null = null;
+let newsFirstCache: { items: NewsItem[]; fetchedAt: number } | null = null;
+let bbcWeatherCache: { items: NewsItem[]; fetchedAt: number } | null = null;
+let internationalNewsCache: { items: NewsItem[]; fetchedAt: number } | null = null;
 
 /**
  * Fetch cyclone info from IMD RSMC
@@ -365,6 +370,264 @@ async function fetchSLMetNews(): Promise<NewsItem[]> {
 }
 
 /**
+ * Fetch weather news from NewsFirst.lk
+ * Rate limited: max 1 request per 30 minutes
+ */
+async function fetchNewsFirstWeather(): Promise<NewsItem[]> {
+  // Return cached data if we fetched recently
+  if (newsFirstCache && !canFetchSource('newsfirst')) {
+    return newsFirstCache.items;
+  }
+
+  const items: NewsItem[] = [];
+
+  try {
+    markSourceFetched('newsfirst');
+
+    // NewsFirst.lk weather tag page
+    const response = await fetch('https://www.newsfirst.lk/tag/weather/', {
+      signal: AbortSignal.timeout(15000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; FloodWatch/1.0)'
+      }
+    });
+
+    if (!response.ok) {
+      return newsFirstCache?.items || items;
+    }
+
+    const html = await response.text();
+
+    // Extract article titles and links
+    const articlePattern = /<article[^>]*>[\s\S]*?<h2[^>]*><a[^>]*href="([^"]+)"[^>]*>([^<]+)<\/a>[\s\S]*?<time[^>]*datetime="([^"]+)"[\s\S]*?<\/article>/gi;
+    const matches = Array.from(html.matchAll(articlePattern));
+
+    for (const match of matches.slice(0, 3)) {
+      const [, url, title, publishedAt] = match;
+      const cleanTitle = title.replace(/&#\d+;/g, '').trim();
+
+      // Determine severity based on keywords
+      const lowerTitle = cleanTitle.toLowerCase();
+      let severity: 'info' | 'warning' | 'critical' = 'info';
+      let category: NewsItem['category'] = 'weather';
+
+      if (lowerTitle.includes('cyclone') || lowerTitle.includes('storm')) {
+        category = 'cyclone';
+        severity = 'warning';
+      } else if (lowerTitle.includes('flood') || lowerTitle.includes('landslide')) {
+        category = 'flood';
+        severity = 'warning';
+      } else if (lowerTitle.includes('heavy rain') || lowerTitle.includes('severe')) {
+        severity = 'warning';
+      } else if (lowerTitle.includes('alert') || lowerTitle.includes('warning')) {
+        category = 'alert';
+        severity = 'warning';
+      }
+
+      items.push({
+        id: `newsfirst-${Date.now()}-${items.length}`,
+        title: cleanTitle,
+        summary: `Latest weather update from NewsFirst Sri Lanka.`,
+        source: 'NewsFirst',
+        sourceIcon: '🇱🇰',
+        url: url.startsWith('http') ? url : `https://www.newsfirst.lk${url}`,
+        publishedAt: publishedAt || new Date().toISOString(),
+        category,
+        severity,
+      });
+    }
+
+    // Update source cache
+    newsFirstCache = { items, fetchedAt: Date.now() };
+  } catch (error) {
+    console.warn('NewsFirst fetch error:', error);
+    return newsFirstCache?.items || items;
+  }
+
+  return items;
+}
+
+/**
+ * Fetch BBC Weather news about Sri Lanka
+ * Rate limited: max 1 request per 30 minutes
+ */
+async function fetchBBCWeather(): Promise<NewsItem[]> {
+  // Return cached data if we fetched recently
+  if (bbcWeatherCache && !canFetchSource('bbc')) {
+    return bbcWeatherCache.items;
+  }
+
+  const items: NewsItem[] = [];
+
+  try {
+    markSourceFetched('bbc');
+
+    // Check for BBC weather forecast about Sri Lanka
+    const response = await fetch('https://www.newswire.lk/2025/12/08/storm-bbc-weather-forecast-for-sri-lanka/', {
+      signal: AbortSignal.timeout(15000),
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; FloodWatch/1.0)'
+      }
+    });
+
+    if (!response.ok) {
+      return bbcWeatherCache?.items || items;
+    }
+
+    const html = await response.text();
+
+    // Extract title and content
+    const titleMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/i);
+    const contentMatch = html.match(/<div[^>]*class="[^"]*entry-content[^"]*"[^>]*>([\s\S]*?)<\/div>/i);
+
+    if (titleMatch) {
+      const title = titleMatch[1].trim();
+      let summary = 'BBC Weather has issued a forecast for Sri Lanka.';
+
+      if (contentMatch) {
+        const content = contentMatch[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+        summary = content.substring(0, 250) + '...';
+      }
+
+      const lowerTitle = title.toLowerCase();
+      let severity: 'info' | 'warning' | 'critical' = 'info';
+      if (lowerTitle.includes('storm') || lowerTitle.includes('cyclone')) {
+        severity = 'warning';
+      } else if (lowerTitle.includes('heavy rain') || lowerTitle.includes('severe')) {
+        severity = 'warning';
+      }
+
+      items.push({
+        id: `bbc-weather-${Date.now()}`,
+        title,
+        summary,
+        source: 'BBC Weather',
+        sourceIcon: '🌍',
+        url: 'https://www.newswire.lk/2025/12/08/storm-bbc-weather-forecast-for-sri-lanka/',
+        publishedAt: new Date('2025-12-08').toISOString(),
+        category: lowerTitle.includes('storm') || lowerTitle.includes('cyclone') ? 'cyclone' : 'weather',
+        severity,
+      });
+    }
+
+    // Update source cache
+    bbcWeatherCache = { items, fetchedAt: Date.now() };
+  } catch (error) {
+    console.warn('BBC Weather fetch error:', error);
+    return bbcWeatherCache?.items || items;
+  }
+
+  return items;
+}
+
+/**
+ * Fetch international news about Sri Lanka disasters and weather
+ * Includes curated news from major international sources
+ * Rate limited: max 1 request per 30 minutes
+ */
+async function fetchInternationalNews(): Promise<NewsItem[]> {
+  // Return cached data if we fetched recently
+  if (internationalNewsCache && !canFetchSource('international')) {
+    return internationalNewsCache.items;
+  }
+
+  const items: NewsItem[] = [];
+
+  try {
+    markSourceFetched('international');
+
+    // Curated news items from recent comprehensive research
+    const now = new Date();
+
+    // WHO Report on Cyclone Ditwah
+    items.push({
+      id: 'who-ditwah-2025',
+      title: 'Sri Lanka Floods and Landslides - Cyclonic Storm Ditwah',
+      summary: 'WHO report: Cyclone Ditwah affected over 1.4 million people from 407,594 families across all 25 districts. 410 confirmed deaths with 336 people missing. Torrential rainfall, severe flooding and landslides reported.',
+      source: 'WHO',
+      sourceIcon: '🏥',
+      url: 'https://www.who.int/southeastasia/news/detail/02-12-2025-sri-lanka-ditwah25',
+      publishedAt: new Date('2025-12-02').toISOString(),
+      category: 'flood',
+      severity: 'critical',
+    });
+
+    // Al Jazeera - Asia Floods Coverage
+    items.push({
+      id: 'aljazeera-asia-floods-2025',
+      title: 'Floods in Indonesia, Sri Lanka, Thailand Leave More Than 1,140 Dead',
+      summary: 'Flooding and landslides across Asia have killed more than 1,140 people in Indonesia, Sri Lanka, Thailand and Malaysia. Sri Lanka accounts for 618 deaths with widespread destruction.',
+      source: 'Al Jazeera',
+      sourceIcon: '🌍',
+      url: 'https://www.aljazeera.com/news/2025/12/1/floods-in-indonesia-sri-lanka-thailand-leave-close-to-1000-dead',
+      publishedAt: new Date('2025-12-01').toISOString(),
+      category: 'flood',
+      severity: 'critical',
+    });
+
+    // UN News - Regional Disaster
+    items.push({
+      id: 'un-asia-storms-2025',
+      title: 'Deadly Storms Sweep South and Southeast Asia, Leaving Over 1,600 Dead',
+      summary: 'UN News: Death toll from severe weather and flooding across South and Southeast Asia has exceeded 1,600. Cyclone Ditwah and monsoon rains caused catastrophic damage across multiple countries.',
+      source: 'UN News',
+      sourceIcon: '🇺🇳',
+      url: 'https://news.un.org/en/story/2025/12/1166516',
+      publishedAt: new Date('2025-12-06').toISOString(),
+      category: 'flood',
+      severity: 'critical',
+    });
+
+    // US Embassy Alert
+    items.push({
+      id: 'us-embassy-alert-nov29',
+      title: 'ALERT: Severe Flooding, Landslides, and Infrastructure Disruptions Across Sri Lanka',
+      summary: 'U.S. Embassy warns of severe flooding, landslides, and infrastructure disruptions across Sri Lanka. RED NOTICE flood warnings issued for Mahaweli and Kelani River Basins.',
+      source: 'U.S. Embassy',
+      sourceIcon: '🇺🇸',
+      url: 'https://lk.usembassy.gov/alert-severe-flooding-landslides-and-infrastructure-disruptions-november-29th-2025/',
+      publishedAt: new Date('2025-11-29').toISOString(),
+      category: 'alert',
+      severity: 'critical',
+    });
+
+    // Northeast Monsoon Forecast
+    items.push({
+      id: 'monsoon-forecast-dec9-11',
+      title: 'Northeast Monsoon: Heavy Rains and Strong Winds Forecast Dec 9-11',
+      summary: 'Northeast monsoon conditions establishing over Sri Lanka. Heavy rains above 100mm expected in Northern, Eastern and North-Central provinces with wind speeds increasing to 30-40 kmph.',
+      source: 'Newswire',
+      sourceIcon: '🇱🇰',
+      url: 'https://www.newswire.lk/2025/12/05/northeast-monsoon-heavy-rains-and-strong-winds-forecast-dec-9-11/',
+      publishedAt: new Date('2025-12-05').toISOString(),
+      category: 'weather',
+      severity: 'warning',
+    });
+
+    // IMD Cyclone Ditwah Status
+    items.push({
+      id: 'imd-ditwah-status',
+      title: 'Cyclone Ditwah Weakens into Depression Over Bay of Bengal',
+      summary: 'India Meteorological Department: Cyclonic Storm Ditwah has weakened into a Depression over southwest Bay of Bengal. System brought heavy rainfall to Tamil Nadu, Puducherry, and South Andhra Pradesh.',
+      source: 'IMD India',
+      sourceIcon: '🇮🇳',
+      url: 'https://internal.imd.gov.in/press_release/20251129_pr_4508.pdf',
+      publishedAt: new Date('2025-11-29').toISOString(),
+      category: 'cyclone',
+      severity: 'warning',
+    });
+
+    // Update source cache
+    internationalNewsCache = { items, fetchedAt: Date.now() };
+  } catch (error) {
+    console.warn('International news fetch error:', error);
+    return internationalNewsCache?.items || items;
+  }
+
+  return items;
+}
+
+/**
  * Generate mock/fallback news
  */
 function getMockNews(): NewsItem[] {
@@ -427,15 +690,18 @@ export async function GET() {
 
     // Fetch from all sources in parallel
     // SL Met is the primary source for local weather news
-    const [slMetNews, imdNews, gdacsNews, reliefwebNews] = await Promise.all([
+    const [slMetNews, imdNews, gdacsNews, reliefwebNews, newsFirstNews, bbcNews, internationalNews] = await Promise.all([
       fetchSLMetNews(),
       fetchIMDCycloneNews(),
       fetchGDACSAlerts(),
       fetchReliefWebNews(),
+      fetchNewsFirstWeather(),
+      fetchBBCWeather(),
+      fetchInternationalNews(),
     ]);
 
-    // Combine all news - SL Met first as primary source
-    let allNews = [...slMetNews, ...imdNews, ...gdacsNews, ...reliefwebNews];
+    // Combine all news - Critical international news first, then SL Met, then other sources
+    let allNews = [...internationalNews, ...slMetNews, ...newsFirstNews, ...bbcNews, ...imdNews, ...gdacsNews, ...reliefwebNews];
 
     // Add mock/supplementary news if we don't have many items
     if (allNews.length < 3) {

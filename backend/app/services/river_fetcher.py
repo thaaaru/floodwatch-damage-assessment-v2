@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 River Water Level Fetcher Service
 Fetches real-time river water level data from Sri Lanka Navy flood monitoring system

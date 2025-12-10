@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Summary API Endpoint
  * GET /api/wind/summary

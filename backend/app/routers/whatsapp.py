@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 WhatsApp API Router (Twilio)
 Handles webhooks, incoming messages, and subscriptions via Twilio WhatsApp

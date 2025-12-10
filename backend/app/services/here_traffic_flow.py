@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 HERE Traffic Flow API integration.
 Provides real-time traffic speeds and congestion levels for Sri Lanka roads.

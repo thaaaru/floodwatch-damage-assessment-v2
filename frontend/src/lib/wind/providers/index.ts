@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Data Providers Index
  * Exports all wind data providers

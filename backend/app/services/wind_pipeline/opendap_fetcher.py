@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 NOAA NOMADS OPeNDAP (DODS) Wind Data Fetcher
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 from twilio.rest import Client
 from twilio.base.exceptions import TwilioException
 import logging

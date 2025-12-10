@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Wind Data API Router
 Provides endpoints for wind visualization data from GFS model.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * ERA5 Wind Data Provider
  * Uses ECMWF Climate Data Store (CDS) API

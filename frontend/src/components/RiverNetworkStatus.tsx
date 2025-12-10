@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, DonutChart, BarList } from '@tremor/react';
 import { api, IrrigationResponse } from '@/lib/api';
 
 interface RiverStatusSummary {
@@ -76,26 +77,6 @@ export default function RiverNetworkStatus() {
     },
   ].filter(item => item.value > 0);
 
-  // Data for bar list (top risk rivers)
-  const topRiskRivers = data.stations
-    .sort((a, b) => {
-      const statusPriority: Record<string, number> = {
-        'major_flood': 4,
-        'minor_flood': 3,
-        'alert': 2,
-        'normal': 1,
-      };
-      return (statusPriority[b.status] || 0) - (statusPriority[a.status] || 0);
-    })
-    .slice(0, 5)
-    .map(station => ({
-      name: station.station,
-      value: station.pct_to_alert,
-      color: station.status === 'major_flood' ? 'rose' :
-             station.status === 'minor_flood' ? 'orange' :
-             station.status === 'alert' ? 'amber' : 'emerald',
-    }));
-
   const getStatusBgColor = (status: string) => {
     switch (status) {
       case 'major_flood': return 'bg-rose-100 text-rose-700 border-rose-300';
@@ -108,7 +89,7 @@ export default function RiverNetworkStatus() {
   const criticalCount = summary.major_flood + summary.minor_flood;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: '380px' }}>
+    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: '320px' }}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-blue-50">
         <div className="flex items-center gap-2">
@@ -174,31 +155,6 @@ export default function RiverNetworkStatus() {
             <div className="text-xl font-bold">{summary.normal}</div>
           </a>
         </div>
-
-        {/* Top Risk Stations */}
-        {topRiskRivers.length > 0 && (
-          <div>
-            <div className="text-xs font-bold text-slate-900 mb-2">Top Risk Stations</div>
-            <div className="space-y-1">
-              {topRiskRivers.map((river, idx) => (
-                <a
-                  key={idx}
-                  href="/flood-info"
-                  className="flex items-center justify-between text-xs py-1 px-2 bg-slate-50 rounded border border-slate-200 w-full hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  <span className="text-slate-900 font-medium truncate flex-1 text-left">{river.name}</span>
-                  <span className={`font-bold ml-2 ${
-                    river.value >= 100 ? 'text-rose-700' :
-                    river.value >= 80 ? 'text-orange-700' :
-                    river.value >= 60 ? 'text-amber-700' : 'text-emerald-700'
-                  }`}>
-                    {river.value.toFixed(0)}%
-                  </span>
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* View All Button */}
         <a

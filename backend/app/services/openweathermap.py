@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 OpenWeatherMap One Call API 3.0 Service
 Provides early warning system with government weather alerts,

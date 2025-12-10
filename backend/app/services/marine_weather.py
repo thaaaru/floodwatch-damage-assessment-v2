@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Open-Meteo Marine API integration for coastal weather data.
 Provides wave height, sea conditions for coastal flood risk assessment.

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 GFS Wind Data Pipeline
 Downloads GFS GRIB2 files (UGRD + VGRD @ 10m) from NOAA NOMADS,

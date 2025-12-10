@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 from contextlib import asynccontextmanager
 from datetime import datetime
 import logging

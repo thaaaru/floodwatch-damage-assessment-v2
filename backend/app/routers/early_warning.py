@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Early Warning System Router
 Provides endpoints for flood early warning data using OpenWeatherMap One Call API 3.0

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -144,13 +146,29 @@ export default function FloodInformationPage() {
             {/* River Network Status */}
             {riverData && (
               <div className="bg-gray-800 rounded-lg p-3 sm:p-4">
-                <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl sm:text-2xl">🌊</span>
-                    <span>River Network Status</span>
-                  </div>
-                  <span className="text-xs sm:text-sm font-normal text-gray-400">({riverData.count} stations monitored)</span>
-                </h2>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
+                  <h2 className="text-base sm:text-lg font-semibold flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl sm:text-2xl">🌊</span>
+                      <span>River Network Status</span>
+                    </div>
+                    <span className="text-xs sm:text-sm font-normal text-gray-400">({riverData.count} stations monitored)</span>
+                  </h2>
+                  <a
+                    href="https://www.arcgis.com/apps/dashboards/2cffe83c9ff5497d97375498bdf3ff38"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors shadow-lg hover:shadow-xl"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>Live Dashboard</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                  </a>
+                </div>
 
                 {/* River Summary by River Name */}
                 <div className="mb-3 sm:mb-4">

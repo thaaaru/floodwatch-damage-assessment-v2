@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Wind Pipeline Package
 GFS wind data processing and serving utilities.

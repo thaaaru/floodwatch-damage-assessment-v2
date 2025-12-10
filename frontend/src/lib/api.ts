@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 // Production API URL - hardcoded for reliability
 const PRODUCTION_API = 'https://api.hackandbuild.dev';
 

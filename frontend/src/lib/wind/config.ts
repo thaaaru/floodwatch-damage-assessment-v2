@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Data Engine - Configuration
  * Centralized configuration for all wind data providers and settings
