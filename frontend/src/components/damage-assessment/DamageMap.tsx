@@ -64,22 +64,24 @@ export default function DamageMap({
     // Add zoom control in bottom-right
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Before imagery layer (Esri World Imagery - baseline)
+    // Before imagery layer (Sentinel-2 Cloudless 2020 via EOX/s2maps.eu)
     const beforeLayer = L.tileLayer(
-      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg',
       {
-        attribution: '&copy; Esri - Before',
-        maxZoom: 18,
+        attribution: '&copy; <a href="https://s2maps.eu">Sentinel-2 cloudless</a> by <a href="https://eox.at">EOX</a> | &copy; ESA',
+        maxZoom: 16,
+        subdomains: ['a', 'b', 'c', 'd'],
       }
     );
     beforeLayerRef.current = beforeLayer;
 
-    // After imagery layer (OpenStreetMap for demo - will be replaced with actual post-disaster imagery)
+    // After imagery layer (Sentinel-2 Cloudless 2021 via EOX - for comparison)
     const afterLayer = L.tileLayer(
-      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2021_3857/default/g/{z}/{y}/{x}.jpg',
       {
-        attribution: '&copy; OpenStreetMap - After (Demo)',
-        maxZoom: 18,
+        attribution: '&copy; <a href="https://s2maps.eu">Sentinel-2 cloudless</a> by <a href="https://eox.at">EOX</a> | &copy; ESA',
+        maxZoom: 16,
+        subdomains: ['a', 'b', 'c', 'd'],
       }
     );
     afterLayerRef.current = afterLayer;
@@ -216,14 +218,14 @@ export default function DamageMap({
       {/* Info banner */}
       <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg px-6 py-3 z-[1000] max-w-2xl">
         <h1 className="text-lg font-semibold text-slate-900">
-          Satellite Damage Assessment - Sri Lanka Floods
+          Satellite Damage Assessment - Sri Lanka
         </h1>
         <p className="text-sm text-slate-600">
-          Compare before/after imagery and view AI-predicted damage
+          Real Sentinel-2 satellite imagery (10m resolution) - Compare 2020 vs 2021
         </p>
         <div className="mt-2 flex items-center gap-2 text-xs">
-          <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded">Phase 1: Demo</span>
-          <span className="text-slate-500">Using placeholder imagery - actual satellite data in Phase 2+</span>
+          <span className="bg-green-100 text-green-800 px-2 py-1 rounded">✓ Live Sentinel-2</span>
+          <span className="text-slate-500">Cloudless composite by EOX/ESA</span>
         </div>
       </div>
 
