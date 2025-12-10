@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 TomTom Traffic Flow API integration.
 Provides real-time traffic speeds and travel times for Sri Lanka roads.

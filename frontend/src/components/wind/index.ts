@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Visualization Components
  * Export all wind-related React components

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Data Engine - Main Export
  * Production-ready wind visualization system

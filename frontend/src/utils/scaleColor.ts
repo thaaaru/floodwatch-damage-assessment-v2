@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Speed Color Scale Utilities
  * Provides continuous gradient color mapping for wind speed visualization

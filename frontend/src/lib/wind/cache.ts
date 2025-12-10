@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Data Cache
  * In-memory caching layer for wind data with TTL support

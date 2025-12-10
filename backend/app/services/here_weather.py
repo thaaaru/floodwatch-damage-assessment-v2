@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 HERE Destination Weather API integration.
 Provides weather forecasts, observations, and alerts for locations in Sri Lanka.

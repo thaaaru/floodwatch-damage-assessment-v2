@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 from contextlib import asynccontextmanager
 from datetime import datetime
 import logging
@@ -11,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 
 from .config import get_settings
 from .database import engine, Base
-from .routers import weather, alerts, subscribers, districts, intel, whatsapp, early_warning, flood_map, wind
+from .routers import weather, alerts, subscribers, districts, intel, whatsapp, early_warning, flood_map, wind, rivers
 from .jobs.scheduler import start_scheduler, stop_scheduler
 from .schemas import HealthResponse
 
@@ -95,6 +97,7 @@ app.include_router(whatsapp.router)
 app.include_router(early_warning.router)
 app.include_router(flood_map.router)
 app.include_router(wind.router)
+app.include_router(rivers.router)
 
 
 @app.get("/api/health", response_model=HealthResponse)

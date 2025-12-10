@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 GFS GRIB2 Data Fetcher
 Downloads real GFS wind data from NOAA NOMADS and processes with xarray/cfgrib.

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Data Engine - Type Definitions
  * Core types for multi-source wind visualization system

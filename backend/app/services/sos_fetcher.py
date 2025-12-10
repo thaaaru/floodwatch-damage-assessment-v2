@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 SOS Data Fetcher Service
 Fetches emergency SOS data from floodsupport.org API

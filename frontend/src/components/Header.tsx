@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 'use client';
 
 import Link from 'next/link';
@@ -10,6 +12,8 @@ const navigation = [
   { name: 'Early Warning', href: '/early-warning' },
   { name: 'Flood Info', href: '/flood-info' },
   { name: 'Intel', href: '/intel' },
+  { name: 'External Links', href: '/external-links' },
+  { name: 'Data Sources', href: '/data-sources' },
   { name: 'Contacts', href: '/contacts' },
 ];
 
@@ -42,7 +46,7 @@ export default function Header() {
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-12">
           {/* Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="relative">
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
@@ -53,6 +57,19 @@ export default function Header() {
               </div>
               <span className="font-semibold text-slate-900 text-sm whitespace-nowrap">FloodWatch Sri Lanka</span>
             </Link>
+            <a
+              href="https://hackandbuild.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 rounded text-xs text-slate-600 hover:text-slate-900 transition-colors"
+              title="Built by Hack & Build"
+            >
+              <span>by</span>
+              <span className="font-semibold">Hack & Build</span>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+              </svg>
+            </a>
           </div>
 
           {/* Desktop Navigation */}

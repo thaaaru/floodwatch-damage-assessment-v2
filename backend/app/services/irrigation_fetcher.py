@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Irrigation Department River Water Level Fetcher
 Fetches real-time river water level data from Sri Lanka Irrigation Department's ArcGIS service.

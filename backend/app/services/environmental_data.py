@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Environmental Data Service
 Fetches deforestation and population density data from World Bank API

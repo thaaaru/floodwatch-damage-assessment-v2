@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Field Fusion Logic
  * Merges wind data from multiple providers with priority-based selection

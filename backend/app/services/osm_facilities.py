@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 OpenStreetMap Facilities Service
 Fetches nearby hospitals, police stations, shelters from Overpass API

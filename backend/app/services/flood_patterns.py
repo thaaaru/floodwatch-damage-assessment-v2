@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Flood Pattern Analysis Service
 Analyzes historical weather data to identify flood patterns in Sri Lanka.

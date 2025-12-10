@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * News Service for FloodWatch.lk
  * Aggregates weather/flood news from multiple sources

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 WhatsApp Service via Twilio
 Sends flood alerts via Twilio's WhatsApp API

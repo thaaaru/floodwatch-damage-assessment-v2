@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Intelligence Engine Service
 Automated analysis of SOS data + weather to produce actionable intelligence

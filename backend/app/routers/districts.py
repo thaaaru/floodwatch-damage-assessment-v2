@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import func

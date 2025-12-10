@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 HERE Traffic Incidents API integration.
 Provides real-time road incidents, closures, and traffic data for Sri Lanka.

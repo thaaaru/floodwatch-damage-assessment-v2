@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Vector Utilities
  * Converts wind U/V components to direction, magnitude, and visual properties

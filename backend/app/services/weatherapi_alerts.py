@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 WeatherAPI.com integration for official weather alerts.
 Fetches weather alerts and warnings for Sri Lanka.

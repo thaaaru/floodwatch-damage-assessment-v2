@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * Wind Data Engine - Utility Functions
  * Core calculations and helper functions for wind data processing

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * OpenWeatherMap Wind Data Provider
  * Uses OpenWeatherMap One Call API as a backup to Open-Meteo

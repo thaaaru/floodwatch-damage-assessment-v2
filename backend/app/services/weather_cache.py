@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 Weather data caching service.
 Now uses HERE Weather API as primary source (more generous rate limits).

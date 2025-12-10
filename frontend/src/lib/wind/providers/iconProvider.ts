@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0
+
 /**
  * ICON Wind Data Provider
  * Fetches data from DWD (German Weather Service) Open Data

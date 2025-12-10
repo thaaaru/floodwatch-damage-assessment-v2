@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 GeoNames API integration for elevation and location data.
 Enhances flood risk assessment with terrain information.
