@@ -113,6 +113,11 @@ export function LayerPanel({
 
             <div className="border-t pt-4">
               <h3 className="text-sm font-semibold text-slate-900 mb-3">Overlay Layers</h3>
+              <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-3">
+                <p className="text-xs text-blue-800">
+                  <strong>Phase 2:</strong> Damage and flood overlays require satellite imagery processing and AI models (not yet implemented).
+                </p>
+              </div>
 
               {/* Damage layer */}
               <div className="mb-3">
