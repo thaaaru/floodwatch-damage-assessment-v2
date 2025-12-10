@@ -34,7 +34,7 @@ Public disclosure of vulnerabilities could:
 
 If you discover a security vulnerability, please report it privately:
 
-1. **Email**: Send details to **security@floodwatch-lk.org** (placeholder - update with actual contact)
+1. **Email**: Send details to **tharaka@hackandbuild.dev** (placeholder - update with actual contact)
 
 2. **Include in your report**:
    - Description of the vulnerability
@@ -209,12 +209,12 @@ After a vulnerability is fixed:
 ## Contact
 
 For security concerns:
-- **Email**: security@floodwatch-lk.org (placeholder - update with actual contact)
+- **Email**: tharaka@hackandbuild.dev (placeholder - update with actual contact)
 - **Response Time**: Within 48 hours
 - **Encryption**: PGP key available on request
 
 For non-security issues:
-- Use GitHub issues: https://github.com/[your-org]/floodwatch-lk/issues
+- Use GitHub issues: https://github.com/thaaaru/floodwatch-lk/issues
 
 ## Acknowledgments
 

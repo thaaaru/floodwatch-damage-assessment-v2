@@ -20,7 +20,11 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAUQv4YkDz2D0IgQqi6Ncocjm5sxFMp8zM';
+  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+  if (!mapsApiKey) {
+    console.warn('Google Maps API key not configured. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.');
+  }
 
   return (
     <html lang="en" className={inter.variable}>
