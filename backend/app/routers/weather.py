@@ -68,15 +68,22 @@ async def get_all_weather(
             asyncio.create_task(weather_cache.refresh_cache())
             return cached_data
         else:
-            # No cached data at all - must wait for refresh
+            # No cached data at all - try refresh with timeout, but don't block too long
             try:
-                await weather_cache.refresh_cache()
-                return weather_cache.get_all_weather(hours)
+                # Use asyncio.wait_for to prevent long waits that cause 502 errors
+                refresh_task = weather_cache.refresh_cache()
+                # Wait max 5 seconds for refresh, then return empty or stale data
+                try:
+                    await asyncio.wait_for(refresh_task, timeout=5.0)
+                    return weather_cache.get_all_weather(hours)
+                except asyncio.TimeoutError:
+                    # Refresh is taking too long - return empty array to prevent 502
+                    logger.warning("Weather cache refresh timed out, returning empty data")
+                    return []
             except Exception as e:
-                raise HTTPException(
-                    status_code=503,
-                    detail=f"Weather service unavailable and no cached data: {str(e)}"
-                )
+                logger.error(f"Weather service error: {e}")
+                # Return empty array instead of raising 503 to prevent 502 gateway errors
+                return []
 
     # Return fresh cached data
     return cached_data
