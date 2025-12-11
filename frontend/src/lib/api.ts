@@ -149,12 +149,19 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        // Handle 502 Bad Gateway specifically
-        if (response.status === 502) {
-          console.error(`Backend gateway error (502) for ${endpoint}. Backend may be temporarily unavailable.`);
+        // Handle 502 Bad Gateway and other server errors
+        if (response.status >= 500) {
+          console.error(`Backend server error (${response.status}) for ${endpoint}. Backend may be temporarily unavailable.`);
           // Return empty array/object based on expected type to prevent UI crashes
-          if (endpoint.includes('/alerts')) {
+          if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
             return [] as T;
+          }
+          // For irrigation and other object responses, return empty object with expected structure
+          if (endpoint.includes('/irrigation')) {
+            return { count: 0, summary: {}, stations: [] } as T;
+          }
+          if (endpoint.includes('/rivers')) {
+            return { count: 0, summary: {}, stations: [] } as T;
           }
           return {} as T;
         }

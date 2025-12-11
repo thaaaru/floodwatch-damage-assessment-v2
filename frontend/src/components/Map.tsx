@@ -583,9 +583,10 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     const fetchFloodGaugeData = async () => {
       try {
         const data = await api.getIrrigationData();
-        setFloodGaugeStations(data.stations);
+        setFloodGaugeStations(data?.stations || []);
       } catch (err) {
         console.error('Failed to fetch flood gauge data:', err);
+        setFloodGaugeStations([]); // Set empty array on error
       }
     };
 
