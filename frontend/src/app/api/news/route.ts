@@ -112,12 +112,18 @@ async function fetchGDACSAlerts(): Promise<NewsItem[]> {
   try {
     markSourceFetched('gdacs');
 
+    // Skip GDACS during build to avoid API errors
+    // GDACS API is unreliable and often returns empty/malformed responses
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_ENV) {
+      return gdacsCache?.items || items;
+    }
+
     // GDACS RSS/API for South Asia region
     const response = await fetch(
       'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?eventlist=TC,FL&country=LKA,IND,BGD,MMR&fromdate=' +
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       {
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(5000),
         headers: {
           'Accept': 'application/json'
         }
@@ -130,19 +136,23 @@ async function fetchGDACSAlerts(): Promise<NewsItem[]> {
 
     // Check if response has content before parsing JSON
     const contentLength = response.headers.get('content-length');
-    if (contentLength === '0') {
+    if (!contentLength || contentLength === '0') {
       return gdacsCache?.items || items;
     }
 
     let data;
     try {
-      data = await response.json();
-    } catch (jsonError) {
-      console.warn('GDACS JSON parse error:', jsonError);
+      const text = await response.text();
+      if (!text || text.trim().length === 0) {
+        return gdacsCache?.items || items;
+      }
+      data = JSON.parse(text);
+    } catch {
+      // Silent failure - GDACS is optional
       return gdacsCache?.items || items;
     }
 
-    if (data.features && Array.isArray(data.features)) {
+    if (data && data.features && Array.isArray(data.features)) {
       for (const feature of data.features.slice(0, 5)) {
         const props = feature.properties || {};
         const alertLevel = props.alertlevel || 'Green';
@@ -163,8 +173,8 @@ async function fetchGDACSAlerts(): Promise<NewsItem[]> {
 
     // Update source cache
     gdacsCache = { items, fetchedAt: Date.now() };
-  } catch (error) {
-    console.warn('GDACS fetch error:', error);
+  } catch {
+    // Silent failure - GDACS is optional
     return gdacsCache?.items || items;
   }
 
