@@ -133,15 +133,20 @@ class ApiClient {
 
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
     try {
+      // Create abort controller for timeout (fallback for browsers without AbortSignal.timeout)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const response = await fetch(this.getUrl(endpoint), {
         ...options,
         headers: {
           'Content-Type': 'application/json',
           ...options?.headers,
         },
-        // Add timeout for production
-        signal: AbortSignal.timeout(30000), // 30 second timeout
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         // Handle 502 Bad Gateway specifically
