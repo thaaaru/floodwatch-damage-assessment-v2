@@ -1287,7 +1287,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       .filter((item): item is { alert: GovernmentAlert; lat: number; lon: number } => item !== null);
 
     // Group alerts by district to avoid duplicate markers
-    const alertsByDistrict = new Map<string, { alert: GovernmentAlert; lat: number; lon: number }[]>();
+    type AlertWithCoords = { alert: GovernmentAlert; lat: number; lon: number };
+    const alertsByDistrict = new globalThis.Map<string, AlertWithCoords[]>();
     alertsWithCoords.forEach(item => {
       const key = `${item.lat},${item.lon}`;
       if (!alertsByDistrict.has(key)) {
