@@ -132,20 +132,45 @@ class ApiClient {
   }
 
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(this.getUrl(endpoint), {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
-      },
-    });
+    try {
+      const response = await fetch(this.getUrl(endpoint), {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options?.headers,
+        },
+        // Add timeout for production
+        signal: AbortSignal.timeout(30000), // 30 second timeout
+      });
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-      throw new Error(error.detail || `HTTP ${response.status}`);
+      if (!response.ok) {
+        // Handle 502 Bad Gateway specifically
+        if (response.status === 502) {
+          console.error(`Backend gateway error (502) for ${endpoint}. Backend may be temporarily unavailable.`);
+          // Return empty array/object based on expected type to prevent UI crashes
+          if (endpoint.includes('/alerts')) {
+            return [] as T;
+          }
+          return {} as T;
+        }
+        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        throw new Error(error.detail || `HTTP ${response.status}`);
+      }
+
+      return response.json();
+    } catch (error: any) {
+      // Handle network errors, timeouts, etc.
+      if (error.name === 'AbortError' || error.name === 'TimeoutError') {
+        console.error(`Request timeout for ${endpoint}`);
+        // Return empty result to prevent UI crashes
+        if (endpoint.includes('/alerts')) {
+          return [] as T;
+        }
+        return {} as T;
+      }
+      // Re-throw other errors
+      throw error;
     }
-
-    return response.json();
   }
 
   async getDistricts(): Promise<District[]> {
