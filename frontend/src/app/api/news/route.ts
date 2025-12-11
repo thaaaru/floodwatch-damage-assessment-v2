@@ -128,7 +128,19 @@ async function fetchGDACSAlerts(): Promise<NewsItem[]> {
       return gdacsCache?.items || items;
     }
 
-    const data = await response.json();
+    // Check if response has content before parsing JSON
+    const contentLength = response.headers.get('content-length');
+    if (contentLength === '0') {
+      return gdacsCache?.items || items;
+    }
+
+    let data;
+    try {
+      data = await response.json();
+    } catch (jsonError) {
+      console.warn('GDACS JSON parse error:', jsonError);
+      return gdacsCache?.items || items;
+    }
 
     if (data.features && Array.isArray(data.features)) {
       for (const feature of data.features.slice(0, 5)) {
