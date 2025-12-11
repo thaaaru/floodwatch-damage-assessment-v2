@@ -158,10 +158,16 @@ class ApiClient {
           }
           // For irrigation and other object responses, return empty object with expected structure
           if (endpoint.includes('/irrigation')) {
-            return { count: 0, summary: {}, stations: [] } as T;
+            return { count: 0, summary: { total_stations: 0, normal: 0, alert: 0, minor_flood: 0, major_flood: 0, highest_risk_station: null }, stations: [] } as T;
           }
           if (endpoint.includes('/rivers')) {
-            return { count: 0, summary: {}, stations: [] } as T;
+            return { count: 0, summary: { normal: 0, alert: 0, rising: 0, falling: 0 }, stations: [] } as T;
+          }
+          if (endpoint.includes('/early-warning')) {
+            return { total_alerts: 0, alerts: [] } as T;
+          }
+          if (endpoint.includes('/weather')) {
+            return [] as T;
           }
           return {} as T;
         }
@@ -175,8 +181,29 @@ class ApiClient {
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         console.error(`Request timeout for ${endpoint}`);
         // Return empty result to prevent UI crashes
-        if (endpoint.includes('/alerts')) {
+        if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
           return [] as T;
+        }
+        if (endpoint.includes('/irrigation')) {
+          return { count: 0, summary: {}, stations: [] } as T;
+        }
+        if (endpoint.includes('/rivers')) {
+          return { count: 0, summary: {}, stations: [] } as T;
+        }
+        return {} as T;
+      }
+      // Handle fetch errors (network failures, CORS, etc.)
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.error(`Network error for ${endpoint}:`, error.message);
+        // Return empty result based on endpoint type
+        if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
+          return [] as T;
+        }
+        if (endpoint.includes('/irrigation')) {
+          return { count: 0, summary: {}, stations: [] } as T;
+        }
+        if (endpoint.includes('/rivers')) {
+          return { count: 0, summary: {}, stations: [] } as T;
         }
         return {} as T;
       }

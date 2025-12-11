@@ -107,7 +107,7 @@ export default function Dashboard() {
     const fetchRainSummary = async () => {
       try {
         const weatherData = await api.getAllWeather(selectedHours);
-        if (!weatherData || weatherData.length === 0) return;
+        if (!weatherData || !Array.isArray(weatherData) || weatherData.length === 0) return;
 
         const rainfallKey = selectedHours === 24 ? 'rainfall_24h_mm' :
                           selectedHours === 48 ? 'rainfall_48h_mm' : 'rainfall_72h_mm';
