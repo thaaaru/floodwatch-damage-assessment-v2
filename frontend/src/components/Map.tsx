@@ -42,17 +42,29 @@ function MapController({ weatherData }: MapControllerProps) {
 
 // Color scale functions for different data types
 
-// Rainfall color: gradient from white (dry) to dark blue (heavy rain)
+// Rainfall color: gradient from white (dry) to dark blue (heavy rain) - 20 points for 0-200+mm
 function getRainfallColor(rainfall: number | null): string {
-  if (rainfall === null || rainfall === 0) return '#ffffff'; // white - dry
-  if (rainfall < 1) return '#e0f2fe';    // sky-100 - trace rainfall
-  if (rainfall < 5) return '#bae6fd';    // sky-200 - very light
-  if (rainfall < 10) return '#7dd3fc';   // sky-300 - light
-  if (rainfall < 25) return '#38bdf8';   // sky-400 - light-moderate
-  if (rainfall < 50) return '#0ea5e9';   // sky-500 - moderate
-  if (rainfall < 100) return '#0284c7';  // sky-600 - moderate-heavy
-  if (rainfall < 150) return '#0369a1';  // sky-700 - heavy
-  return '#0c4a6e';                       // sky-900 - extreme (dark blue)
+  if (rainfall === null || rainfall === 0) return '#ffffff';     // 0mm - white
+  if (rainfall < 1) return '#f3f8fe';      // 0.1mm
+  if (rainfall < 2) return '#e8f2fd';      // 0.5mm
+  if (rainfall < 3) return '#dde9fc';      // 1mm
+  if (rainfall < 5) return '#d0dffb';      // 2mm
+  if (rainfall < 7) return '#bfe5fa';      // 5mm
+  if (rainfall < 10) return '#a8d8f8';     // 7mm
+  if (rainfall < 15) return '#8ecff7';     // 10mm
+  if (rainfall < 20) return '#6fbff4';     // 15mm
+  if (rainfall < 25) return '#4dafef';     // 20mm
+  if (rainfall < 30) return '#2099e8';     // 25mm
+  if (rainfall < 40) return '#0f7fce';     // 30mm
+  if (rainfall < 50) return '#0d70ba';     // 40mm
+  if (rainfall < 60) return '#0a5fa1';     // 50mm
+  if (rainfall < 70) return '#084f89';     // 60mm
+  if (rainfall < 80) return '#063f71';     // 70mm
+  if (rainfall < 100) return '#042f59';    // 80mm
+  if (rainfall < 130) return '#032241';    // 100mm
+  if (rainfall < 160) return '#021529';    // 130mm
+  if (rainfall < 200) return '#010914';    // 160mm
+  return '#000b0f';                         // 200+mm - very dark blue (almost black)
 }
 
 function getTemperatureColor(temp: number | null): string {
@@ -101,54 +113,101 @@ function getDangerColor(level: string): string {
   return '#22c55e';
 }
 
-function getRiverStatusColor(status: string): string {
-  switch (status) {
-    case 'alert': return '#dc2626';   // Red - alert level
-    case 'rising': return '#f97316';  // Orange - water rising
-    case 'falling': return '#22c55e'; // Green - water falling
-    case 'normal': return '#3b82f6';  // Blue - normal
-    default: return '#9ca3af';        // Gray - unknown
-  }
+// Flood gauge color gradient: grey→white for 0 to alert level, white→dark orange for alert to max
+function getFloodGaugeGradientColor(pctToAlert: number): string {
+  if (pctToAlert <= 5) return '#d1d5db';      // 0-5% - grey
+  if (pctToAlert < 10) return '#d9dce0';      // 5-10%
+  if (pctToAlert < 15) return '#e0e4e8';      // 10-15%
+  if (pctToAlert < 20) return '#e8ecf0';      // 15-20%
+  if (pctToAlert < 25) return '#f0f4f8';      // 20-25%
+  if (pctToAlert < 30) return '#f8fbfd';      // 25-30%
+  if (pctToAlert < 35) return '#ffffff';      // 30-35% - white (alert level area)
+  if (pctToAlert < 40) return '#fff5e6';      // 35-40%
+  if (pctToAlert < 45) return '#ffedcc';      // 40-45%
+  if (pctToAlert < 50) return '#ffe0b2';      // 45-50%
+  if (pctToAlert < 55) return '#ffd99a';      // 50-55%
+  if (pctToAlert < 60) return '#ffcc80';      // 55-60%
+  if (pctToAlert < 65) return '#ffbf66';      // 60-65%
+  if (pctToAlert < 70) return '#ffb24d';      // 65-70%
+  if (pctToAlert < 75) return '#ffa533';      // 70-75%
+  if (pctToAlert < 80) return '#ff991a';      // 75-80%
+  if (pctToAlert < 85) return '#ff8c00';      // 80-85%
+  if (pctToAlert < 90) return '#ff7700';      // 85-90%
+  if (pctToAlert < 95) return '#ff6600';      // 90-95%
+  return '#ff5500';                           // 95%+ - dark orange
 }
 
-// Irrigation/Flood gauge station colors based on flood threshold status
-function getFloodGaugeColor(status: string): string {
-  switch (status) {
-    case 'major_flood': return '#7c2d12'; // Dark brown - major flood
-    case 'minor_flood': return '#c2410c'; // Orange-red - minor flood
-    case 'alert': return '#ea580c';       // Orange - alert level
-    case 'normal': return '#65a30d';      // Lime green - normal
-    default: return '#9ca3af';            // Gray - unknown
-  }
-}
-
-// Create custom flood gauge marker icon
+// Create custom flood gauge marker icon matching rain icon style with water gauge icon
 function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
-  const color = getFloodGaugeColor(status);
-  const size = 26;
-  const isFlooding = status === 'major_flood' || status === 'minor_flood';
+  const circleSize = 24;
+  const pctLabel = Math.round(pctToAlert);
+  const color = getFloodGaugeGradientColor(pctToAlert);
+  const waterLevel = Math.min(pctToAlert, 100);
 
   return L.divIcon({
     className: 'custom-flood-gauge-marker',
+    html: `<div style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    ">
+      <div style="
+        width: ${circleSize}px;
+        height: ${circleSize}px;
+        background-color: ${color};
+        border: 2px solid #0c4a6e;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1">
+          <path d="M12 2L5 12h14L12 2z" fill="white" opacity="0.8"/>
+          <rect x="6" y="14" width="12" height="8" rx="1" fill="rgba(255,255,255,0.5)"/>
+          <rect x="6" y="${22 - waterLevel * 0.08}" width="12" height="${waterLevel * 0.08}" fill="white"/>
+        </svg>
+      </div>
+      <div style="
+        margin-top: 3px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: ${pctToAlert > 35 ? '#ffffff' : '#1e293b'};
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+      ">${pctLabel}%</div>
+    </div>`,
+    iconSize: [60, 50],
+    iconAnchor: [30, 25],
+  });
+}
+
+function getRiverStatusColorGradient(status: string): string {
+  // All river stations are green
+  return '#86efac';                     // Light green for all statuses
+}
+
+// Create simple river station icon
+function createRiverStationIcon(color: string): L.DivIcon {
+  const size = 10;
+  console.log('River station icon color:', color);
+  return L.divIcon({
+    className: 'river-station-marker',
     html: `<div style="
       width: ${size}px;
       height: ${size}px;
       background-color: ${color};
       border: 2px solid white;
-      border-radius: 4px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      border-radius: 2px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
       cursor: pointer;
-      ${isFlooding ? 'animation: pulse 1s infinite;' : ''}
-    ">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1">
-        <path d="M12 2L5 12h14L12 2z" fill="${isFlooding ? 'white' : 'rgba(255,255,255,0.8)'}"/>
-        <rect x="6" y="14" width="12" height="8" rx="1" fill="rgba(255,255,255,0.6)"/>
-        <rect x="6" y="${22 - Math.min(pctToAlert, 100) * 0.08}" width="12" height="${Math.min(pctToAlert, 100) * 0.08}" fill="white"/>
-      </svg>
-    </div>`,
+    "></div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
@@ -232,9 +291,14 @@ function createAlertIcon(color: string, alertLevel: string, borderColor: string 
 }
 
 // Create marker icon with rainfall text
-function createRainfallMarker(color: string, rainfallMm: number, borderColor: string = 'white'): L.DivIcon {
-  const circleSize = 18;
-  const rainfallText = Math.round(rainfallMm);
+function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white'): L.DivIcon {
+  const circleSize = 24;
+  // Ensure rainfallMm is a valid number
+  const validRainfall = (rainfallMm !== null && rainfallMm !== undefined) ? rainfallMm : 0;
+  const rainfallText = Math.round(validRainfall);
+
+  // All rainfall labels use black text for consistency and readability
+  const labelTextColor = '#000000';
 
   return L.divIcon({
     className: 'custom-rainfall-marker',
@@ -260,14 +324,14 @@ function createRainfallMarker(color: string, rainfallMm: number, borderColor: st
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 12px;
         font-weight: 600;
-        color: ${rainfallMm > 50 ? '#dc2626' : rainfallMm > 25 ? '#f97316' : rainfallMm > 10 ? '#3b82f6' : '#64748b'};
+        color: ${labelTextColor};
         box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         white-space: nowrap;
         letter-spacing: 0.3px;
       ">${rainfallText}mm</div>
     </div>`,
-    iconSize: [50, 40],
-    iconAnchor: [25, 20],
+    iconSize: [60, 50],
+    iconAnchor: [30, 25],
   });
 }
 
@@ -293,7 +357,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [isAnimating, setIsAnimating] = useState(true);
   const [showRivers, setShowRivers] = useState(false);
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
-  const [showMarine, setShowMarine] = useState(true); // Show marine by default
+  const [showMarine, setShowMarine] = useState(false); // Hide marine/coast information
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
   const [showFloodGauges, setShowFloodGauges] = useState(true); // Show flood gauges by default
   const [floodGaugeStations, setFloodGaugeStations] = useState<IrrigationStation[]>([]);
@@ -417,7 +481,17 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         if (isMounted) {
           // Weather is required - fail if it doesn't load
           if (weatherResult.status === 'fulfilled') {
-            setWeatherData(weatherResult.value);
+            const data = weatherResult.value;
+            // Debug: log the fields to ensure 48h/72h rainfall data exists
+            if (data && data.length > 0) {
+              console.log(`Weather data loaded for ${hours}h:`, {
+                district: data[0].district,
+                rainfall_24h_mm: data[0].rainfall_24h_mm,
+                rainfall_48h_mm: data[0].rainfall_48h_mm,
+                rainfall_72h_mm: data[0].rainfall_72h_mm,
+              });
+            }
+            setWeatherData(data);
             setError('');
           } else {
             setError('Failed to load weather data');
@@ -749,17 +823,10 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     if (!showRivers || riverStations.length === 0) return null;
 
     return riverStations.map((station) => (
-      <CircleMarker
+      <Marker
         key={`river-${station.river_code}-${station.station}`}
-        center={[station.lat, station.lon]}
-        radius={8}
-        pathOptions={{
-          fillColor: getRiverStatusColor(station.status),
-          color: '#fff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.9,
-        }}
+        position={[station.lat, station.lon]}
+        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status))}
       >
         <Popup maxWidth={300} minWidth={250}>
           <div className="p-1">
@@ -814,7 +881,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             )}
           </div>
         </Popup>
-      </CircleMarker>
+      </Marker>
     ));
   }, [showRivers, riverStations]);
 
@@ -1041,11 +1108,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     );
   }
 
-  const sriLankaCenter: [number, number] = [7.8731, 80.7718];
-  const mapCenter: [number, number] = userLocation
-    ? [userLocation.lat, userLocation.lon]
-    : sriLankaCenter;
-  const mapZoom = userLocation ? 10 : 7;
+  const kurunegalaCenter: [number, number] = [7.2833, 80.6333];
+  const mapCenter: [number, number] = kurunegalaCenter;
+  const mapZoom = 8;
 
   return (
     <div className="relative h-full w-full">
@@ -1079,22 +1144,6 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         {marineMarkers}
         {markers}
         {floodGaugeMarkers}
-        {userLocation && (
-          <CircleMarker
-            center={[userLocation.lat, userLocation.lon]}
-            radius={8}
-            pathOptions={{
-              fillColor: '#3b82f6',
-              fillOpacity: 1,
-              color: '#ffffff',
-              weight: 3,
-            }}
-          >
-            <Tooltip permanent direction="top" offset={[0, -10]}>
-              <span className="font-medium">Your Location</span>
-            </Tooltip>
-          </CircleMarker>
-        )}
       </MapContainer>
     </div>
   );

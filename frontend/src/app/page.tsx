@@ -56,7 +56,7 @@ export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [selectedHours, setSelectedHours] = useState<number>(24);
-  const [selectedLayer, setSelectedLayer] = useState<MapLayer>('danger');
+  const [selectedLayer, setSelectedLayer] = useState<MapLayer>('rainfall');
   const [loading, setLoading] = useState(true);
   const [dangerFilter, setDangerFilter] = useState<DangerFilter>('all');
   const [rainSummary, setRainSummary] = useState<RainSummary | null>(null);
