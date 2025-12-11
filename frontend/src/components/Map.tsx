@@ -4,8 +4,8 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
-import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, IrrigationStation, api } from '@/lib/api';
-import { getAlertColor } from '@/lib/districts';
+import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, IrrigationStation, api, GovernmentAlert, EarlyWarningAlertsResponse } from '@/lib/api';
+import { getAlertColor, districts } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -32,12 +32,37 @@ interface MapControllerProps {
   weatherData: WeatherSummary[];
 }
 
+// Store map instance globally so markers can access it
+let mapInstance: L.Map | null = null;
+let isZoomedIn = false;
+
 function MapController({ weatherData }: MapControllerProps) {
   const map = useMap();
   useEffect(() => {
     map.invalidateSize();
+    mapInstance = map;
+    
+    // Reset zoom state when map initializes
+    map.on('zoomend', () => {
+      const currentZoom = map.getZoom();
+      if (currentZoom <= 8) {
+        isZoomedIn = false;
+      }
+    });
   }, [map, weatherData]);
   return null;
+}
+
+// Function to focus on a position with zoom level 10
+function focusOnPosition(lat: number, lon: number) {
+  if (!mapInstance) return;
+  
+  // Always zoom in slowly to level 10
+  mapInstance.setView([lat, lon], 10, {
+    animate: true,
+    duration: 1.2
+  });
+  isZoomedIn = true;
 }
 
 // Color scale functions for different data types
@@ -144,6 +169,8 @@ function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
   const color = getFloodGaugeGradientColor(pctToAlert);
   const waterLevel = Math.min(pctToAlert, 100);
 
+  const gaugeSize = 24;
+
   return L.divIcon({
     className: 'custom-flood-gauge-marker',
     html: `<div style="
@@ -152,28 +179,21 @@ function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
       align-items: center;
       cursor: pointer;
     ">
-      <div style="
-        width: ${circleSize}px;
-        height: ${circleSize}px;
-        background-color: ${color};
-        border: 2px solid #0c4a6e;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Water container/gauge -->
-          <rect x="6" y="10" width="12" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="white" stroke-width="2"/>
-          <!-- Water level fill -->
-          <rect x="6" y="${20 - waterLevel * 0.1}" width="12" height="${waterLevel * 0.1}" rx="1" fill="white"/>
-          <!-- Water waves at surface -->
-          <path d="M8 ${20 - waterLevel * 0.1} Q9 ${19 - waterLevel * 0.1} 10 ${20 - waterLevel * 0.1} T12 ${20 - waterLevel * 0.1} T14 ${20 - waterLevel * 0.1} T16 ${20 - waterLevel * 0.1}" stroke="white" stroke-width="1.5" fill="none" opacity="0.8"/>
-          <!-- Top indicator dot -->
-          <circle cx="12" cy="8" r="1.5" fill="white"/>
-        </svg>
-      </div>
+      <svg width="${gaugeSize}" height="${gaugeSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <!-- Water level gauge container -->
+        <rect x="5" y="8" width="14" height="12" rx="1" fill="rgba(255,255,255,0.9)" stroke="black" stroke-width="1.5"/>
+        <!-- Measurement marks on the left -->
+        <line x1="6" y1="10" x2="7" y2="10" stroke="black" stroke-width="1"/>
+        <line x1="6" y1="13" x2="7" y2="13" stroke="black" stroke-width="1"/>
+        <line x1="6" y1="16" x2="7" y2="16" stroke="black" stroke-width="1"/>
+        <line x1="6" y1="19" x2="7" y2="19" stroke="black" stroke-width="1"/>
+        <!-- Water level fill -->
+        <rect x="5" y="${20 - waterLevel * 0.12}" width="14" height="${waterLevel * 0.12}" rx="1" fill="#3b82f6" opacity="0.9"/>
+        <!-- Water surface with waves -->
+        <path d="M6 ${20 - waterLevel * 0.12} Q7 ${19 - waterLevel * 0.12} 8 ${20 - waterLevel * 0.12} T10 ${20 - waterLevel * 0.12} T12 ${20 - waterLevel * 0.12} T14 ${20 - waterLevel * 0.12} T16 ${20 - waterLevel * 0.12} T18 ${20 - waterLevel * 0.12}" stroke="black" stroke-width="1.5" fill="none"/>
+        <!-- Top mounting bracket -->
+        <rect x="10" y="6" width="4" height="2" rx="0.5" fill="black"/>
+      </svg>
       <div style="
         margin-top: 3px;
         background: rgba(255, 255, 255, 0.95);
@@ -182,7 +202,7 @@ function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 12px;
         font-weight: 600;
-        color: ${pctToAlert > 35 ? '#ffffff' : '#1e293b'};
+        color: #000000;
         box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         white-space: nowrap;
         letter-spacing: 0.3px;
@@ -199,42 +219,49 @@ function getRiverStatusColorGradient(status: string): string {
 }
 
 // Create water level icon for river stations
-function createRiverStationIcon(color: string): L.DivIcon {
-  const size = 24;
+function createRiverStationIcon(color: string, waterLevelM?: number): L.DivIcon {
+  const gaugeSize = 24;
+  const labelText = waterLevelM !== undefined ? `${waterLevelM.toFixed(1)}m` : null;
   console.log('River station icon color:', color);
   return L.divIcon({
     className: 'river-station-marker',
     html: `<div style="
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
       cursor: pointer;
     ">
-      <div style="
-        width: ${size}px;
-        height: ${size}px;
-        background-color: ${color};
-        border: 2px solid white;
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      ">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Water container/gauge -->
-          <rect x="6" y="10" width="12" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="white" stroke-width="2"/>
-          <!-- Water level fill -->
-          <rect x="6" y="16" width="12" height="4" rx="1" fill="white"/>
-          <!-- Water waves -->
-          <path d="M8 16 Q9 15 10 16 T12 16 T14 16 T16 16" stroke="white" stroke-width="1.5" fill="none"/>
-          <!-- Top indicator -->
-          <circle cx="12" cy="8" r="1.5" fill="white"/>
-        </svg>
-      </div>
+      <svg width="${gaugeSize}" height="${gaugeSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <!-- Water level gauge container -->
+        <rect x="5" y="8" width="14" height="12" rx="1" fill="rgba(255,255,255,0.9)" stroke="black" stroke-width="1.5"/>
+        <!-- Measurement marks on the left -->
+        <line x1="6" y1="10" x2="7" y2="10" stroke="black" stroke-width="1"/>
+        <line x1="6" y1="13" x2="7" y2="13" stroke="black" stroke-width="1"/>
+        <line x1="6" y1="16" x2="7" y2="16" stroke="black" stroke-width="1"/>
+        <line x1="6" y1="19" x2="7" y2="19" stroke="black" stroke-width="1"/>
+        <!-- Water level fill (static at mid-level for river stations) -->
+        <rect x="5" y="14" width="14" height="6" rx="1" fill="#3b82f6" opacity="0.9"/>
+        <!-- Water surface with waves -->
+        <path d="M6 14 Q7 13 8 14 T10 14 T12 14 T14 14 T16 14 T18 14" stroke="black" stroke-width="1.5" fill="none"/>
+        <!-- Top mounting bracket -->
+        <rect x="10" y="6" width="4" height="2" rx="0.5" fill="black"/>
+      </svg>
+      ${labelText !== null ? `<div style="
+        margin-top: 3px;
+        background: rgba(255, 255, 255, 0.95);
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: #000000;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+      ">${labelText}</div>` : ''}
     </div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconSize: labelText !== null ? [60, 50] : [gaugeSize, gaugeSize],
+    iconAnchor: labelText !== null ? [30, 25] : [gaugeSize / 2, gaugeSize / 2],
   });
 }
 
@@ -294,9 +321,54 @@ function getAlertSymbol(level: string): string {
   }
 }
 
+// Create icon for early warning alerts
+function createEarlyWarningIcon(alert: GovernmentAlert): L.DivIcon {
+  const size = 32;
+  // Determine color based on event type or tags
+  let color = '#ef4444'; // Default red
+  if (alert.tags && alert.tags.length > 0) {
+    const tagsStr = alert.tags.join(' ').toLowerCase();
+    if (tagsStr.includes('extreme') || tagsStr.includes('severe')) {
+      color = '#dc2626'; // Dark red
+    } else if (tagsStr.includes('moderate')) {
+      color = '#f97316'; // Orange
+    } else if (tagsStr.includes('minor')) {
+      color = '#eab308'; // Yellow
+    }
+  }
+
+  return L.divIcon({
+    className: 'early-warning-marker',
+    html: `<div style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    ">
+      <svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
+        <!-- Warning triangle -->
+        <path d="M12 2L22 20H2L12 2Z" fill="${color}" stroke="white" stroke-width="1.5"/>
+        <!-- Exclamation mark -->
+        <path d="M12 8V12M12 16H12.01" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+  });
+}
+
 // Create small custom marker icon
 function createAlertIcon(color: string, alertLevel: string, borderColor: string = 'white'): L.DivIcon {
-  const size = 14;
+  const size = 24;
+  
+  // Map alert level to water level percentage for visualization
+  const alertToWaterLevel: Record<string, number> = {
+    'green': 20,
+    'yellow': 40,
+    'orange': 60,
+    'red': 85
+  };
+  const waterLevel = alertToWaterLevel[alertLevel] || 30;
 
   return L.divIcon({
     className: 'custom-alert-marker',
@@ -304,26 +376,58 @@ function createAlertIcon(color: string, alertLevel: string, borderColor: string 
       width: ${size}px;
       height: ${size}px;
       background-color: ${color};
-      border: 1.5px solid ${borderColor};
+      border: 2px solid ${borderColor};
       border-radius: 50%;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       transition: transform 0.15s ease;
-    "></div>`,
+    ">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Water container/gauge -->
+        <rect x="6" y="10" width="12" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="white" stroke-width="2"/>
+        <!-- Water level fill -->
+        <rect x="6" y="${20 - waterLevel * 0.1}" width="12" height="${waterLevel * 0.1}" rx="1" fill="white"/>
+        <!-- Water waves at surface -->
+        <path d="M8 ${20 - waterLevel * 0.1} Q9 ${19 - waterLevel * 0.1} 10 ${20 - waterLevel * 0.1} T12 ${20 - waterLevel * 0.1} T14 ${20 - waterLevel * 0.1} T16 ${20 - waterLevel * 0.1}" stroke="white" stroke-width="1.5" fill="none" opacity="0.8"/>
+        <!-- Top indicator dot -->
+        <circle cx="12" cy="8" r="1.5" fill="white"/>
+      </svg>
+    </div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
 }
 
-// Create marker icon with rainfall text
-function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white'): L.DivIcon {
-  const circleSize = 24;
+// Create marker icon with raindrop and rainfall text
+function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white', alertLevel: string = 'green'): L.DivIcon {
   // Ensure rainfallMm is a valid number
   const validRainfall = (rainfallMm !== null && rainfallMm !== undefined) ? rainfallMm : 0;
   const rainfallText = Math.round(validRainfall);
 
   // All rainfall labels use black text for consistency and readability
   const labelTextColor = '#000000';
+  const raindropSize = 24;
+  
+  // Generate unique ID for gradients based on color and rainfall to avoid conflicts
+  const gradientId = `raindropGrad-${color.replace('#', '')}-${rainfallText}`;
+  const highlightId = `raindropHighlight-${color.replace('#', '')}-${rainfallText}`;
+
+  // Determine animation class based on alert level
+  const alertLevelLower = alertLevel.toLowerCase();
+  let animationClass = '';
+  
+  if (alertLevelLower === 'red') {
+    animationClass = 'raindrop-animate-red';
+  } else if (alertLevelLower === 'orange') {
+    animationClass = 'raindrop-animate-orange';
+  } else if (alertLevelLower === 'yellow') {
+    animationClass = 'raindrop-animate-yellow';
+  } else {
+    animationClass = 'raindrop-animate-green';
+  }
 
   return L.divIcon({
     className: 'custom-rainfall-marker',
@@ -333,28 +437,40 @@ function createRainfallMarker(color: string, rainfallMm: number | null | undefin
       align-items: center;
       cursor: pointer;
     ">
-      <div style="
-        width: ${circleSize}px;
-        height: ${circleSize}px;
-        background-color: ${color};
-        border: 2px solid ${borderColor};
-        border-radius: 50%;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-      "></div>
-      <div style="
-        margin-top: 3px;
-        background: rgba(255, 255, 255, 0.95);
-        padding: 2px 5px;
-        border-radius: 4px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 12px;
-        font-weight: 600;
-        color: ${labelTextColor};
-        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-        white-space: nowrap;
-        letter-spacing: 0.3px;
-      ">${rainfallText}mm</div>
-    </div>`,
+      <svg width="${raindropSize}" height="${raindropSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="${animationClass}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); color: ${color};">
+          <defs>
+            <!-- 3D gradient for raindrop - lighter at top left, darker at bottom -->
+            <linearGradient id="${gradientId}" x1="20%" y1="0%" x2="50%" y2="100%">
+              <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
+              <stop offset="40%" style="stop-color:${color};stop-opacity:0.95" />
+              <stop offset="100%" style="stop-color:${color};stop-opacity:0.75" />
+            </linearGradient>
+            <!-- Highlight gradient for 3D shine effect on left side -->
+            <linearGradient id="${highlightId}" x1="0%" y1="0%" x2="40%" y2="0%">
+              <stop offset="0%" style="stop-color:rgba(255,255,255,0.5);stop-opacity:1" />
+              <stop offset="50%" style="stop-color:rgba(255,255,255,0.2);stop-opacity:1" />
+              <stop offset="100%" style="stop-color:rgba(255,255,255,0);stop-opacity:0" />
+            </linearGradient>
+          </defs>
+          <!-- Raindrop shape - teardrop from top to bottom with 3D gradient -->
+          <path d="M12 2C12 2 6 8 6 13C6 17.4183 9.58172 21 14 21C18.4183 21 22 17.4183 22 13C22 8 16 2 16 2L12 2Z" fill="url(#${gradientId})" stroke="black" stroke-width="1.5"/>
+          <!-- Highlight overlay for 3D shine effect on left side -->
+          <path d="M12 2C12 2 6 8 6 13C6 17.4183 9.58172 21 14 21C18.4183 21 22 17.4183 22 13C22 8 16 2 16 2L12 2Z" fill="url(#${highlightId})" opacity="0.7"/>
+        </svg>
+        <div style="
+          margin-top: 3px;
+          background: #bfdbfe;
+          padding: 2px 5px;
+          border-radius: 4px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 12px;
+          font-weight: 600;
+          color: #000000;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          white-space: nowrap;
+          letter-spacing: 0.3px;
+        ">${rainfallText}mm</div>
+      </div>`,
     iconSize: [60, 50],
     iconAnchor: [30, 25],
   });
@@ -386,6 +502,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
   const [showFloodGauges, setShowFloodGauges] = useState(true); // Show flood gauges by default
   const [floodGaugeStations, setFloodGaugeStations] = useState<IrrigationStation[]>([]);
+  const [earlyWarningAlerts, setEarlyWarningAlerts] = useState<GovernmentAlert[]>([]);
 
   const isForecastLayer = layer.startsWith('forecast');
   const forecastDayIndex = isForecastLayer ? parseInt(layer.replace('forecast', '')) - 1 : 0;
@@ -475,6 +592,22 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     fetchFloodGaugeData();
     // No auto-refresh - data is cached on backend
   }, [showFloodGauges]);
+
+  // Fetch early warning alerts
+  useEffect(() => {
+    const fetchEarlyWarningAlerts = async () => {
+      try {
+        const data = await api.getEarlyWarningAlerts();
+        setEarlyWarningAlerts(data.alerts || []);
+      } catch (err) {
+        console.error('Failed to fetch early warning alerts:', err);
+        setEarlyWarningAlerts([]);
+      }
+    };
+
+    fetchEarlyWarningAlerts();
+    // No auto-refresh - data is cached on backend
+  }, []);
 
   // Animate overlay frames with different speeds
   useEffect(() => {
@@ -685,12 +818,10 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
           : district.rainfall_72h_mm;
 
       const markerColor = getMarkerColor(district);
-      // Use dark blue border for rainfall layer to match the blue gradient
-      const borderColor = layer === 'rainfall' ? '#0c4a6e' : 'white'; // sky-900
-      // Use rainfall marker for rainfall and danger layers, otherwise use alert icon
-      const icon = (layer === 'rainfall' || layer === 'danger')
-        ? createRainfallMarker(markerColor, rainfallValue || 0, borderColor)
-        : createAlertIcon(markerColor, district.alert_level, borderColor);
+      // Always use rainfall markers, with dark blue border to match the blue gradient
+      const borderColor = '#0c4a6e'; // sky-900
+      // Always show rainfall markers with animation based on alert level
+      const icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level);
 
       // Calculate z-index for weather markers (1000-1999 range, below flood gauges)
       const baseZIndex = 1000;
@@ -705,7 +836,10 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
           icon={icon}
           zIndexOffset={zIndex}
           eventHandlers={{
-            click: () => onDistrictSelect?.(district.district),
+            click: () => {
+              onDistrictSelect?.(district.district);
+              focusOnPosition(district.latitude, district.longitude);
+            },
           }}
         >
           <Popup maxWidth={360} minWidth={340} className="district-popup">
@@ -851,7 +985,12 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       <Marker
         key={`river-${station.river_code}-${station.station}`}
         position={[station.lat, station.lon]}
-        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status))}
+        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status), station.water_level_m)}
+        eventHandlers={{
+          click: () => {
+            focusOnPosition(station.lat, station.lon);
+          },
+        }}
       >
         <Popup maxWidth={300} minWidth={250}>
           <div className="p-1">
@@ -1046,6 +1185,11 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
           position={[station.lat, station.lon]}
           icon={createFloodGaugeIcon(station.status, station.pct_to_alert)}
           zIndexOffset={zIndex}
+          eventHandlers={{
+            click: () => {
+              focusOnPosition(station.lat, station.lon);
+            },
+          }}
         >
           <Popup maxWidth={300} minWidth={270}>
             <div className="p-1">
@@ -1114,6 +1258,118 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     });
   }, [showFloodGauges, floodGaugeStations]);
 
+  // Helper function to get alert severity (0-3)
+  const getAlertSeverity = useCallback((alert: GovernmentAlert): number => {
+    if (!alert.tags || alert.tags.length === 0) return 1;
+    const tagsStr = alert.tags.join(' ').toLowerCase();
+    if (tagsStr.includes('extreme') || tagsStr.includes('severe')) return 3;
+    if (tagsStr.includes('moderate')) return 2;
+    if (tagsStr.includes('minor')) return 1;
+    return 1;
+  }, []);
+
+  // Early warning alert markers
+  const earlyWarningMarkers = useMemo(() => {
+    if (earlyWarningAlerts.length === 0) return null;
+
+    // Get district coordinates for each alert
+    const alertsWithCoords = earlyWarningAlerts
+      .filter(alert => alert.district)
+      .map(alert => {
+        const districtData = districts.find(d => d.name === alert.district);
+        if (!districtData) return null;
+        return {
+          alert,
+          lat: districtData.latitude,
+          lon: districtData.longitude,
+        };
+      })
+      .filter((item): item is { alert: GovernmentAlert; lat: number; lon: number } => item !== null);
+
+    // Group alerts by district to avoid duplicate markers
+    const alertsByDistrict = new Map<string, { alert: GovernmentAlert; lat: number; lon: number }[]>();
+    alertsWithCoords.forEach(item => {
+      const key = `${item.lat},${item.lon}`;
+      if (!alertsByDistrict.has(key)) {
+        alertsByDistrict.set(key, []);
+      }
+      alertsByDistrict.get(key)!.push(item);
+    });
+
+    // Create markers for each district (one marker per district, showing alert count)
+    return Array.from(alertsByDistrict.entries()).map(([key, items], index) => {
+      const { lat, lon } = items[0];
+      const alertCount = items.length;
+      const mostSevereAlert = items.reduce((prev, curr) => {
+        // Determine severity based on tags
+        const prevSeverity = getAlertSeverity(prev.alert);
+        const currSeverity = getAlertSeverity(curr.alert);
+        return currSeverity > prevSeverity ? curr : prev;
+      }, items[0]);
+
+      // Calculate z-index: early warning alerts should be on top (3000+)
+      const baseZIndex = 3000;
+      const severity = getAlertSeverity(mostSevereAlert.alert);
+      const zIndex = baseZIndex + (severity * 100) + index;
+
+      return (
+        <Marker
+          key={`early-warning-${key}-${index}`}
+          position={[lat, lon]}
+          icon={createEarlyWarningIcon(mostSevereAlert.alert)}
+          zIndexOffset={zIndex}
+          eventHandlers={{
+            click: () => {
+              focusOnPosition(lat, lon);
+            },
+          }}
+        >
+          <Popup maxWidth={350} minWidth={320}>
+            <div className="p-2">
+              <h3 className="font-bold text-sm border-b pb-1.5 mb-2">
+                {mostSevereAlert.alert.district} - Early Warning Alert{alertCount > 1 ? `s (${alertCount})` : ''}
+              </h3>
+              
+              {items.map((item, idx) => (
+                <div key={idx} className={`mb-3 ${idx < items.length - 1 ? 'border-b pb-3' : ''}`}>
+                  <div className="flex items-start justify-between mb-1">
+                    <span className="text-xs font-semibold text-gray-700">{item.alert.event}</span>
+                    <span className="text-xs text-gray-500">{item.alert.sender}</span>
+                  </div>
+                  
+                  <div className="text-xs text-gray-600 mb-2">{item.alert.description}</div>
+                  
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {item.alert.tags && item.alert.tags.map((tag, tagIdx) => (
+                      <span
+                        key={tagIdx}
+                        className="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded text-[10px] font-medium"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  
+                  <div className="text-[10px] text-gray-500">
+                    <div>Start: {new Date(item.alert.start).toLocaleString()}</div>
+                    <div>End: {new Date(item.alert.end).toLocaleString()}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Popup>
+          <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
+            <div className="text-xs">
+              <div className="font-bold">{mostSevereAlert.alert.district}</div>
+              <div>{mostSevereAlert.alert.event}</div>
+              {alertCount > 1 && <div className="text-[10px]">+{alertCount - 1} more</div>}
+            </div>
+          </Tooltip>
+        </Marker>
+      );
+    });
+  }, [earlyWarningAlerts, getAlertSeverity]);
+
   if (loading && weatherData.length === 0) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
@@ -1133,9 +1389,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     );
   }
 
-  const kurunegalaCenter: [number, number] = [7.2833, 80.6333];
-  const mapCenter: [number, number] = kurunegalaCenter;
-  const mapZoom = 8;
+  const nawalapitiyaCenter: [number, number] = [7.05, 80.55];
+  const mapCenter: [number, number] = nawalapitiyaCenter;
+  const mapZoom = 9;
 
   return (
     <div className="relative h-full w-full">
@@ -1169,6 +1425,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         {marineMarkers}
         {markers}
         {floodGaugeMarkers}
+        {earlyWarningMarkers}
       </MapContainer>
     </div>
   );

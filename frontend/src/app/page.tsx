@@ -238,7 +238,7 @@ export default function Dashboard() {
               {/* Divider */}
               <div className="h-6 w-px bg-slate-200 hidden md:block" />
 
-              {/* Flood Risk - Always show all options */}
+              {/* Flood Risk - Show only All Levels button */}
               <div className="flex items-center gap-1 flex-wrap">
                 <button
                   onClick={() => { setSelectedLayer('danger'); setDangerFilter('all'); }}
@@ -250,37 +250,6 @@ export default function Dashboard() {
                 >
                   <span className="md:hidden">⚠️ All</span>
                   <span className="hidden md:inline">⚠️ All Levels</span>
-                </button>
-                <button
-                  onClick={() => { setSelectedLayer('danger'); setDangerFilter('low'); }}
-                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    selectedLayer === 'danger' && dangerFilter === 'low'
-                      ? 'bg-emerald-600 text-white'
-                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                  }`}
-                >
-                  Low
-                </button>
-                <button
-                  onClick={() => { setSelectedLayer('danger'); setDangerFilter('medium'); }}
-                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    selectedLayer === 'danger' && dangerFilter === 'medium'
-                      ? 'bg-amber-600 text-white'
-                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                  }`}
-                >
-                  <span className="md:hidden">Med</span>
-                  <span className="hidden md:inline">Medium</span>
-                </button>
-                <button
-                  onClick={() => { setSelectedLayer('danger'); setDangerFilter('high'); }}
-                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    selectedLayer === 'danger' && dangerFilter === 'high'
-                      ? 'bg-red-600 text-white'
-                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                  }`}
-                >
-                  High
                 </button>
               </div>
 

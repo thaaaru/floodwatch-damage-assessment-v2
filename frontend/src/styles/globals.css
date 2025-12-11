@@ -243,3 +243,64 @@
 .map-control {
   @apply bg-white/10 backdrop-blur-md rounded-xl shadow-soft border border-white/30;
 }
+
+/* Raindrop icon animations based on alert level */
+@keyframes raindrop-pulse-red {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 8px currentColor);
+  }
+  50% {
+    transform: scale(1.15);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 12px currentColor);
+  }
+}
+
+@keyframes raindrop-pulse-orange {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) drop-shadow(0 0 6px currentColor);
+  }
+}
+
+@keyframes raindrop-pulse-yellow {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  50% {
+    transform: scale(1.05);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+}
+
+@keyframes raindrop-breathe-green {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+  50% {
+    transform: scale(1.02);
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+  }
+}
+
+.raindrop-animate-red {
+  animation: raindrop-pulse-red 1s ease-in-out infinite;
+}
+
+.raindrop-animate-orange {
+  animation: raindrop-pulse-orange 1.5s ease-in-out infinite;
+}
+
+.raindrop-animate-yellow {
+  animation: raindrop-pulse-yellow 2s ease-in-out infinite;
+}
+
+.raindrop-animate-green {
+  animation: raindrop-breathe-green 3s ease-in-out infinite;
+}
