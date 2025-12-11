@@ -1373,7 +1373,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     });
   }, [earlyWarningAlerts, getAlertSeverity]);
 
-  if (loading && weatherData.length === 0) {
+  // Show loading only on initial load, allow map to render even if data is empty
+  if (loading && weatherData.length === 0 && !error) {
     return (
       <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
         <div className="text-center">
@@ -1384,12 +1385,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     );
   }
 
+  // Show error message but still render the map
   if (error && weatherData.length === 0) {
-    return (
-      <div className="h-full flex items-center justify-center bg-gray-100 rounded-lg">
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
+    // Don't block the map - show error overlay instead
   }
 
   const nawalapitiyaCenter: [number, number] = [7.05, 80.55];
@@ -1402,6 +1400,12 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         <div className="absolute top-2 right-2 z-[1000] bg-white px-3 py-1 rounded-full shadow-md flex items-center gap-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
           <span className="text-sm text-gray-600">Updating...</span>
+        </div>
+      )}
+      {error && weatherData.length === 0 && (
+        <div className="absolute top-2 left-2 z-[1000] bg-red-50 border border-red-200 px-3 py-2 rounded-lg shadow-md max-w-xs">
+          <p className="text-sm text-red-600 font-medium">{error}</p>
+          <p className="text-xs text-red-500 mt-1">Map will load with available data</p>
         </div>
       )}
       <MapContainer
