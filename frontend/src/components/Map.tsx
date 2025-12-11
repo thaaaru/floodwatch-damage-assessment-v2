@@ -1288,17 +1288,18 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
     // Group alerts by district to avoid duplicate markers
     type AlertWithCoords = { alert: GovernmentAlert; lat: number; lon: number };
-    const alertsByDistrict = new globalThis.Map<string, AlertWithCoords[]>();
+    // Use a plain object to group alerts by district (avoiding Map type conflict with Leaflet)
+    const alertsByDistrict: Record<string, AlertWithCoords[]> = {};
     alertsWithCoords.forEach(item => {
       const key = `${item.lat},${item.lon}`;
-      if (!alertsByDistrict.has(key)) {
-        alertsByDistrict.set(key, []);
+      if (!alertsByDistrict[key]) {
+        alertsByDistrict[key] = [];
       }
-      alertsByDistrict.get(key)!.push(item);
+      alertsByDistrict[key].push(item);
     });
 
     // Create markers for each district (one marker per district, showing alert count)
-    return Array.from(alertsByDistrict.entries()).map(([key, items], index) => {
+    return Object.entries(alertsByDistrict).map(([key, items], index) => {
       const { lat, lon } = items[0];
       const alertCount = items.length;
       const mostSevereAlert = items.reduce((prev, curr) => {
