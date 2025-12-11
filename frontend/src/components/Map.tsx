@@ -193,21 +193,41 @@ function getRiverStatusColorGradient(status: string): string {
   return '#86efac';                     // Light green for all statuses
 }
 
-// Create simple river station icon
+// Create water level icon for river stations
 function createRiverStationIcon(color: string): L.DivIcon {
-  const size = 10;
+  const size = 24;
   console.log('River station icon color:', color);
   return L.divIcon({
     className: 'river-station-marker',
     html: `<div style="
-      width: ${size}px;
-      height: ${size}px;
-      background-color: ${color};
-      border: 2px solid white;
-      border-radius: 2px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
-    "></div>`,
+    ">
+      <div style="
+        width: ${size}px;
+        height: ${size}px;
+        background-color: ${color};
+        border: 2px solid white;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      ">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Water container/gauge -->
+          <rect x="6" y="10" width="12" height="10" rx="2" fill="rgba(255,255,255,0.3)" stroke="white"/>
+          <!-- Water level fill -->
+          <rect x="6" y="16" width="12" height="4" rx="1" fill="white"/>
+          <!-- Water waves -->
+          <path d="M8 16 Q9 15 10 16 T12 16 T14 16 T16 16" stroke="white" stroke-width="1.5" fill="none"/>
+          <!-- Top indicator -->
+          <circle cx="12" cy="8" r="1.5" fill="white"/>
+        </svg>
+      </div>
+    </div>`,
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
