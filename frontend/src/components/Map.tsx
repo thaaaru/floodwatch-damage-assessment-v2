@@ -554,22 +554,9 @@ function createRainfallMarker(color: string, rainfallMm: number | null | undefin
           white-space: nowrap;
           letter-spacing: 0.3px;
         ">${rainfallText}mm</div>` : ''}
-        ${temperatureC !== null && (temperatureC > 32 || alertLevel.toLowerCase() !== 'green') ? `<div style="
-          margin-top: ${showLabel ? '2px' : '3px'};
-          background: ${temperatureC > 32 ? '#fef3c7' : '#fef2f2'};
-          padding: 2px 5px;
-          border-radius: 4px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          font-size: 11px;
-          font-weight: 600;
-          color: ${temperatureC > 32 ? '#92400e' : '#991b1b'};
-          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-          white-space: nowrap;
-          letter-spacing: 0.3px;
-        ">${Math.round(temperatureC)}°C</div>` : ''}
       </div>`,
-    iconSize: showLabel || (temperatureC !== null && (temperatureC > 32 || alertLevel.toLowerCase() !== 'green')) ? [60, 50] : [raindropSize, raindropSize],
-    iconAnchor: showLabel || (temperatureC !== null && (temperatureC > 32 || alertLevel.toLowerCase() !== 'green')) ? [30, 25] : [raindropSize / 2, raindropSize / 2],
+    iconSize: showLabel ? [60, 50] : [raindropSize, raindropSize],
+    iconAnchor: showLabel ? [30, 25] : [raindropSize / 2, raindropSize / 2],
   });
 }
 
