@@ -184,7 +184,17 @@ class ApiClient {
         throw new Error(error.detail || `HTTP ${response.status}`);
       }
 
-      return response.json();
+      const data = await response.json();
+      
+      // Additional safety check: ensure forecast endpoints return arrays
+      if (endpoint.includes('/forecast') || endpoint.includes('/alerts') || endpoint.includes('/history')) {
+        if (!Array.isArray(data)) {
+          console.warn(`Expected array but got ${typeof data} for ${endpoint}, returning empty array`);
+          return [] as T;
+        }
+      }
+      
+      return data;
     } catch (error: any) {
       // Handle network errors, timeouts, etc.
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {

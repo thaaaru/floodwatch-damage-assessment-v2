@@ -747,12 +747,17 @@ function WeatherMap(props: MapProps = {} as MapProps) {
           // Forecast is optional - use empty array if it fails
           if (forecastResult.status === 'fulfilled') {
             const forecastValue = forecastResult.value;
-            // Ensure it's an array
-            setForecastData(Array.isArray(forecastValue) ? forecastValue : []);
+            // Ensure it's an array - handle edge cases where API might return object/null
+            if (Array.isArray(forecastValue)) {
+              setForecastData(forecastValue);
+            } else {
+              console.warn('Forecast data is not an array, got:', typeof forecastValue, forecastValue);
+              setForecastData([]);
+            }
           } else {
             console.warn('Forecast fetch failed (non-critical):', forecastResult.reason);
-            // Keep existing forecast data or use empty array
-            setForecastData(prev => Array.isArray(prev) && prev.length > 0 ? prev : []);
+            // Always set to empty array on error to prevent stale non-array data
+            setForecastData([]);
           }
         }
       } catch (err) {
@@ -779,11 +784,13 @@ function WeatherMap(props: MapProps = {} as MapProps) {
   // Create a map of forecast data by district
   const forecastByDistrict = useMemo(() => {
     const map: Record<string, DistrictForecast> = {};
-    if (Array.isArray(forecastData)) {
-      forecastData.forEach(f => {
+    // Defensive check: ensure forecastData is always an array
+    const safeForecastData = Array.isArray(forecastData) ? forecastData : [];
+    safeForecastData.forEach(f => {
+      if (f && f.district) {
         map[f.district] = f;
-      });
-    }
+      }
+    });
     return map;
   }, [forecastData]);
 

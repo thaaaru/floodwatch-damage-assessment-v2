@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, date
 import json
 import os
 import asyncio
+import logging
 
 from ..database import get_db
 from ..models import WeatherLog
@@ -17,6 +18,8 @@ from ..services.weather_cache import weather_cache
 from ..config import get_settings
 
 router = APIRouter(prefix="/api/weather", tags=["weather"])
+
+logger = logging.getLogger(__name__)
 
 # Cache file for yesterday's stats - persists across restarts
 YESTERDAY_STATS_CACHE_FILE = os.path.join(
@@ -172,11 +175,22 @@ async def get_all_forecast(
     """
     Get 5-day forecast for all districts.
     Data is extracted from the cached weather data.
+    Always returns a list, even if empty or on error.
     """
-    if not weather_cache.is_cache_valid():
-        await weather_cache.refresh_cache()
+    try:
+        if not weather_cache.is_cache_valid():
+            await weather_cache.refresh_cache()
 
-    return weather_cache.get_all_forecast()
+        result = weather_cache.get_all_forecast()
+        # Ensure we always return a list
+        if not isinstance(result, list):
+            logger.warning(f"get_all_forecast returned non-list type: {type(result)}, returning empty list")
+            return []
+        return result
+    except Exception as e:
+        logger.error(f"Error in get_all_forecast: {e}")
+        # Always return a list, even on error, to prevent frontend crashes
+        return []
 
 
 def _load_yesterday_stats_cache():
