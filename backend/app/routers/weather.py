@@ -169,18 +169,17 @@ async def get_district_weather(district_name: str, db: Session = Depends(get_db)
 
 
 @router.get("/forecast/all")
-async def get_all_forecast(
-    db: Session = Depends(get_db)
-):
+def get_all_forecast():
     """
     Get 5-day forecast for all districts.
     Data is extracted from the cached weather data.
     Uses the same cache as /api/weather/all - no separate refresh needed.
     Always returns a list, even if empty or on error.
+    Fast, synchronous endpoint - returns immediately from in-memory cache.
     """
     try:
         # Simply return forecast data from cache - /api/weather/all handles cache refresh
-        # This prevents duplicate refresh attempts and timeout issues
+        # This is a fast, synchronous read from in-memory cache
         result = weather_cache.get_all_forecast()
         
         # Ensure we always return a list

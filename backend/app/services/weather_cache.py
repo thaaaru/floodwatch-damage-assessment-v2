@@ -289,25 +289,40 @@ class WeatherCache:
         return None
 
     def get_all_forecast(self) -> list[dict]:
-        """Get 5-day forecast for all districts from cache."""
+        """Get 5-day forecast for all districts from cache.
+        Fast, non-blocking read from in-memory cache.
+        """
         result = []
+        
+        # Quick check - if cache is empty, return immediately
+        if not self._cache:
+            return result
 
-        for district_name, cached in self._cache.items():
-            try:
-                data = cached["data"]
-                forecast_daily = data.get("forecast_daily", [])
+        try:
+            # Iterate through cache - this should be fast for in-memory dict
+            for district_name, cached in self._cache.items():
+                try:
+                    data = cached.get("data", {})
+                    forecast_daily = data.get("forecast_daily", [])
 
-                if forecast_daily:
-                    result.append({
-                        "district": cached["district"],
-                        "latitude": cached["latitude"],
-                        "longitude": cached["longitude"],
-                        "forecast_daily": forecast_daily,
-                        "forecast_precip_24h_mm": data.get("forecast_precip_24h_mm", 0.0),
-                        "forecast_precip_48h_mm": data.get("forecast_precip_48h_mm", 0.0),
-                    })
-            except Exception as e:
-                logger.error(f"Error processing forecast for {district_name}: {e}")
+                    # Only include districts with forecast data
+                    if forecast_daily:
+                        result.append({
+                            "district": cached.get("district", district_name),
+                            "latitude": cached.get("latitude", 0.0),
+                            "longitude": cached.get("longitude", 0.0),
+                            "forecast_daily": forecast_daily,
+                            "forecast_precip_24h_mm": data.get("forecast_precip_24h_mm", 0.0),
+                            "forecast_precip_48h_mm": data.get("forecast_precip_48h_mm", 0.0),
+                        })
+                except Exception as e:
+                    logger.error(f"Error processing forecast for {district_name}: {e}")
+                    # Continue processing other districts even if one fails
+                    continue
+        except Exception as e:
+            logger.error(f"Error in get_all_forecast: {e}")
+            # Return empty list on any error to prevent hanging
+            return []
 
         return result
 
