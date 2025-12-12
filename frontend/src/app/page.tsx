@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [showForecastExpanded, setShowForecastExpanded] = useState(false);
   const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
   const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
+  const [showRiverStations, setShowRiverStations] = useState(false);
 
   // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
 
@@ -250,6 +251,25 @@ export default function Dashboard() {
                 >
                   <span className="md:hidden">⚠️ All</span>
                   <span className="hidden md:inline">⚠️ All Levels</span>
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="h-6 w-px bg-slate-200 hidden md:block" />
+
+              {/* River Stations Toggle */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowRiverStations(!showRiverStations)}
+                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+                    showRiverStations
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
+                  }`}
+                  title="Toggle river stations with water level icons"
+                >
+                  <span className="text-base">🌊</span>
+                  <span className="hidden sm:inline">Stations</span>
                 </button>
               </div>
 
