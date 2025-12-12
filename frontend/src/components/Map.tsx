@@ -423,6 +423,68 @@ function createAlertIcon(color: string, alertLevel: string, borderColor: string 
   });
 }
 
+// Create temperature thermometer icon
+function createTemperatureIcon(temperatureC: number, showLabel: boolean = true): L.DivIcon {
+  const tempSize = 24;
+  const tempRounded = Math.round(temperatureC);
+  
+  // Color based on temperature
+  let tempColor = '#3b82f6'; // Blue for cool
+  if (temperatureC >= 35) tempColor = '#dc2626'; // Red for very hot
+  else if (temperatureC >= 32) tempColor = '#f97316'; // Orange for hot
+  else if (temperatureC >= 28) tempColor = '#eab308'; // Yellow for warm
+  else if (temperatureC >= 24) tempColor = '#22c55e'; // Green for mild
+  
+  const gradientId = `tempGrad-${tempColor.replace('#', '')}-${tempRounded}`;
+  
+  // Calculate mercury level (0-100% based on temperature range 20-40°C)
+  const minTemp = 20;
+  const maxTemp = 40;
+  const mercuryLevel = Math.min(Math.max(((temperatureC - minTemp) / (maxTemp - minTemp)) * 100, 0), 100);
+  
+  return L.divIcon({
+    className: 'custom-temperature-marker',
+    html: `<div style="
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+    ">
+      <svg width="${tempSize}" height="${tempSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+        <defs>
+          <linearGradient id="${gradientId}" x1="50%" y1="0%" x2="50%" y2="100%">
+            <stop offset="0%" style="stop-color:${tempColor};stop-opacity:1" />
+            <stop offset="100%" style="stop-color:${tempColor};stop-opacity:0.8" />
+          </linearGradient>
+        </defs>
+        <!-- Thermometer bulb -->
+        <circle cx="12" cy="20" r="4" fill="url(#${gradientId})" stroke="black" stroke-width="1.5"/>
+        <!-- Thermometer tube -->
+        <rect x="10" y="4" width="4" height="14" rx="2" fill="rgba(255,255,255,0.9)" stroke="black" stroke-width="1.5"/>
+        <!-- Mercury fill -->
+        <rect x="10.5" y="${20 - (mercuryLevel * 0.14)}" width="3" height="${mercuryLevel * 0.14}" rx="1.5" fill="url(#${gradientId})" opacity="0.9"/>
+        <!-- Mercury surface -->
+        <ellipse cx="12" cy="${20 - (mercuryLevel * 0.14)}" rx="1.5" ry="0.5" fill="url(#${gradientId})"/>
+      </svg>
+      ${showLabel ? `<div style="
+        margin-top: 3px;
+        background: ${tempColor};
+        padding: 2px 5px;
+        border-radius: 4px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: #ffffff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+      ">${tempRounded}°C</div>` : ''}
+    </div>`,
+    iconSize: showLabel ? [60, 50] : [tempSize, tempSize],
+    iconAnchor: showLabel ? [30, 25] : [tempSize / 2, tempSize / 2],
+  });
+}
+
 // Create marker icon with raindrop and rainfall text
 function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white', alertLevel: string = 'green', showLabel: boolean = true, temperatureC: number | null = null): L.DivIcon {
   // Ensure rainfallMm is a valid number
@@ -896,7 +958,14 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       const borderColor = '#0c4a6e'; // sky-900
       // Always show rainfall markers with animation based on alert level
       const showLabel = currentZoom >= 9;
-      const icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel, district.temperature_c);
+      
+      // Use temperature icon if temperature conditions are met
+      let icon;
+      if (district.temperature_c !== null && (district.temperature_c > 32 || district.alert_level.toLowerCase() !== 'green')) {
+        icon = createTemperatureIcon(district.temperature_c, showLabel);
+      } else {
+        icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel, null);
+      }
 
       // Calculate z-index for weather markers (1000-1999 range, below flood gauges)
       const baseZIndex = 1000;
