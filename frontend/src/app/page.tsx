@@ -52,6 +52,18 @@ const fmt = (v: any, d: number = 0): string => {
   return Number(v).toFixed(d);
 };
 
+// Safe date formatting helper
+const formatDate = (dateStr: string | null | undefined, options: Intl.DateTimeFormatOptions): string => {
+  if (!dateStr) return 'Unknown date';
+  try {
+    const date = new Date(dateStr + 'T00:00:00');
+    if (isNaN(date.getTime())) return 'Unknown date';
+    return date.toLocaleDateString('en-LK', options);
+  } catch {
+    return 'Unknown date';
+  }
+};
+
 export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
@@ -113,15 +125,19 @@ export default function Dashboard() {
         const rainfallKey = selectedHours === 24 ? 'rainfall_24h_mm' :
                           selectedHours === 48 ? 'rainfall_48h_mm' : 'rainfall_72h_mm';
 
-        const districtsWithRain = weatherData.filter((d: any) => (d[rainfallKey] || 0) > 0);
-        const maxDistrict = weatherData.reduce((max: any, d: any) =>
-          (d[rainfallKey] || 0) > (max[rainfallKey] || 0) ? d : max, weatherData[0]);
-        const totalRainfall = weatherData.reduce((sum: number, d: any) =>
+        // Filter valid data entries
+        const validData = weatherData.filter((d: any) => d != null);
+        if (validData.length === 0) return;
+
+        const districtsWithRain = validData.filter((d: any) => (d[rainfallKey] || 0) > 0);
+        const maxDistrict = validData.reduce((max: any, d: any) =>
+          (d[rainfallKey] || 0) > (max[rainfallKey] || 0) ? d : max, validData[0]);
+        const totalRainfall = validData.reduce((sum: number, d: any) =>
           sum + (d[rainfallKey] || 0), 0);
 
         setRainSummary({
           districtsWithRain: districtsWithRain.length,
-          totalDistricts: weatherData.length,
+          totalDistricts: validData.length,
           maxRainfall: Number(maxDistrict?.[rainfallKey]) || 0,
           maxRainfallDistrict: maxDistrict?.district || 'Unknown',
           totalRainfall: totalRainfall,
@@ -473,7 +489,7 @@ export default function Dashboard() {
 
                         {/* Footer with date */}
                         <div className="text-[10px] text-slate-500 text-center">
-                          Data for {new Date(yesterdayStats.date + 'T00:00:00').toLocaleDateString('en-LK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          Data for {formatDate(yesterdayStats.date, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </div>
                       </div>
                     ) : loadingYesterdayStats ? (
@@ -605,7 +621,7 @@ export default function Dashboard() {
 
                   {/* Footer with date */}
                   <div className="text-[10px] text-slate-500 text-center">
-                    Data for {new Date(yesterdayStats.date + 'T00:00:00').toLocaleDateString('en-LK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    Data for {formatDate(yesterdayStats.date, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                   </div>
                 </div>
               ) : loadingYesterdayStats ? (
