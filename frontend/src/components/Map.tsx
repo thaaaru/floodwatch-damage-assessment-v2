@@ -882,8 +882,10 @@ function WeatherMap(props: MapProps = {} as MapProps) {
 
   // Filter weather data based on danger filter
   const filteredWeatherData = useMemo(() => {
-    if (dangerFilter === 'all') return weatherData;
-    return weatherData.filter(district => district.danger_level === dangerFilter);
+    // Ensure weatherData is always an array
+    const safeWeatherData = Array.isArray(weatherData) ? weatherData : [];
+    if (dangerFilter === 'all') return safeWeatherData;
+    return safeWeatherData.filter(district => district.danger_level === dangerFilter);
   }, [weatherData, dangerFilter]);
 
   const markers = useMemo(() => {
