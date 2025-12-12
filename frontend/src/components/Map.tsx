@@ -415,7 +415,7 @@ function createAlertIcon(color: string, alertLevel: string, borderColor: string 
 }
 
 // Create marker icon with raindrop and rainfall text
-function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white', alertLevel: string = 'green', showLabel: boolean = true): L.DivIcon {
+function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white', alertLevel: string = 'green', showLabel: boolean = true, temperatureC: number | null = null): L.DivIcon {
   // Ensure rainfallMm is a valid number
   const validRainfall = (rainfallMm !== null && rainfallMm !== undefined) ? rainfallMm : 0;
   const rainfallText = Math.round(validRainfall);
@@ -483,9 +483,22 @@ function createRainfallMarker(color: string, rainfallMm: number | null | undefin
           white-space: nowrap;
           letter-spacing: 0.3px;
         ">${rainfallText}mm</div>` : ''}
+        ${temperatureC !== null && (temperatureC > 32 || alertLevel.toLowerCase() !== 'green') ? `<div style="
+          margin-top: ${showLabel ? '2px' : '3px'};
+          background: ${temperatureC > 32 ? '#fef3c7' : '#fef2f2'};
+          padding: 2px 5px;
+          border-radius: 4px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-size: 11px;
+          font-weight: 600;
+          color: ${temperatureC > 32 ? '#92400e' : '#991b1b'};
+          box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+          white-space: nowrap;
+          letter-spacing: 0.3px;
+        ">${Math.round(temperatureC)}°C</div>` : ''}
       </div>`,
-    iconSize: showLabel ? [60, 50] : [raindropSize, raindropSize],
-    iconAnchor: showLabel ? [30, 25] : [raindropSize / 2, raindropSize / 2],
+    iconSize: showLabel || (temperatureC !== null && (temperatureC > 32 || alertLevel.toLowerCase() !== 'green')) ? [60, 50] : [raindropSize, raindropSize],
+    iconAnchor: showLabel || (temperatureC !== null && (temperatureC > 32 || alertLevel.toLowerCase() !== 'green')) ? [30, 25] : [raindropSize / 2, raindropSize / 2],
   });
 }
 
@@ -517,7 +530,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
   const [showMarine, setShowMarine] = useState(false); // Hide marine/coast information
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
-  const [showFloodGauges, setShowFloodGauges] = useState(true); // Show flood gauges by default
+  const [showFloodGauges, setShowFloodGauges] = useState(false); // Hide flood gauges by default - show only raindrops
   const [floodGaugeStations, setFloodGaugeStations] = useState<IrrigationStation[]>([]);
   const [earlyWarningAlerts, setEarlyWarningAlerts] = useState<GovernmentAlert[]>([]);
   const [currentZoom, setCurrentZoom] = useState(8);
@@ -819,7 +832,31 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       'critical': 3
     };
 
-    const sortedData = [...filteredWeatherData].sort((a, b) => {
+    // Remove duplicates based on position (lat/lon) - keep the one with highest priority
+    const uniqueDistricts = new Map<string, WeatherSummary>();
+    filteredWeatherData.forEach(district => {
+      const key = `${district.latitude.toFixed(4)}_${district.longitude.toFixed(4)}`;
+      const existing = uniqueDistricts.get(key);
+      if (!existing) {
+        uniqueDistricts.set(key, district);
+      } else {
+        // Keep the one with higher alert level priority
+        const existingPriority = alertPriority[existing.alert_level] || 0;
+        const currentPriority = alertPriority[district.alert_level] || 0;
+        if (currentPriority > existingPriority) {
+          uniqueDistricts.set(key, district);
+        } else if (currentPriority === existingPriority) {
+          // If same alert level, keep the one with higher danger level
+          const existingDanger = dangerPriority[existing.danger_level] || 0;
+          const currentDanger = dangerPriority[district.danger_level] || 0;
+          if (currentDanger > existingDanger) {
+            uniqueDistricts.set(key, district);
+          }
+        }
+      }
+    });
+
+    const sortedData = [...uniqueDistricts.values()].sort((a, b) => {
       // Primary sort by alert level
       const alertDiff = (alertPriority[a.alert_level] || 0) - (alertPriority[b.alert_level] || 0);
       if (alertDiff !== 0) return alertDiff;
@@ -841,7 +878,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       const borderColor = '#0c4a6e'; // sky-900
       // Always show rainfall markers with animation based on alert level
       const showLabel = currentZoom >= 9;
-      const icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel);
+      const icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel, district.temperature_c);
 
       // Calculate z-index for weather markers (1000-1999 range, below flood gauges)
       const baseZIndex = 1000;
@@ -1001,7 +1038,16 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const riverMarkers = useMemo(() => {
     if (!showRivers || riverStations.length === 0) return null;
 
-    return riverStations.map((station) => (
+    // Remove duplicates based on position (lat/lon) - keep first occurrence
+    const uniqueStations = new Map<string, RiverStation>();
+    riverStations.forEach(station => {
+      const key = `${station.lat.toFixed(4)}_${station.lon.toFixed(4)}`;
+      if (!uniqueStations.has(key)) {
+        uniqueStations.set(key, station);
+      }
+    });
+
+    return Array.from(uniqueStations.values()).map((station) => (
       <Marker
         key={`river-${station.river_code}-${station.station}`}
         position={[station.lat, station.lon]}
@@ -1153,7 +1199,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const floodGaugeMarkers = useMemo(() => {
     if (!showFloodGauges || floodGaugeStations.length === 0) return null;
 
-    // Sort by flood severity: normal < alert < minor_flood < major_flood (so major renders on top)
+    // Remove duplicates based on position (lat/lon) - keep the one with highest priority
     const statusPriority: Record<string, number> = {
       'normal': 0,
       'alert': 1,
@@ -1161,7 +1207,23 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       'major_flood': 3
     };
 
-    const sortedStations = [...floodGaugeStations].sort((a, b) => {
+    const uniqueStations = new Map<string, IrrigationStation>();
+    floodGaugeStations.forEach(station => {
+      const key = `${station.lat.toFixed(4)}_${station.lon.toFixed(4)}`;
+      const existing = uniqueStations.get(key);
+      if (!existing) {
+        uniqueStations.set(key, station);
+      } else {
+        // Keep the one with higher status priority
+        const existingPriority = statusPriority[existing.status] || 0;
+        const currentPriority = statusPriority[station.status] || 0;
+        if (currentPriority > existingPriority) {
+          uniqueStations.set(key, station);
+        }
+      }
+    });
+
+    const sortedStations = [...uniqueStations.values()].sort((a, b) => {
       return (statusPriority[a.status] || 0) - (statusPriority[b.status] || 0);
     });
 
@@ -1256,7 +1318,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
   // Early warning alert markers
   const earlyWarningMarkers = useMemo(() => {
-    if (earlyWarningAlerts.length === 0) return null;
+    // Hide early warning alerts by default - show only raindrops on page load
+    return null;
 
     // Get district coordinates for each alert
     const alertsWithCoords = earlyWarningAlerts
