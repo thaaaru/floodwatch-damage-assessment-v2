@@ -948,7 +948,8 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       
       // Use temperature icon if temperature conditions are met
       let icon;
-      if (district.temperature_c !== null && (district.temperature_c > 32 || district.alert_level.toLowerCase() !== 'green')) {
+      const shouldShowTemp = district.temperature_c !== null && (district.temperature_c > 32 || district.alert_level.toLowerCase() !== 'green');
+      if (shouldShowTemp) {
         icon = createTemperatureIcon(district.temperature_c, showLabel);
       } else {
         icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel, null);
