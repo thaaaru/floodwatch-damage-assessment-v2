@@ -956,6 +956,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       const shouldShowTemp = temp !== null && temp !== undefined && typeof temp === 'number' && !isNaN(temp) && (Number(temp) > 30 || alertLevel !== 'green');
       
       if (shouldShowTemp) {
+        console.log(`[Map] Showing temperature icon for ${district.district}: ${temp}°C, alert: ${alertLevel}`);
         icon = createTemperatureIcon(Number(temp), showLabel);
       } else {
         icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel, null);
