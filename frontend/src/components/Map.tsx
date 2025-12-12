@@ -8,10 +8,14 @@ import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, Irriga
 import { getAlertColor, districts } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 // Store reference to native Map constructor to avoid conflict with component name
-const NativeMap = globalThis.Map;
-import 'leaflet/dist/leaflet.css';
+// Use IIFE to capture before any component definitions
+const NativeMap = (() => {
+  const GlobalMap = (globalThis || window || self).Map;
+  return GlobalMap;
+})();
 
 interface RadarFrame {
   time: number;
