@@ -911,7 +911,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
     // Remove duplicates based on position (lat/lon) - keep the one with highest priority
     const uniqueDistricts = new NativeMap<string, WeatherSummary>();
     // Ensure filteredWeatherData is an array
-    if (!Array.isArray(filteredWeatherData)) {
+    if (!Array.isArray(filteredWeatherData) || filteredWeatherData.length === 0) {
       return [];
     }
     filteredWeatherData.forEach(district => {
