@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Production API URL - hardcoded for reliability
-const PRODUCTION_API = 'https://api.hackandbuild.dev';
+// Production API URL - use environment variable or fallback
+// Primary: api.floodwatch.lk, Secondary: direct DigitalOcean IP
+const PRODUCTION_API = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://198.199.76.11:8000';
 
 // Use production API in production, localhost in development
 const BACKEND_BASE = process.env.NODE_ENV === 'production'
