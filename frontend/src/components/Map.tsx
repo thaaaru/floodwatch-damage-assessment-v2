@@ -739,20 +739,23 @@ function WeatherMap(props: MapProps = {} as MapProps) {
           // Weather is required - fail if it doesn't load
           if (weatherResult.status === 'fulfilled') {
             const data = weatherResult.value;
+            // Ensure data is always an array
+            const safeData = Array.isArray(data) ? data : [];
             // Debug: log the fields to ensure 48h/72h rainfall data exists
-            if (data && data.length > 0) {
+            if (safeData && safeData.length > 0) {
               console.log(`Weather data loaded for ${hours}h:`, {
-                district: data[0].district,
-                rainfall_24h_mm: data[0].rainfall_24h_mm,
-                rainfall_48h_mm: data[0].rainfall_48h_mm,
-                rainfall_72h_mm: data[0].rainfall_72h_mm,
+                district: safeData[0].district,
+                rainfall_24h_mm: safeData[0].rainfall_24h_mm,
+                rainfall_48h_mm: safeData[0].rainfall_48h_mm,
+                rainfall_72h_mm: safeData[0].rainfall_72h_mm,
               });
             }
-            setWeatherData(data);
+            setWeatherData(safeData);
             setError('');
           } else {
             setError('Failed to load weather data');
             console.error('Weather fetch failed:', weatherResult.reason);
+            setWeatherData([]); // Set to empty array on error
           }
 
           // Forecast is optional - use empty array if it fails
