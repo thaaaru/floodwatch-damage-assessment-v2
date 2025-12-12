@@ -923,7 +923,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       }
     });
 
-    const sortedData = [...uniqueDistricts.values()].sort((a, b) => {
+    const sortedData = Array.from(uniqueDistricts.values()).sort((a, b) => {
       // Primary sort by alert level
       const alertDiff = (alertPriority[a.alert_level] || 0) - (alertPriority[b.alert_level] || 0);
       if (alertDiff !== 0) return alertDiff;
