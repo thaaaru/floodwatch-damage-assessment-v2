@@ -561,7 +561,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
     fetchRiverData();
     // No auto-refresh - data is cached on backend
-  }, [showRivers]);
+  }, [showRiverStations]);
 
   // Fetch marine data when enabled
   useEffect(() => {
@@ -1052,7 +1052,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         </Popup>
       </Marker>
     ));
-  }, [showRivers, riverStations]);
+  }, [showRiverStations, riverStations]);
 
   // River path lines - always show when river stations are shown
   const riverLines = useMemo(() => {
