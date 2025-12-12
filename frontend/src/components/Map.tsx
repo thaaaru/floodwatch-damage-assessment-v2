@@ -887,8 +887,16 @@ function WeatherMap(props: MapProps = {} as MapProps) {
   const filteredWeatherData = useMemo(() => {
     // Ensure weatherData is always an array
     const safeWeatherData = Array.isArray(weatherData) ? weatherData : [];
+    console.log('[Map] filteredWeatherData useMemo:', { 
+      weatherDataLength: weatherData?.length || 0,
+      isArray: Array.isArray(weatherData),
+      safeWeatherDataLength: safeWeatherData.length,
+      dangerFilter 
+    });
     if (dangerFilter === 'all') return safeWeatherData;
-    return safeWeatherData.filter(district => district.danger_level === dangerFilter);
+    const filtered = safeWeatherData.filter(district => district.danger_level === dangerFilter);
+    console.log('[Map] Filtered result:', { filteredLength: filtered.length });
+    return filtered;
   }, [weatherData, dangerFilter]);
 
   const markers = useMemo(() => {
