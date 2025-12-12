@@ -484,11 +484,11 @@ interface MapProps {
   layer: MapLayer;
   dangerFilter?: DangerFilter;
   userLocation?: { lat: number; lon: number } | null;
-  showRiverStations?: boolean;
-  onShowRiverStationsChange?: (show: boolean) => void;
+  showRivers?: boolean;
+  onShowRiversChange?: (show: boolean) => void;
 }
 
-export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation, showRiverStations: showRiverStationsProp, onShowRiverStationsChange }: MapProps) {
+export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation, showRivers: showRiversProp, onShowRiversChange }: MapProps) {
   const [weatherData, setWeatherData] = useState<WeatherSummary[]>([]);
   const [forecastData, setForecastData] = useState<DistrictForecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -498,9 +498,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [satelliteData, setSatelliteData] = useState<SatelliteData | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
-  const [showRiverStationsInternal, setShowRiverStationsInternal] = useState(false);
-  const showRiverStations = showRiverStationsProp !== undefined ? showRiverStationsProp : showRiverStationsInternal;
-  const setShowRiverStations = onShowRiverStationsChange || setShowRiverStationsInternal;
+  const [showRiversInternal, setShowRiversInternal] = useState(false);
+  const showRivers = showRiversProp !== undefined ? showRiversProp : showRiversInternal;
+  const setShowRivers = onShowRiversChange || setShowRiversInternal;
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
   const [showMarine, setShowMarine] = useState(false); // Hide marine/coast information
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
@@ -548,7 +548,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
   // Fetch river data when enabled
   useEffect(() => {
-    if (!showRiverStations) return;
+    if (!showRivers) return;
 
     const fetchRiverData = async () => {
       try {
@@ -561,7 +561,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
     fetchRiverData();
     // No auto-refresh - data is cached on backend
-  }, [showRiverStations]);
+  }, [showRivers]);
 
   // Fetch marine data when enabled
   useEffect(() => {
@@ -984,7 +984,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
   // River station markers
   const riverMarkers = useMemo(() => {
-    if (!showRiverStations || riverStations.length === 0) return null;
+    if (!showRivers || riverStations.length === 0) return null;
 
     return riverStations.map((station) => (
       <Marker
@@ -1052,30 +1052,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         </Popup>
       </Marker>
     ));
-  }, [showRiverStations, riverStations]);
+  }, [showRivers, riverStations]);
 
-  // River path lines - always show when river stations are shown
-  const riverLines = useMemo(() => {
-    if (!showRiverStations) return null;
-
-    return riverPaths.map((river) => (
-      <Polyline
-        key={`river-line-${river.code}`}
-        positions={river.coordinates}
-        pathOptions={{
-          color: river.color,
-          weight: 3,
-          opacity: 0.7,
-          lineCap: 'round',
-          lineJoin: 'round',
-        }}
-      >
-        <Tooltip sticky>
-          <span className="font-medium">{river.name}</span>
-        </Tooltip>
-      </Polyline>
-    ));
-  }, [showRiverStations]);
 
   // Marine condition markers
   const marineMarkers = useMemo(() => {
@@ -1431,7 +1409,6 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
             attribution='<a href="https://rainviewer.com">RainViewer</a>'
           />
         )}
-        {riverLines}
         {riverMarkers}
         {marineMarkers}
         {markers}
