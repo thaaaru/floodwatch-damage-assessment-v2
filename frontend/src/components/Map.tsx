@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
 import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, IrrigationStation, api, GovernmentAlert, EarlyWarningAlertsResponse } from '@/lib/api';
 import { getAlertColor, districts } from '@/lib/districts';
@@ -39,30 +39,36 @@ let isZoomedIn = false;
 
 function MapController({ weatherData, onZoomChange }: MapControllerProps) {
   const map = useMap();
+  const onZoomChangeRef = useRef(onZoomChange);
+  
+  // Keep ref updated
+  useEffect(() => {
+    onZoomChangeRef.current = onZoomChange;
+  }, [onZoomChange]);
+  
   useEffect(() => {
     map.invalidateSize();
     mapInstance = map;
     
-    // Track zoom changes
-    const handleZoom = () => {
+    // Set initial zoom
+    onZoomChangeRef.current?.(map.getZoom());
+    
+    // Track zoom changes - only on zoomend to avoid infinite loops
+    const handleZoomEnd = () => {
       const currentZoom = map.getZoom();
       if (currentZoom <= 8) {
         isZoomedIn = false;
       }
-      onZoomChange?.(currentZoom);
+      onZoomChangeRef.current?.(currentZoom);
     };
     
-    // Set initial zoom
-    onZoomChange?.(map.getZoom());
-    
-    map.on('zoomend', handleZoom);
-    map.on('zoom', handleZoom); // Also track during zoom animation
+    // Only listen to zoomend, not zoom (which fires continuously during animation)
+    map.on('zoomend', handleZoomEnd);
     
     return () => {
-      map.off('zoomend', handleZoom);
-      map.off('zoom', handleZoom);
+      map.off('zoomend', handleZoomEnd);
     };
-  }, [map, weatherData, onZoomChange]);
+  }, [map, weatherData]); // Remove onZoomChange from dependencies to prevent infinite loops
   return null;
 }
 
