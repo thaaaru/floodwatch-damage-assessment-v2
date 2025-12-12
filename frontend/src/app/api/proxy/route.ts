@@ -17,11 +17,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Reconstruct query string from all params except 'path'
-    const queryParams = new URLSearchParams(searchParams);
-    queryParams.delete('path');
-    const queryString = queryParams.toString();
-    const fullUrl = `${BACKEND_URL}${path}${queryString ? `?${queryString}` : ''}`;
+    // Reconstruct the full URL with the path and any additional params
+    // The path already includes the query string if it was part of the original request
+    const fullUrl = path.startsWith('http') ? path : `${BACKEND_URL}${path}`;
 
     const response = await fetch(fullUrl, {
       method: 'GET',
