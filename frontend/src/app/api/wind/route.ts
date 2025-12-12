@@ -184,6 +184,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
+    console.error('Wind API error:', error);
+
     const message = error instanceof Error ? error.message : 'Unknown error';
     const responseTime = Date.now() - startTime;
 

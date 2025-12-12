@@ -60,7 +60,7 @@ export default function RiversPage() {
         setRiverData(data);
         setLastUpdated(new Date().toLocaleTimeString());
       } catch (error) {
-        // Failed to fetch river data
+        console.error('Failed to fetch river data:', error);
       } finally {
         setLoading(false);
       }

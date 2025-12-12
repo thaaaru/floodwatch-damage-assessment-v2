@@ -185,10 +185,12 @@ export async function getCachedWindField(
   // Check cache first
   const cached = windCache.get(source, normalizedBbox, normalizedTime, resolutionKm);
   if (cached) {
+    console.log(`Wind cache hit: ${source} at ${normalizedTime}`);
     return cached;
   }
 
   // Fetch fresh data
+  console.log(`Wind cache miss: ${source} at ${normalizedTime}`);
   const field = await fetcher();
 
   // Store in cache

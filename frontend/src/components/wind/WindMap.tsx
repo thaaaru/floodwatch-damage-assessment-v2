@@ -117,6 +117,7 @@ export function WindMap({
           error: null,
         });
       } catch (error) {
+        console.error('Wind fetch error:', error);
         setWindData(prev => ({
           ...prev,
           loading: false,

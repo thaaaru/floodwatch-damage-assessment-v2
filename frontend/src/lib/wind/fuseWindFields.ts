@@ -45,6 +45,7 @@ function isProviderInCooldown(source: string): boolean {
     return false;
   }
 
+  console.log(`Provider ${source} in cooldown until ${new Date(cooldown.until).toISOString()}: ${cooldown.reason}`);
   return true;
 }
 
@@ -54,6 +55,7 @@ function isProviderInCooldown(source: string): boolean {
 function setProviderCooldown(source: string, minutes: number, reason: string): void {
   const until = Date.now() + minutes * 60 * 1000;
   providerCooldowns.set(source, { until, reason });
+  console.log(`Provider ${source} set to cooldown for ${minutes} min: ${reason}`);
 }
 
 /**
@@ -72,17 +74,20 @@ export async function getWindField(request: WindDataRequest): Promise<WindField>
   if (source !== 'auto') {
     // Check cooldown for specific source
     if (isProviderInCooldown(source)) {
+      console.warn(`Provider ${source} is rate-limited, falling back to mock data`);
       return generateMockWindField(request);
     }
 
     const provider = providers[source as keyof typeof providers];
     if (!provider) {
+      console.warn(`Unknown wind source: ${source}, using mock data`);
       return generateMockWindField(request);
     }
 
     try {
       const canServe = await provider.canServe(request);
       if (!canServe) {
+        console.warn(`Provider ${source} cannot serve, using mock data`);
         return generateMockWindField(request);
       }
 
@@ -97,6 +102,8 @@ export async function getWindField(request: WindDataRequest): Promise<WindField>
       if (message.includes('429') || message.includes('rate') || message.includes('limit')) {
         setProviderCooldown(source, 60, message);
       }
+
+      console.warn(`Provider ${source} failed: ${message}, using mock data`);
     }
 
     return generateMockWindField(request);
@@ -138,6 +145,7 @@ export async function getWindField(request: WindDataRequest): Promise<WindField>
   }
 
   // All providers failed or in cooldown - use mock data
+  console.warn('All providers failed or rate-limited, using mock wind data');
   return generateMockWindField(request);
 }
 

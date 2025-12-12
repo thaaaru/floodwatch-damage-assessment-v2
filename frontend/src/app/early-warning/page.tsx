@@ -61,7 +61,7 @@ function getCachedData(): CachedData | null {
       }
     }
   } catch (e) {
-    // Cache read error
+    console.error('Cache read error:', e);
   }
   return null;
 }
@@ -71,7 +71,7 @@ function setCachedData(data: EarlyWarningResponse): void {
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
   } catch (e) {
-    // Cache write error
+    console.error('Cache write error:', e);
   }
 }
 

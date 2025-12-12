@@ -75,7 +75,7 @@ export default function Dashboard() {
         const data = await api.getActiveAlerts();
         setAlerts(data);
       } catch (err) {
-        // Failed to fetch alerts
+        console.error('Failed to fetch alerts:', err);
       } finally {
         setLoading(false);
       }
@@ -127,7 +127,7 @@ export default function Dashboard() {
           totalRainfall: totalRainfall,
         });
       } catch (err) {
-        // Failed to fetch rain summary
+        console.error('Failed to fetch rain summary:', err);
       }
     };
     fetchRainSummary();
@@ -142,7 +142,7 @@ export default function Dashboard() {
         const stats = await api.getYesterdayStats();
         setYesterdayStats(stats);
       } catch (err) {
-        // Failed to fetch yesterday stats
+        console.error('Failed to fetch yesterday stats:', err);
       } finally {
         setLoadingYesterdayStats(false);
       }
