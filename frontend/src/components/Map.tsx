@@ -1390,8 +1390,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     // Don't block the map - show error overlay instead
   }
 
-  const nawalapitiyaCenter: [number, number] = [7.05, 80.55];
-  const mapCenter: [number, number] = nawalapitiyaCenter;
+  const ankumburaCenter: [number, number] = [7.4393, 80.571];
+  const mapCenter: [number, number] = ankumburaCenter;
   const mapZoom = 8;
 
   return (
