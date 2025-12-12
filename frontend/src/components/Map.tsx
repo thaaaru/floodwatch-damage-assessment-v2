@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Tooltip, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, CircleMarker, Popup, Polyline, useMap } from 'react-leaflet';
 import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, IrrigationStation, api, GovernmentAlert, EarlyWarningAlertsResponse } from '@/lib/api';
 import { getAlertColor, districts } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
@@ -1129,12 +1129,6 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
               )}
             </div>
           </Popup>
-          <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-            <div className="text-xs">
-              <div className="font-bold">{condition.location}</div>
-              <div>Waves: {condition.wave_height_m.toFixed(1)}m</div>
-            </div>
-          </Tooltip>
         </Marker>
       );
     });
@@ -1230,12 +1224,6 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
               )}
             </div>
           </Popup>
-          <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-            <div className="text-xs">
-              <div className="font-bold">{station.station}</div>
-              <div>{station.pct_to_alert.toFixed(0)}% to alert</div>
-            </div>
-          </Tooltip>
         </Marker>
       );
     });
@@ -1343,13 +1331,6 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
               ))}
             </div>
           </Popup>
-          <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-            <div className="text-xs">
-              <div className="font-bold">{mostSevereAlert.alert.district}</div>
-              <div>{mostSevereAlert.alert.event}</div>
-              {alertCount > 1 && <div className="text-[10px]">+{alertCount - 1} more</div>}
-            </div>
-          </Tooltip>
         </Marker>
       );
     });
