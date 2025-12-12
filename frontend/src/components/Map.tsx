@@ -38,7 +38,6 @@ interface MapControllerProps {
 
 // Store map instance globally so markers can access it
 let mapInstance: L.Map | null = null;
-let isZoomedIn = false;
 
 function MapController({ weatherData, onZoomChange }: MapControllerProps) {
   const map = useMap();
@@ -59,9 +58,6 @@ function MapController({ weatherData, onZoomChange }: MapControllerProps) {
     // Track zoom changes - only on zoomend to avoid infinite loops
     const handleZoomEnd = () => {
       const currentZoom = map.getZoom();
-      if (currentZoom <= 8) {
-        isZoomedIn = false;
-      }
       onZoomChangeRef.current?.(currentZoom);
     };
     
@@ -84,7 +80,6 @@ function focusOnPosition(lat: number, lon: number) {
     animate: true,
     duration: 1.2
   });
-  isZoomedIn = true;
 }
 
 // Color scale functions for different data types
@@ -244,7 +239,6 @@ function getRiverStatusColorGradient(status: string): string {
 function createRiverStationIcon(color: string, waterLevelM?: number, showLabel: boolean = true): L.DivIcon {
   const gaugeSize = 24;
   const labelText = waterLevelM !== undefined ? `${waterLevelM.toFixed(1)}m` : null;
-  console.log('River station icon color:', color);
   return L.divIcon({
     className: 'river-station-marker',
     html: `<div style="
@@ -741,15 +735,6 @@ function WeatherMap(props: MapProps = {} as MapProps) {
             const data = weatherResult.value;
             // Ensure data is always an array
             const safeData = Array.isArray(data) ? data : [];
-            // Debug: log the fields to ensure 48h/72h rainfall data exists
-            if (safeData && safeData.length > 0) {
-              console.log(`Weather data loaded for ${hours}h:`, {
-                district: safeData[0].district,
-                rainfall_24h_mm: safeData[0].rainfall_24h_mm,
-                rainfall_48h_mm: safeData[0].rainfall_48h_mm,
-                rainfall_72h_mm: safeData[0].rainfall_72h_mm,
-              });
-            }
             setWeatherData(safeData);
             setError('');
           } else {
@@ -887,16 +872,8 @@ function WeatherMap(props: MapProps = {} as MapProps) {
   const filteredWeatherData = useMemo(() => {
     // Ensure weatherData is always an array
     const safeWeatherData = Array.isArray(weatherData) ? weatherData : [];
-    console.log('[Map] filteredWeatherData useMemo:', { 
-      weatherDataLength: weatherData?.length || 0,
-      isArray: Array.isArray(weatherData),
-      safeWeatherDataLength: safeWeatherData.length,
-      dangerFilter 
-    });
     if (dangerFilter === 'all') return safeWeatherData;
-    const filtered = safeWeatherData.filter(district => district.danger_level === dangerFilter);
-    console.log('[Map] Filtered result:', { filteredLength: filtered.length });
-    return filtered;
+    return safeWeatherData.filter(district => district.danger_level === dangerFilter);
   }, [weatherData, dangerFilter]);
 
   const markers = useMemo(() => {
@@ -919,12 +896,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
     // Remove duplicates based on position (lat/lon) - keep the one with highest priority
     const uniqueDistricts = new NativeMap<string, WeatherSummary>();
     // Ensure filteredWeatherData is an array
-    if (!Array.isArray(filteredWeatherData)) {
-      console.warn('[Map] filteredWeatherData is not an array:', filteredWeatherData);
-      return [];
-    }
-    if (filteredWeatherData.length === 0) {
-      console.log('[Map] filteredWeatherData is empty');
+    if (!Array.isArray(filteredWeatherData) || filteredWeatherData.length === 0) {
       return [];
     }
     filteredWeatherData.forEach(district => {
@@ -977,12 +949,11 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       const temp = district.temperature_c;
       const alertLevel = (district.alert_level || 'green').toLowerCase();
       
-      // Show temperature icon if: temp > 30°C OR alert level is not green (yellow/orange/red)
+      // Show temperature icon if: temp > 32°C OR alert level is not green (yellow/orange/red)
       // Lowered threshold to 30°C for testing - can be changed back to 32°C
-      const shouldShowTemp = temp !== null && temp !== undefined && typeof temp === 'number' && !isNaN(temp) && (Number(temp) > 30 || alertLevel !== 'green');
+      const shouldShowTemp = temp !== null && temp !== undefined && typeof temp === 'number' && !isNaN(temp) && (Number(temp) > 32 || alertLevel !== 'green');
       
       if (shouldShowTemp) {
-        console.log(`[Map] Showing temperature icon for ${district.district}: ${temp}°C, alert: ${alertLevel}`);
         icon = createTemperatureIcon(Number(temp), showLabel);
       } else {
         icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel, null);
