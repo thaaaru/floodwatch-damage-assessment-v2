@@ -9,9 +9,11 @@ const BACKEND_BASE = process.env.NODE_ENV === 'production'
   ? PRODUCTION_API
   : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
-// Use proxy in development to avoid CORS issues with remote backends
-const USE_PROXY = process.env.NODE_ENV === 'development' &&
-                  process.env.NEXT_PUBLIC_API_URL?.includes('198.199.76.11');
+// Use proxy in development OR production to avoid CORS/HTTPS issues with remote backends
+// In development: avoids CORS when backend is remote IP (198.199.76.11)
+// In production: avoids HTTPS-to-HTTP mixed content and CORS issues
+const USE_PROXY = process.env.NEXT_PUBLIC_API_URL?.includes('198.199.76.11') ||
+                  (process.env.NODE_ENV === 'production' && BACKEND_BASE.includes('198.199.76.11'));
 
 const API_BASE = USE_PROXY ? '/api/proxy' : BACKEND_BASE;
 
