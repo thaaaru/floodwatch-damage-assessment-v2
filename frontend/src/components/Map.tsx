@@ -1392,7 +1392,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
   const nawalapitiyaCenter: [number, number] = [7.05, 80.55];
   const mapCenter: [number, number] = nawalapitiyaCenter;
-  const mapZoom = 9;
+  const mapZoom = 8;
 
   return (
     <div className="relative h-full w-full">
