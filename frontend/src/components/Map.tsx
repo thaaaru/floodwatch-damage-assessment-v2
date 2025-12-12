@@ -1075,7 +1075,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         </Tooltip>
       </Polyline>
     ));
-  }, [showRivers]);
+  }, [showRiverStations]);
 
   // Marine condition markers
   const marineMarkers = useMemo(() => {
