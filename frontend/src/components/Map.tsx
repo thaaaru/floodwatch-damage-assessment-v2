@@ -757,11 +757,13 @@ function WeatherMap(props: MapProps = {} as MapProps) {
 
           // Forecast is optional - use empty array if it fails
           if (forecastResult.status === 'fulfilled') {
-            setForecastData(forecastResult.value);
+            const forecastValue = forecastResult.value;
+            // Ensure it's an array
+            setForecastData(Array.isArray(forecastValue) ? forecastValue : []);
           } else {
             console.warn('Forecast fetch failed (non-critical):', forecastResult.reason);
             // Keep existing forecast data or use empty array
-            setForecastData(prev => prev.length > 0 ? prev : []);
+            setForecastData(prev => Array.isArray(prev) && prev.length > 0 ? prev : []);
           }
         }
       } catch (err) {
@@ -788,9 +790,11 @@ function WeatherMap(props: MapProps = {} as MapProps) {
   // Create a map of forecast data by district
   const forecastByDistrict = useMemo(() => {
     const map: Record<string, DistrictForecast> = {};
-    forecastData.forEach(f => {
-      map[f.district] = f;
-    });
+    if (Array.isArray(forecastData)) {
+      forecastData.forEach(f => {
+        map[f.district] = f;
+      });
+    }
     return map;
   }, [forecastData]);
 
