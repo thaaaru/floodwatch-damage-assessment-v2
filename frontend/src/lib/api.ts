@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Production API URL - use environment variable or fallback
+// Note: The API base URL is https://api.hackandbuild.dev with endpoints like /api/weather/all
 const PRODUCTION_API = process.env.NEXT_PUBLIC_PROD_API_URL || 'https://api.hackandbuild.dev';
 
 // Use production API in production, localhost in development
