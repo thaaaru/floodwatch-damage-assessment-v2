@@ -191,7 +191,7 @@ class ApiClient {
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         console.error(`Request timeout for ${endpoint}`);
         // Return empty result to prevent UI crashes
-        if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
+        if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
         }
         if (endpoint.includes('/irrigation')) {
@@ -206,7 +206,7 @@ class ApiClient {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         console.error(`Network error for ${endpoint}:`, error.message);
         // Return empty result based on endpoint type
-        if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
+        if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
         }
         if (endpoint.includes('/irrigation')) {
