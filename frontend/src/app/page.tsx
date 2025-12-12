@@ -175,15 +175,17 @@ export default function Dashboard() {
         {/* Map Container */}
         <div className="relative h-full">
           {/* Map - Full Screen on mobile, left column on desktop */}
-          <div className="absolute inset-0 p-4">
-            <div className="h-full card overflow-hidden">
-              <Map
-                onDistrictSelect={setSelectedDistrict}
-                hours={selectedHours}
-                layer={selectedLayer}
-                dangerFilter={dangerFilter}
-                userLocation={userLocation}
-              />
+            <div className="absolute inset-0 p-4">
+              <div className="h-full card overflow-hidden">
+                <Map
+                  onDistrictSelect={setSelectedDistrict}
+                  hours={selectedHours}
+                  layer={selectedLayer}
+                  dangerFilter={dangerFilter}
+                  userLocation={userLocation}
+                  showRivers={showRiverStations}
+                  onShowRiversChange={setShowRiverStations}
+                />
             </div>
           </div>
 
