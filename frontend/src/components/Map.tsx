@@ -8,6 +8,9 @@ import { WeatherSummary, DistrictForecast, RiverStation, MarineCondition, Irriga
 import { getAlertColor, districts } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
 import L from 'leaflet';
+
+// Store reference to native Map constructor to avoid conflict with component name
+const NativeMap = Map;
 import 'leaflet/dist/leaflet.css';
 
 interface RadarFrame {
@@ -848,7 +851,7 @@ export default function Map(props: MapProps = {} as MapProps) {
     };
 
     // Remove duplicates based on position (lat/lon) - keep the one with highest priority
-    const uniqueDistricts = new Map<string, WeatherSummary>();
+    const uniqueDistricts = new NativeMap<string, WeatherSummary>();
     filteredWeatherData.forEach(district => {
       const key = `${district.latitude.toFixed(4)}_${district.longitude.toFixed(4)}`;
       const existing = uniqueDistricts.get(key);
@@ -1054,7 +1057,7 @@ export default function Map(props: MapProps = {} as MapProps) {
     if (!showRivers || riverStations.length === 0) return null;
 
     // Remove duplicates based on position (lat/lon) - keep first occurrence
-    const uniqueStations = new Map<string, RiverStation>();
+    const uniqueStations = new NativeMap<string, RiverStation>();
     riverStations.forEach(station => {
       const key = `${station.lat.toFixed(4)}_${station.lon.toFixed(4)}`;
       if (!uniqueStations.has(key)) {
@@ -1222,7 +1225,7 @@ export default function Map(props: MapProps = {} as MapProps) {
       'major_flood': 3
     };
 
-    const uniqueStations = new Map<string, IrrigationStation>();
+    const uniqueStations = new NativeMap<string, IrrigationStation>();
     floodGaugeStations.forEach(station => {
       const key = `${station.lat.toFixed(4)}_${station.lon.toFixed(4)}`;
       const existing = uniqueStations.get(key);
