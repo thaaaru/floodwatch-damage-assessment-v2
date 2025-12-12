@@ -164,7 +164,7 @@ class ApiClient {
         if (response.status >= 500) {
           console.error(`Backend server error (${response.status}) for ${endpoint}. Backend may be temporarily unavailable.`);
           // Return empty array/object based on expected type to prevent UI crashes
-          if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
+          if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast') || endpoint.includes('/weather')) {
             return [] as T;
           }
           // For irrigation and other object responses, return empty object with expected structure
@@ -176,9 +176,6 @@ class ApiClient {
           }
           if (endpoint.includes('/early-warning')) {
             return { total_alerts: 0, alerts: [] } as T;
-          }
-          if (endpoint.includes('/weather')) {
-            return [] as T;
           }
           return {} as T;
         }
