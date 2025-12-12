@@ -484,9 +484,11 @@ interface MapProps {
   layer: MapLayer;
   dangerFilter?: DangerFilter;
   userLocation?: { lat: number; lon: number } | null;
+  showRivers?: boolean;
+  onShowRiversChange?: (show: boolean) => void;
 }
 
-export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation }: MapProps) {
+export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation, showRivers: showRiversProp, onShowRiversChange }: MapProps) {
   const [weatherData, setWeatherData] = useState<WeatherSummary[]>([]);
   const [forecastData, setForecastData] = useState<DistrictForecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -496,7 +498,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [satelliteData, setSatelliteData] = useState<SatelliteData | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
-  const [showRivers, setShowRivers] = useState(false);
+  const [showRiversInternal, setShowRiversInternal] = useState(false);
+  const showRivers = showRiversProp !== undefined ? showRiversProp : showRiversInternal;
+  const setShowRivers = onShowRiversChange || setShowRiversInternal;
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
   const [showMarine, setShowMarine] = useState(false); // Hide marine/coast information
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
