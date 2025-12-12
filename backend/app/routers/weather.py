@@ -175,13 +175,41 @@ async def get_all_forecast(
     """
     Get 5-day forecast for all districts.
     Data is extracted from the cached weather data.
+    Returns stale data immediately if available, triggers background refresh.
     Always returns a list, even if empty or on error.
     """
-    try:
-        if not weather_cache.is_cache_valid():
-            await weather_cache.refresh_cache()
+    import asyncio
 
-        result = weather_cache.get_all_forecast()
+    try:
+        # Check if we have any cached data (even if stale)
+        cached_forecast = weather_cache.get_all_forecast()
+
+        # If cache is invalid, trigger background refresh (don't wait)
+        if not weather_cache.is_cache_valid():
+            if cached_forecast:
+                # Have stale data - return it immediately, refresh in background
+                asyncio.create_task(weather_cache.refresh_cache())
+                return cached_forecast
+            else:
+                # No cached data at all - try refresh with timeout, but don't block too long
+                try:
+                    # Use asyncio.wait_for to prevent long waits that cause 502 errors
+                    refresh_task = weather_cache.refresh_cache()
+                    # Wait max 5 seconds for refresh, then return empty or stale data
+                    try:
+                        await asyncio.wait_for(refresh_task, timeout=5.0)
+                        return weather_cache.get_all_forecast()
+                    except asyncio.TimeoutError:
+                        # Refresh is taking too long - return empty array to prevent timeout
+                        logger.warning("Weather cache refresh timed out for forecast, returning empty data")
+                        return []
+                except Exception as e:
+                    logger.error(f"Weather service error in forecast endpoint: {e}")
+                    # Return empty array instead of raising 503 to prevent timeout errors
+                    return []
+
+        # Return fresh cached data
+        result = cached_forecast if cached_forecast else weather_cache.get_all_forecast()
         # Ensure we always return a list
         if not isinstance(result, list):
             logger.warning(f"get_all_forecast returned non-list type: {type(result)}, returning empty list")
