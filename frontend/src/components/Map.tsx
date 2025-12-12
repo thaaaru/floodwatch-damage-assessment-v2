@@ -1565,6 +1565,15 @@ function WeatherMap(props: MapProps = {} as MapProps) {
             attribution='<a href="https://rainviewer.com">RainViewer</a>'
           />
         )}
+        {/* Test marker to verify map rendering */}
+        <Marker position={[7.4393, 80.571]} icon={L.divIcon({
+          className: 'test-marker',
+          html: '<div style="width: 30px; height: 30px; background: red; border-radius: 50%; border: 3px solid white;"></div>',
+          iconSize: [30, 30],
+          iconAnchor: [15, 15]
+        })}>
+          <Popup>Test Marker - If you see this, markers work</Popup>
+        </Marker>
         {riverMarkers}
         {marineMarkers}
         {Array.isArray(markers) && markers.length > 0 ? markers : null}
