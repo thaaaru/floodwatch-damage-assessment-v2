@@ -30,26 +30,39 @@ export type MapLayer = 'rainfall' | 'danger' | 'temperature' | 'humidity' | 'win
 
 interface MapControllerProps {
   weatherData: WeatherSummary[];
+  onZoomChange?: (zoom: number) => void;
 }
 
 // Store map instance globally so markers can access it
 let mapInstance: L.Map | null = null;
 let isZoomedIn = false;
 
-function MapController({ weatherData }: MapControllerProps) {
+function MapController({ weatherData, onZoomChange }: MapControllerProps) {
   const map = useMap();
   useEffect(() => {
     map.invalidateSize();
     mapInstance = map;
     
-    // Reset zoom state when map initializes
-    map.on('zoomend', () => {
+    // Track zoom changes
+    const handleZoom = () => {
       const currentZoom = map.getZoom();
       if (currentZoom <= 8) {
         isZoomedIn = false;
       }
-    });
-  }, [map, weatherData]);
+      onZoomChange?.(currentZoom);
+    };
+    
+    // Set initial zoom
+    onZoomChange?.(map.getZoom());
+    
+    map.on('zoomend', handleZoom);
+    map.on('zoom', handleZoom); // Also track during zoom animation
+    
+    return () => {
+      map.off('zoomend', handleZoom);
+      map.off('zoom', handleZoom);
+    };
+  }, [map, weatherData, onZoomChange]);
   return null;
 }
 
@@ -163,7 +176,7 @@ function getFloodGaugeGradientColor(pctToAlert: number): string {
 }
 
 // Create custom flood gauge marker icon matching rain icon style with water gauge icon
-function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
+function createFloodGaugeIcon(status: string, pctToAlert: number, showLabel: boolean = true): L.DivIcon {
   const circleSize = 24;
   const pctLabel = Math.round(pctToAlert);
   const color = getFloodGaugeGradientColor(pctToAlert);
@@ -194,7 +207,7 @@ function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
         <!-- Top mounting bracket -->
         <rect x="10" y="6" width="4" height="2" rx="0.5" fill="black"/>
       </svg>
-      <div style="
+      ${showLabel ? `<div style="
         margin-top: 3px;
         background: rgba(255, 255, 255, 0.95);
         padding: 2px 5px;
@@ -206,10 +219,10 @@ function createFloodGaugeIcon(status: string, pctToAlert: number): L.DivIcon {
         box-shadow: 0 1px 3px rgba(0,0,0,0.3);
         white-space: nowrap;
         letter-spacing: 0.3px;
-      ">${pctLabel}%</div>
+      ">${pctLabel}%</div>` : ''}
     </div>`,
-    iconSize: [60, 50],
-    iconAnchor: [30, 25],
+    iconSize: showLabel ? [60, 50] : [gaugeSize, gaugeSize],
+    iconAnchor: showLabel ? [30, 25] : [gaugeSize / 2, gaugeSize / 2],
   });
 }
 
@@ -219,7 +232,7 @@ function getRiverStatusColorGradient(status: string): string {
 }
 
 // Create water level icon for river stations
-function createRiverStationIcon(color: string, waterLevelM?: number): L.DivIcon {
+function createRiverStationIcon(color: string, waterLevelM?: number, showLabel: boolean = true): L.DivIcon {
   const gaugeSize = 24;
   const labelText = waterLevelM !== undefined ? `${waterLevelM.toFixed(1)}m` : null;
   console.log('River station icon color:', color);
@@ -246,7 +259,7 @@ function createRiverStationIcon(color: string, waterLevelM?: number): L.DivIcon 
         <!-- Top mounting bracket -->
         <rect x="10" y="6" width="4" height="2" rx="0.5" fill="black"/>
       </svg>
-      ${labelText !== null ? `<div style="
+      ${showLabel && labelText !== null ? `<div style="
         margin-top: 3px;
         background: rgba(255, 255, 255, 0.95);
         padding: 2px 5px;
@@ -260,8 +273,8 @@ function createRiverStationIcon(color: string, waterLevelM?: number): L.DivIcon 
         letter-spacing: 0.3px;
       ">${labelText}</div>` : ''}
     </div>`,
-    iconSize: labelText !== null ? [60, 50] : [gaugeSize, gaugeSize],
-    iconAnchor: labelText !== null ? [30, 25] : [gaugeSize / 2, gaugeSize / 2],
+    iconSize: (showLabel && labelText !== null) ? [60, 50] : [gaugeSize, gaugeSize],
+    iconAnchor: (showLabel && labelText !== null) ? [30, 25] : [gaugeSize / 2, gaugeSize / 2],
   });
 }
 
@@ -402,7 +415,7 @@ function createAlertIcon(color: string, alertLevel: string, borderColor: string 
 }
 
 // Create marker icon with raindrop and rainfall text
-function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white', alertLevel: string = 'green'): L.DivIcon {
+function createRainfallMarker(color: string, rainfallMm: number | null | undefined, borderColor: string = 'white', alertLevel: string = 'green', showLabel: boolean = true): L.DivIcon {
   // Ensure rainfallMm is a valid number
   const validRainfall = (rainfallMm !== null && rainfallMm !== undefined) ? rainfallMm : 0;
   const rainfallText = Math.round(validRainfall);
@@ -457,7 +470,7 @@ function createRainfallMarker(color: string, rainfallMm: number | null | undefin
           <!-- Highlight overlay for 3D shine effect on left side -->
           <path d="M12 2C12 2 6 8 6 13C6 17.4183 9.58172 21 14 21C18.4183 21 22 17.4183 22 13C22 8 16 2 16 2L12 2Z" fill="url(#${highlightId})" opacity="0.7"/>
         </svg>
-        <div style="
+        ${showLabel ? `<div style="
           margin-top: 3px;
           background: #bfdbfe;
           padding: 2px 5px;
@@ -469,10 +482,10 @@ function createRainfallMarker(color: string, rainfallMm: number | null | undefin
           box-shadow: 0 1px 3px rgba(0,0,0,0.3);
           white-space: nowrap;
           letter-spacing: 0.3px;
-        ">${rainfallText}mm</div>
+        ">${rainfallText}mm</div>` : ''}
       </div>`,
-    iconSize: [60, 50],
-    iconAnchor: [30, 25],
+    iconSize: showLabel ? [60, 50] : [raindropSize, raindropSize],
+    iconAnchor: showLabel ? [30, 25] : [raindropSize / 2, raindropSize / 2],
   });
 }
 
@@ -507,6 +520,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [showFloodGauges, setShowFloodGauges] = useState(true); // Show flood gauges by default
   const [floodGaugeStations, setFloodGaugeStations] = useState<IrrigationStation[]>([]);
   const [earlyWarningAlerts, setEarlyWarningAlerts] = useState<GovernmentAlert[]>([]);
+  const [currentZoom, setCurrentZoom] = useState(8);
 
   const isForecastLayer = layer.startsWith('forecast');
   const forecastDayIndex = isForecastLayer ? parseInt(layer.replace('forecast', '')) - 1 : 0;
@@ -826,7 +840,8 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       // Always use rainfall markers, with dark blue border to match the blue gradient
       const borderColor = '#0c4a6e'; // sky-900
       // Always show rainfall markers with animation based on alert level
-      const icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level);
+      const showLabel = currentZoom > 10;
+      const icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel);
 
       // Calculate z-index for weather markers (1000-1999 range, below flood gauges)
       const baseZIndex = 1000;
@@ -980,7 +995,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         </Marker>
       );
     });
-  }, [filteredWeatherData, forecastByDistrict, hours, layer, onDistrictSelect, isForecastLayer, forecastDayIndex]);
+  }, [filteredWeatherData, forecastByDistrict, hours, layer, onDistrictSelect, isForecastLayer, forecastDayIndex, currentZoom]);
 
   // River station markers
   const riverMarkers = useMemo(() => {
@@ -990,7 +1005,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       <Marker
         key={`river-${station.river_code}-${station.station}`}
         position={[station.lat, station.lon]}
-        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status), station.water_level_m)}
+        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status), station.water_level_m, currentZoom > 10)}
         eventHandlers={{
           click: () => {
             focusOnPosition(station.lat, station.lon);
@@ -1052,7 +1067,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         </Popup>
       </Marker>
     ));
-  }, [showRivers, riverStations]);
+  }, [showRivers, riverStations, currentZoom]);
 
 
   // Marine condition markers
@@ -1160,7 +1175,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         <Marker
           key={`flood-gauge-${station.station}`}
           position={[station.lat, station.lon]}
-          icon={createFloodGaugeIcon(station.status, station.pct_to_alert)}
+          icon={createFloodGaugeIcon(station.status, station.pct_to_alert, currentZoom > 10)}
           zIndexOffset={zIndex}
           eventHandlers={{
             click: () => {
@@ -1227,7 +1242,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         </Marker>
       );
     });
-  }, [showFloodGauges, floodGaugeStations]);
+  }, [showFloodGauges, floodGaugeStations, currentZoom]);
 
   // Helper function to get alert severity (0-3)
   const getAlertSeverity = useCallback((alert: GovernmentAlert): number => {
@@ -1377,7 +1392,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         className="h-full w-full rounded-lg"
         scrollWheelZoom={true}
       >
-        <MapController weatherData={weatherData} />
+        <MapController weatherData={weatherData} onZoomChange={setCurrentZoom} />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
