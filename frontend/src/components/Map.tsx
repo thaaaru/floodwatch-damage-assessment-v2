@@ -735,6 +735,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
             const data = weatherResult.value;
             // Ensure data is always an array
             const safeData = Array.isArray(data) ? data : [];
+            console.log('[Map Debug] Setting weatherData:', { length: safeData.length, firstDistrict: safeData[0]?.district });
             setWeatherData(safeData);
             setError('');
           } else {
