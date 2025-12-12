@@ -515,7 +515,7 @@ function createRainfallMarker(color: string, rainfallMm: number | null | undefin
       align-items: center;
       cursor: pointer;
     ">
-      <svg width="${raindropSize}" height="${raindropSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="${animationClass}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); color: ${color};">
+      <svg width="${raindropSize}" height="${raindropSize}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="${animationClass}" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); color: ${color};">
           <defs>
             <!-- 3D gradient for raindrop - lighter at top left, darker at bottom -->
             <linearGradient id="${gradientId}" x1="20%" y1="0%" x2="50%" y2="100%">
@@ -1116,8 +1116,17 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       filteredWeatherDataLength: filteredWeatherData.length,
       uniqueDistrictsSize: uniqueDistricts.size,
       sortedDataLength: sortedData.length,
-      markersArrayLength: markersArray.length
+      markersArrayLength: markersArray.length,
+      firstMarker: markersArray[0] ? {
+        district: sortedData[0]?.district,
+        position: [sortedData[0]?.latitude, sortedData[0]?.longitude],
+        hasIcon: !!markersArray[0]
+      } : 'none'
     });
+    
+    if (markersArray.length === 0) {
+      console.warn('[Map Debug] ⚠️ No markers to display! Check if weatherData is loading.');
+    }
     
     return markersArray;
   }, [filteredWeatherData, forecastByDistrict, hours, layer, onDistrictSelect, isForecastLayer, forecastDayIndex, currentZoom]);
