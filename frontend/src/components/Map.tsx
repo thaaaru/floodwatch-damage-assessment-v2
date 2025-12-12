@@ -840,7 +840,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       // Always use rainfall markers, with dark blue border to match the blue gradient
       const borderColor = '#0c4a6e'; // sky-900
       // Always show rainfall markers with animation based on alert level
-      const showLabel = currentZoom > 10;
+      const showLabel = currentZoom >= 9;
       const icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel);
 
       // Calculate z-index for weather markers (1000-1999 range, below flood gauges)
@@ -1005,7 +1005,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
       <Marker
         key={`river-${station.river_code}-${station.station}`}
         position={[station.lat, station.lon]}
-        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status), station.water_level_m, currentZoom > 10)}
+        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status), station.water_level_m, currentZoom >= 9)}
         eventHandlers={{
           click: () => {
             focusOnPosition(station.lat, station.lon);
@@ -1175,7 +1175,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
         <Marker
           key={`flood-gauge-${station.station}`}
           position={[station.lat, station.lon]}
-          icon={createFloodGaugeIcon(station.status, station.pct_to_alert, currentZoom > 10)}
+          icon={createFloodGaugeIcon(station.status, station.pct_to_alert, currentZoom >= 9)}
           zIndexOffset={zIndex}
           eventHandlers={{
             click: () => {
