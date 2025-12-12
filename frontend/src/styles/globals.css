@@ -188,6 +188,23 @@
   transition: opacity 0.15s ease-in-out !important;
 }
 
+/* Custom marker icons */
+.custom-rainfall-marker,
+.custom-temperature-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.custom-rainfall-marker div,
+.custom-temperature-marker div {
+  pointer-events: auto !important;
+}
+
+.leaflet-div-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
 /* Custom alert marker styles */
 .custom-alert-marker {
   background: transparent !important;
