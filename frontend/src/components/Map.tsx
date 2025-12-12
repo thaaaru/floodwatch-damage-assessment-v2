@@ -1558,7 +1558,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
         )}
         {riverMarkers}
         {marineMarkers}
-        {markers}
+        {Array.isArray(markers) && markers.length > 0 ? markers : null}
         {floodGaugeMarkers}
         {earlyWarningMarkers}
       </MapContainer>
