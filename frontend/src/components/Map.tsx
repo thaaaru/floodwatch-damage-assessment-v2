@@ -11,11 +11,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 // Store reference to native Map constructor to avoid conflict with component name
-// Use IIFE to capture before any component definitions
-const NativeMap = (() => {
-  const GlobalMap = (globalThis || window || self).Map;
-  return GlobalMap;
-})();
+const NativeMap = Map;
 
 interface RadarFrame {
   time: number;
@@ -527,7 +523,7 @@ interface MapProps {
   onShowRiversChange?: (show: boolean) => void;
 }
 
-export default function Map(props: MapProps = {} as MapProps) {
+function WeatherMap(props: MapProps = {} as MapProps) {
   const { 
     onDistrictSelect, 
     hours = 24, 
@@ -1499,3 +1495,5 @@ export default function Map(props: MapProps = {} as MapProps) {
     </div>
   );
 }
+
+export default WeatherMap;
