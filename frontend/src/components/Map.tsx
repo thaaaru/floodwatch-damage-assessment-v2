@@ -950,7 +950,6 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       const alertLevel = (district.alert_level || 'green').toLowerCase();
       
       // Show temperature icon if: temp > 32°C OR alert level is not green (yellow/orange/red)
-      // Lowered threshold to 30°C for testing - can be changed back to 32°C
       const shouldShowTemp = temp !== null && temp !== undefined && typeof temp === 'number' && !isNaN(temp) && (Number(temp) > 32 || alertLevel !== 'green');
       
       if (shouldShowTemp) {
