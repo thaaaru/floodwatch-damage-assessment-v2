@@ -10,7 +10,7 @@ import { riverPaths } from '@/lib/rivers';
 import L from 'leaflet';
 
 // Store reference to native Map constructor to avoid conflict with component name
-const NativeMap = Map;
+const NativeMap = globalThis.Map;
 import 'leaflet/dist/leaflet.css';
 
 interface RadarFrame {
