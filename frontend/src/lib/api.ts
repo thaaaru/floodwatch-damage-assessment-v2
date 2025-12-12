@@ -8,6 +8,12 @@ const BACKEND_BASE = process.env.NODE_ENV === 'production'
   ? PRODUCTION_API
   : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
+// Use proxy in development to avoid CORS issues with remote backends
+const USE_PROXY = process.env.NODE_ENV === 'development' &&
+                  process.env.NEXT_PUBLIC_API_URL?.includes('198.199.76.11');
+
+const API_BASE = USE_PROXY ? '/api/proxy' : BACKEND_BASE;
+
 export interface District {
   name: string;
   latitude: number;
@@ -127,7 +133,11 @@ export interface SubscribeResponse {
 
 class ApiClient {
   private getUrl(endpoint: string): string {
-    // Always use BACKEND_BASE directly (works for both production and development)
+    if (USE_PROXY) {
+      // Use the Next.js proxy to avoid CORS issues with remote backends
+      return `${API_BASE}?path=${encodeURIComponent(endpoint)}`;
+    }
+    // Use backend directly
     return `${BACKEND_BASE}${endpoint}`;
   }
 
