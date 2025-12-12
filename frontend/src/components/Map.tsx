@@ -514,7 +514,16 @@ interface MapProps {
   onShowRiversChange?: (show: boolean) => void;
 }
 
-export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation, showRivers: showRiversProp, onShowRiversChange }: MapProps) {
+export default function Map(props: MapProps = {} as MapProps) {
+  const { 
+    onDistrictSelect, 
+    hours = 24, 
+    layer = 'rainfall', 
+    dangerFilter = 'all', 
+    userLocation, 
+    showRivers: showRiversProp, 
+    onShowRiversChange 
+  } = props || {};
   const [weatherData, setWeatherData] = useState<WeatherSummary[]>([]);
   const [forecastData, setForecastData] = useState<DistrictForecast[]>([]);
   const [loading, setLoading] = useState(true);
