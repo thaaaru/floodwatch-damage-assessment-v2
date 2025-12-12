@@ -65,7 +65,7 @@ export default function Dashboard() {
   const [showForecastExpanded, setShowForecastExpanded] = useState(false);
   const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
   const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
-  const [showRiverStations, setShowRiverStations] = useState(false);
+  const [showRiverStations, setShowRiverStations] = useState(true);
 
   // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
 
