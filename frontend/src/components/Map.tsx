@@ -461,10 +461,10 @@ function createTemperatureIcon(temperatureC: number, showLabel: boolean = true):
         <circle cx="12" cy="20" r="4" fill="url(#${gradientId})" stroke="black" stroke-width="1.5"/>
         <!-- Thermometer tube -->
         <rect x="10" y="4" width="4" height="14" rx="2" fill="rgba(255,255,255,0.9)" stroke="black" stroke-width="1.5"/>
-        <!-- Mercury fill -->
-        <rect x="10.5" y="${20 - (mercuryLevel * 0.14)}" width="3" height="${mercuryLevel * 0.14}" rx="1.5" fill="url(#${gradientId})" opacity="0.9"/>
+        <!-- Mercury fill (starts from bottom of tube at y=18, fills upward) -->
+        <rect x="10.5" y="${18 - (mercuryLevel * 0.14)}" width="3" height="${mercuryLevel * 0.14}" rx="1.5" fill="url(#${gradientId})" opacity="0.9"/>
         <!-- Mercury surface -->
-        <ellipse cx="12" cy="${20 - (mercuryLevel * 0.14)}" rx="1.5" ry="0.5" fill="url(#${gradientId})"/>
+        <ellipse cx="12" cy="${18 - (mercuryLevel * 0.14)}" rx="1.5" ry="0.5" fill="url(#${gradientId})"/>
       </svg>
       ${showLabel ? `<div style="
         margin-top: 3px;
