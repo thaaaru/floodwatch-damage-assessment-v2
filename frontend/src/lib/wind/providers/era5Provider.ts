@@ -70,7 +70,6 @@ class ERA5Provider implements WindDataProvider {
     }
 
     if (!CDS_API_KEY) {
-      console.warn('ERA5 provider: CDS_API_KEY not configured');
       return false;
     }
 
@@ -132,7 +131,6 @@ class ERA5Provider implements WindDataProvider {
     try {
       windPoints = await this.fetchERA5Data(bbox, requestTime, resolutionKm);
     } catch (error) {
-      console.warn('ERA5 fetch failed:', error);
       windPoints = [];
     }
 
@@ -191,60 +189,6 @@ class ERA5Provider implements WindDataProvider {
       area: [maxLat, minLon, minLat, maxLon], // North, West, South, East
     };
 
-    console.log('ERA5 CDS request (not implemented):', cdsRequest);
-
-    // TODO: Implement actual CDS API calls
-    // This would require:
-    // 1. Submit job to CDS API
-    // 2. Poll for completion
-    // 3. Download NetCDF
-    // 4. Parse with netcdfjs or similar
-    // 5. Extract U/V values at grid points
-    // 6. Convert to WindPoint array
-
-    /*
-    // Example implementation outline:
-
-    // 1. Submit request
-    const submitResponse = await fetch(`${CDS_API_URL}/resources/reanalysis-era5-single-levels`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${Buffer.from(`${CDS_API_KEY}:`).toString('base64')}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(cdsRequest),
-    });
-
-    const jobInfo: CDSJobResponse = await submitResponse.json();
-
-    // 2. Poll for completion
-    let status = jobInfo;
-    while (status.state === 'queued' || status.state === 'running') {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      const statusResponse = await fetch(
-        `${CDS_API_URL}/tasks/${jobInfo.request_id}`,
-        { headers: { 'Authorization': `Basic ${Buffer.from(`${CDS_API_KEY}:`).toString('base64')}` } }
-      );
-      status = await statusResponse.json();
-    }
-
-    if (status.state === 'failed') {
-      throw new Error(`ERA5 job failed: ${status.error?.message}`);
-    }
-
-    // 3. Download NetCDF
-    const dataResponse = await fetch(status.location!);
-    const netcdfBuffer = await dataResponse.arrayBuffer();
-
-    // 4. Parse NetCDF (would need netcdfjs or similar)
-    // const reader = new NetCDFReader(netcdfBuffer);
-    // const uVar = reader.getDataVariable('u10');
-    // const vVar = reader.getDataVariable('v10');
-
-    // 5. Build WindPoint array
-    */
-
-    // For now, throw to trigger fallback
     throw new Error('ERA5 CDS integration not yet implemented');
   }
 }

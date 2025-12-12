@@ -616,7 +616,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
           setFrameIndex(data.satellite.infrared.length - 1);
         }
       } catch (err) {
-        console.error('Failed to fetch overlay data:', err);
+        // Silently fail - data is optional
       }
     };
 
@@ -643,7 +643,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
         const data = await api.getRiverLevels();
         setRiverStations(data.stations);
       } catch (err) {
-        console.error('Failed to fetch river data:', err);
+        // Silently fail - data is optional
       }
     };
 
@@ -660,7 +660,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
         const data = await api.getMarineConditions();
         setMarineConditions(data.conditions);
       } catch (err) {
-        console.error('Failed to fetch marine data:', err);
+        // Silently fail - data is optional
       }
     };
 
@@ -677,7 +677,6 @@ function WeatherMap(props: MapProps = {} as MapProps) {
         const data = await api.getIrrigationData();
         setFloodGaugeStations(data?.stations || []);
       } catch (err) {
-        console.error('Failed to fetch flood gauge data:', err);
         setFloodGaugeStations([]); // Set empty array on error
       }
     };
@@ -693,7 +692,6 @@ function WeatherMap(props: MapProps = {} as MapProps) {
         const data = await api.getEarlyWarningAlerts();
         setEarlyWarningAlerts(data.alerts || []);
       } catch (err) {
-        console.error('Failed to fetch early warning alerts:', err);
         setEarlyWarningAlerts([]);
       }
     };
@@ -735,12 +733,10 @@ function WeatherMap(props: MapProps = {} as MapProps) {
             const data = weatherResult.value;
             // Ensure data is always an array
             const safeData = Array.isArray(data) ? data : [];
-            console.log('[Map Debug] Setting weatherData:', { length: safeData.length, firstDistrict: safeData[0]?.district });
             setWeatherData(safeData);
             setError('');
           } else {
             setError('Failed to load weather data');
-            console.error('Weather fetch failed:', weatherResult.reason);
             setWeatherData([]); // Set to empty array on error
           }
 
@@ -750,7 +746,6 @@ function WeatherMap(props: MapProps = {} as MapProps) {
             // Ensure it's an array
             setForecastData(Array.isArray(forecastValue) ? forecastValue : []);
           } else {
-            console.warn('Forecast fetch failed (non-critical):', forecastResult.reason);
             // Keep existing forecast data or use empty array
             setForecastData(prev => Array.isArray(prev) && prev.length > 0 ? prev : []);
           }
@@ -758,7 +753,6 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       } catch (err) {
         if (isMounted) {
           setError('Failed to load weather data');
-          console.error(err);
         }
       } finally {
         if (isMounted) {
@@ -873,16 +867,8 @@ function WeatherMap(props: MapProps = {} as MapProps) {
   const filteredWeatherData = useMemo(() => {
     // Ensure weatherData is always an array
     const safeWeatherData = Array.isArray(weatherData) ? weatherData : [];
-    console.log('[Map Debug] filteredWeatherData useMemo:', { 
-      weatherDataLength: weatherData?.length || 0,
-      isArray: Array.isArray(weatherData),
-      safeWeatherDataLength: safeWeatherData.length,
-      dangerFilter,
-      firstDistrict: safeWeatherData[0]?.district
-    });
     if (dangerFilter === 'all') return safeWeatherData;
     const filtered = safeWeatherData.filter(district => district.danger_level === dangerFilter);
-    console.log('[Map Debug] After filtering:', { filteredLength: filtered.length });
     return filtered;
   }, [weatherData, dangerFilter]);
 
@@ -1120,23 +1106,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
         </Marker>
       );
     });
-    
-    console.log('[Map Debug] Markers created:', {
-      filteredWeatherDataLength: filteredWeatherData.length,
-      uniqueDistrictsSize: uniqueDistricts.size,
-      sortedDataLength: sortedData.length,
-      markersArrayLength: markersArray.length,
-      firstMarker: markersArray[0] ? {
-        district: sortedData[0]?.district,
-        position: [sortedData[0]?.latitude, sortedData[0]?.longitude],
-        hasIcon: !!markersArray[0]
-      } : 'none'
-    });
-    
-    if (markersArray.length === 0) {
-      console.warn('[Map Debug] ⚠️ No markers to display! Check if weatherData is loading.');
-    }
-    
+
     return markersArray;
   }, [filteredWeatherData, forecastByDistrict, hours, layer, onDistrictSelect, isForecastLayer, forecastDayIndex, currentZoom]);
 

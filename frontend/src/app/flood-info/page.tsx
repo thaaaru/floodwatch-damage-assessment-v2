@@ -25,7 +25,7 @@ export default function FloodInformationPage() {
       setFloodThreat(threatData);
       setRiverData(irrigationData);
     } catch (err) {
-      console.error('Failed to fetch flood data:', err);
+      // Failed to fetch flood data
     } finally {
       setLoading(false);
     }

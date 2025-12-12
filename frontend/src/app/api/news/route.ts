@@ -90,7 +90,6 @@ async function fetchIMDCycloneNews(): Promise<NewsItem[]> {
     // Update source cache
     imdCache = { items, fetchedAt: Date.now() };
   } catch (error) {
-    console.warn('IMD fetch error:', error);
     return imdCache?.items || items;
   }
 
@@ -234,7 +233,6 @@ async function fetchReliefWebNews(): Promise<NewsItem[]> {
     // Update source cache
     reliefwebCache = { items, fetchedAt: Date.now() };
   } catch (error) {
-    console.warn('ReliefWeb fetch error:', error);
     return reliefwebCache?.items || items;
   }
 
@@ -384,7 +382,6 @@ async function fetchSLMetNews(): Promise<NewsItem[]> {
     // Update source cache
     slMetCache = { items, fetchedAt: Date.now() };
   } catch (error) {
-    console.warn('SL Met fetch error:', error);
     return slMetCache?.items || items;
   }
 
@@ -462,7 +459,6 @@ async function fetchNewsFirstWeather(): Promise<NewsItem[]> {
     // Update source cache
     newsFirstCache = { items, fetchedAt: Date.now() };
   } catch (error) {
-    console.warn('NewsFirst fetch error:', error);
     return newsFirstCache?.items || items;
   }
 
@@ -535,7 +531,6 @@ async function fetchBBCWeather(): Promise<NewsItem[]> {
     // Update source cache
     bbcWeatherCache = { items, fetchedAt: Date.now() };
   } catch (error) {
-    console.warn('BBC Weather fetch error:', error);
     return bbcWeatherCache?.items || items;
   }
 
@@ -642,7 +637,6 @@ async function fetchInternationalNews(): Promise<NewsItem[]> {
     // Update source cache
     internationalNewsCache = { items, fetchedAt: Date.now() };
   } catch (error) {
-    console.warn('International news fetch error:', error);
     return internationalNewsCache?.items || items;
   }
 
@@ -750,7 +744,6 @@ export async function GET() {
 
     return NextResponse.json(allNews);
   } catch (error) {
-    console.error('News API error:', error);
     // Return mock data on error
     return NextResponse.json(getMockNews());
   }

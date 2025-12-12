@@ -22,7 +22,6 @@ export async function GET(
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Proxy error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch from backend' },
       { status: 502 }
@@ -50,7 +49,6 @@ export async function POST(
     const data = await response.json();
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error('Proxy error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch from backend' },
       { status: 502 }

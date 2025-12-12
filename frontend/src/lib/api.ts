@@ -151,7 +151,6 @@ class ApiClient {
       if (!response.ok) {
         // Handle 502 Bad Gateway and other server errors
         if (response.status >= 500) {
-          console.error(`Backend server error (${response.status}) for ${endpoint}. Backend may be temporarily unavailable.`);
           // Return empty array/object based on expected type to prevent UI crashes
           if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
             return [] as T;
@@ -179,7 +178,6 @@ class ApiClient {
     } catch (error: any) {
       // Handle network errors, timeouts, etc.
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
-        console.error(`Request timeout for ${endpoint}`);
         // Return empty result to prevent UI crashes
         if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
           return [] as T;
@@ -194,7 +192,6 @@ class ApiClient {
       }
       // Handle fetch errors (network failures, CORS, etc.)
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error(`Network error for ${endpoint}:`, error.message);
         // Return empty result based on endpoint type
         if (endpoint.includes('/alerts') || endpoint.includes('/history')) {
           return [] as T;

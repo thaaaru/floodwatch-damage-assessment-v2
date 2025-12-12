@@ -114,7 +114,6 @@ export default function WindPage() {
 
       return closestHour;
     } catch (e) {
-      console.error('Error calculating closest forecast hour:', e);
       return forecastHours[0];
     }
   };
@@ -136,7 +135,7 @@ export default function WindPage() {
           setSelectedHour(closestHour);
         }
       } catch (err) {
-        console.error('Failed to fetch wind metadata:', err);
+        // Failed to fetch wind metadata
       }
     };
     fetchMeta();
@@ -152,7 +151,7 @@ export default function WindPage() {
         setWindData(data);
         windDataRef.current = data;
       } catch (err) {
-        console.error('Failed to fetch wind data:', err);
+        // Failed to fetch wind data
       } finally {
         setLoading(false);
       }

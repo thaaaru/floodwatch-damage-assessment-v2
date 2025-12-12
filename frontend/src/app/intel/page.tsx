@@ -77,7 +77,7 @@ export default function IntelDashboard() {
         return true;
       }
     } catch (err) {
-      console.error('Failed to load cache:', err);
+      // Cache load failed
     }
     return false;
   }, []);
@@ -91,7 +91,7 @@ export default function IntelDashboard() {
       };
       localStorage.setItem(INTEL_CACHE_KEY, JSON.stringify(cacheData));
     } catch (err) {
-      console.error('Failed to save cache:', err);
+      // Cache save failed
     }
   }, []);
 
@@ -141,7 +141,7 @@ export default function IntelDashboard() {
       // Save to cache
       saveToCache(fetchedData);
     } catch (err) {
-      console.error('Failed to fetch intel data:', err);
+      // Intel data fetch failed
     } finally {
       setLoading(false);
     }
@@ -170,7 +170,7 @@ export default function IntelDashboard() {
         }
       }
     } catch (err) {
-      console.error('Failed to load flood patterns cache:', err);
+      // Flood patterns cache load failed
     }
 
     setLoadingPatterns(true);
@@ -183,7 +183,7 @@ export default function IntelDashboard() {
         timestamp: Date.now()
       }));
     } catch (err) {
-      console.error('Failed to fetch flood patterns:', err);
+      // Flood patterns fetch failed
     } finally {
       setLoadingPatterns(false);
     }
@@ -212,7 +212,7 @@ export default function IntelDashboard() {
         }
       }
     } catch (err) {
-      console.error('Failed to load environmental data cache:', err);
+      // Environmental data cache load failed
     }
 
     setLoadingEnvironmental(true);
@@ -225,7 +225,7 @@ export default function IntelDashboard() {
         timestamp: Date.now()
       }));
     } catch (err) {
-      console.error('Failed to fetch environmental data:', err);
+      // Environmental data fetch failed
     } finally {
       setLoadingEnvironmental(false);
     }
@@ -254,7 +254,7 @@ export default function IntelDashboard() {
         }
       }
     } catch (err) {
-      console.error('Failed to load yesterday stats cache:', err);
+      // Yesterday stats cache load failed
     }
 
     setLoadingYesterdayStats(true);
@@ -267,7 +267,7 @@ export default function IntelDashboard() {
         timestamp: Date.now()
       }));
     } catch (err) {
-      console.error('Failed to fetch yesterday stats:', err);
+      // Yesterday stats fetch failed
     } finally {
       setLoadingYesterdayStats(false);
     }
@@ -296,7 +296,7 @@ export default function IntelDashboard() {
         const facilities = await api.getNearbyFacilities(report.latitude, report.longitude, 15, 3);
         setNearbyFacilities(facilities);
       } catch (err) {
-        console.error('Failed to fetch nearby facilities:', err);
+        // Nearby facilities fetch failed
       } finally {
         setLoadingFacilities(false);
       }
@@ -473,18 +473,6 @@ export default function IntelDashboard() {
           >
             Flood Threat Intel
           </button>
-          {/* Infrastructure Intel tab - hidden for now
-          <button
-            onClick={() => setActiveTab('infrastructure')}
-            className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
-              activeTab === 'infrastructure'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
-            }`}
-          >
-            Infrastructure Intel
-          </button>
-          */}
         </div>
 
         {/* FLOOD THREAT INTEL TAB */}

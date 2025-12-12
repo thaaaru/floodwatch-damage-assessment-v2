@@ -98,7 +98,6 @@ export default function DamageMap({
         const sideBySide = L_SideBySide(beforeLayer, afterLayer);
         sideBySideRef.current = sideBySide;
       } catch (error) {
-        console.warn('Failed to load side-by-side, using simple layers:', error);
         // Fallback: just show before layer
         beforeLayer.addTo(map);
       }
@@ -132,7 +131,7 @@ export default function DamageMap({
         sideBySideRef.current.remove();
         sideBySideRef.current = null;
       } catch (e) {
-        console.warn('Error removing side-by-side:', e);
+        // Error removing side-by-side
       }
     }
 
@@ -152,7 +151,7 @@ export default function DamageMap({
         const sideBySide = L_SideBySide(beforeLayer, afterLayer);
         sideBySideRef.current = sideBySide;
       } catch (error) {
-        console.warn('Side-by-side not available in split mode');
+        // Side-by-side not available
       }
     } else if (comparisonMode === 'before') {
       beforeLayer.addTo(map);

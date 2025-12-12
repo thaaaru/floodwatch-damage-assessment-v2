@@ -103,7 +103,6 @@ class OpenWeatherProvider implements WindDataProvider {
           });
 
           if (!response.ok) {
-            console.warn(`OWM fetch failed: ${response.status}`);
             return null;
           }
 
@@ -130,7 +129,6 @@ class OpenWeatherProvider implements WindDataProvider {
             source: 'openweather' as const,
           };
         } catch (error) {
-          console.warn(`OWM fetch error for ${point.lat},${point.lon}:`, error);
           return null;
         }
       });

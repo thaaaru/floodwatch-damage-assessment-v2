@@ -23,7 +23,7 @@ export default function RiverNetworkStatus() {
         const riverData = await api.getIrrigationData();
         setData(riverData);
       } catch (err) {
-        console.error('Failed to fetch river data:', err);
+        // Failed to fetch river data
       } finally {
         setLoading(false);
       }

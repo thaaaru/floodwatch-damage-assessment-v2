@@ -136,17 +136,12 @@ class ICONProvider implements WindDataProvider {
     const gridPoints = generateGrid(bbox, resolutionKm);
     const { width, height } = getGridDimensions(bbox, resolutionKm);
 
-    // TODO: Implement actual GRIB2 fetching and parsing
-    // For now, return a placeholder that indicates ICON is not yet implemented
-    // but maintains the correct structure
-
     // Attempt to fetch ICON data
     let windPoints: WindPoint[];
 
     try {
       windPoints = await this.fetchICONData(bbox, latestRun, forecastHour, resolutionKm);
     } catch (error) {
-      console.warn('ICON fetch failed, using fallback:', error);
       // Return empty field - fusion logic will fall back to other providers
       windPoints = [];
     }
@@ -221,17 +216,6 @@ class ICONProvider implements WindDataProvider {
     const uUrl = `${ICON_BASE_URL}/${runStr}/icon_global_icosahedral_single-level_${runStr}_${forecastStr}_U_10M.grib2.bz2`;
     const vUrl = `${ICON_BASE_URL}/${runStr}/icon_global_icosahedral_single-level_${runStr}_${forecastStr}_V_10M.grib2.bz2`;
 
-    console.log('ICON URLs (not implemented):', { uUrl, vUrl });
-
-    // TODO: Implement actual GRIB2 fetching and parsing
-    // This would require:
-    // 1. fetch() the .grib2.bz2 files
-    // 2. Decompress with bz2 library
-    // 3. Parse GRIB2 with appropriate library
-    // 4. Extract U/V values at grid points
-    // 5. Convert to WindPoint array
-
-    // For now, throw to trigger fallback
     throw new Error('ICON GRIB2 parsing not yet implemented');
   }
 

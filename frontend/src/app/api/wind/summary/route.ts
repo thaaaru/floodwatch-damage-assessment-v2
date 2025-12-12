@@ -103,8 +103,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Wind summary API error:', error);
-
     return NextResponse.json(
       {
         error: 'Failed to fetch wind summary',

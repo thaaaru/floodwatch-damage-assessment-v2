@@ -56,7 +56,6 @@ export default function GoogleMapsTraffic() {
         trafficLayerRef.current = new window.google.maps.TrafficLayer();
         trafficLayerRef.current.setMap(googleMapRef.current);
       } catch (err) {
-        console.error('Failed to initialize Google Maps:', err);
         setError('Failed to load Google Maps');
       }
     };
