@@ -930,6 +930,12 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       return (dangerPriority[a.danger_level] || 0) - (dangerPriority[b.danger_level] || 0);
     });
 
+    console.log('[Map Debug] Markers being created:', {
+      filteredWeatherDataLength: filteredWeatherData.length,
+      uniqueDistrictsSize: uniqueDistricts.size,
+      sortedDataLength: sortedData.length
+    });
+
     return sortedData.map((district, index) => {
       const forecast = forecastByDistrict[district.district];
       const rainfallValue = hours === 24
