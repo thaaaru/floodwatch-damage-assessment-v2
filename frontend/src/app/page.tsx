@@ -65,7 +65,7 @@ export default function Dashboard() {
   const [showForecastExpanded, setShowForecastExpanded] = useState(false);
   const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
   const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
-  const [showRivers, setShowRivers] = useState(false);
+  const [showRiverStations, setShowRiverStations] = useState(false);
 
   // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
 
@@ -183,8 +183,8 @@ export default function Dashboard() {
                 layer={selectedLayer}
                 dangerFilter={dangerFilter}
                 userLocation={userLocation}
-                showRivers={showRivers}
-                onShowRiversChange={setShowRivers}
+                showRiverStations={showRiverStations}
+                onShowRiverStationsChange={setShowRiverStations}
               />
             </div>
           </div>
@@ -262,16 +262,16 @@ export default function Dashboard() {
               {/* River Stations Toggle */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setShowRivers(!showRivers)}
+                  onClick={() => setShowRiverStations(!showRiverStations)}
                   className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                    showRivers
+                    showRiverStations
                       ? 'bg-blue-600 text-white shadow-sm'
                       : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
                   }`}
                   title="Toggle river stations"
                 >
                   <span className="text-base">🌊</span>
-                  <span className="hidden sm:inline">Rivers</span>
+                  <span className="hidden sm:inline">Stations</span>
                 </button>
               </div>
 

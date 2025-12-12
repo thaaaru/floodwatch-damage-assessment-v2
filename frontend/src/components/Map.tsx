@@ -484,11 +484,11 @@ interface MapProps {
   layer: MapLayer;
   dangerFilter?: DangerFilter;
   userLocation?: { lat: number; lon: number } | null;
-  showRivers?: boolean;
-  onShowRiversChange?: (show: boolean) => void;
+  showRiverStations?: boolean;
+  onShowRiverStationsChange?: (show: boolean) => void;
 }
 
-export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation, showRivers: showRiversProp, onShowRiversChange }: MapProps) {
+export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'all', userLocation, showRiverStations: showRiverStationsProp, onShowRiverStationsChange }: MapProps) {
   const [weatherData, setWeatherData] = useState<WeatherSummary[]>([]);
   const [forecastData, setForecastData] = useState<DistrictForecast[]>([]);
   const [loading, setLoading] = useState(true);
@@ -498,9 +498,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
   const [satelliteData, setSatelliteData] = useState<SatelliteData | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
-  const [showRiversInternal, setShowRiversInternal] = useState(false);
-  const showRivers = showRiversProp !== undefined ? showRiversProp : showRiversInternal;
-  const setShowRivers = onShowRiversChange || setShowRiversInternal;
+  const [showRiverStationsInternal, setShowRiverStationsInternal] = useState(false);
+  const showRiverStations = showRiverStationsProp !== undefined ? showRiverStationsProp : showRiverStationsInternal;
+  const setShowRiverStations = onShowRiverStationsChange || setShowRiverStationsInternal;
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
   const [showMarine, setShowMarine] = useState(false); // Hide marine/coast information
   const [marineConditions, setMarineConditions] = useState<MarineCondition[]>([]);
@@ -548,7 +548,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
   // Fetch river data when enabled
   useEffect(() => {
-    if (!showRivers) return;
+    if (!showRiverStations) return;
 
     const fetchRiverData = async () => {
       try {
@@ -984,7 +984,7 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
 
   // River station markers
   const riverMarkers = useMemo(() => {
-    if (!showRivers || riverStations.length === 0) return null;
+    if (!showRiverStations || riverStations.length === 0) return null;
 
     return riverStations.map((station) => (
       <Marker
@@ -1054,9 +1054,9 @@ export default function Map({ onDistrictSelect, hours, layer, dangerFilter = 'al
     ));
   }, [showRivers, riverStations]);
 
-  // River path lines
+  // River path lines - always show when river stations are shown
   const riverLines = useMemo(() => {
-    if (!showRivers) return null;
+    if (!showRiverStations) return null;
 
     return riverPaths.map((river) => (
       <Polyline
