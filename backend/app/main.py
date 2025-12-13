@@ -74,6 +74,8 @@ allowed_origins = [
     "http://127.0.0.1:5000",
     "http://127.0.0.1:8001",
     "https://weather.hackandbuild.dev",
+    "http://142.93.218.223",  # Frontend server (weather.hackandbuild.dev)
+    "http://142.93.218.223:80",
     # Legacy Vercel domains (deprecated - use weather.hackandbuild.dev instead)
     "https://floodwatch.vercel.app",
     "https://floodwatch-lk.vercel.app",
