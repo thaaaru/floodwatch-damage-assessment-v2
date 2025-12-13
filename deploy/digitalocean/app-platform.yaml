@@ -31,7 +31,7 @@ services:
         type: SECRET
       - key: FRONTEND_URL
         scope: RUN_TIME
-        value: https://floodwatch.vercel.app
+        value: https://weather.hackandbuild.dev
 
 databases:
   - name: floodwatch-db

@@ -26,7 +26,7 @@ class Settings(BaseSettings):
 
     # Application
     alert_check_interval_minutes: int = 15
-    frontend_url: str = "https://floodwatch.vercel.app"
+    frontend_url: str = "https://weather.hackandbuild.dev"
     debug: bool = False
 
     # Alert thresholds (mm in 24 hours)

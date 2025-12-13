@@ -73,12 +73,10 @@ allowed_origins = [
     "http://127.0.0.1:3001",
     "http://127.0.0.1:5000",
     "http://127.0.0.1:8001",
-    "https://frontend-iltbjzuqs-thaaarus-projects.vercel.app",
-    "https://frontend-thaaarus-projects.vercel.app",
-    "https://floodwatch-lk.vercel.app",
-    "https://floodwatch.vercel.app",
-    "https://staging-floodwatch.vercel.app",
     "https://weather.hackandbuild.dev",
+    # Legacy Vercel domains (deprecated - use weather.hackandbuild.dev instead)
+    "https://floodwatch.vercel.app",
+    "https://floodwatch-lk.vercel.app",
 ]
 
 app.add_middleware(
