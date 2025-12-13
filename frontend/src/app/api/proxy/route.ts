@@ -1,82 +1,95 @@
-// SPDX-License-Identifier: Apache-2.0
-
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
 export async function GET(request: NextRequest) {
+  const path = request.nextUrl.searchParams.get('path');
+
+  if (!path) {
+    return NextResponse.json(
+      { error: 'Missing path parameter' },
+      { status: 400 }
+    );
+  }
+
   try {
-    // Get the path from query parameters
-    const { searchParams } = new URL(request.url);
-    const path = searchParams.get('path');
+    const apiUrl = `https://api.hackandbuild.dev${path}`;
+    const url = new URL(apiUrl);
 
-    if (!path) {
-      return NextResponse.json(
-        { error: 'Missing path parameter' },
-        { status: 400 }
-      );
-    }
-
-    // Reconstruct the full URL with the path and any additional params
-    // The path already includes the query string if it was part of the original request
-    const fullUrl = path.startsWith('http') ? path : `${BACKEND_URL}${path}`;
-
-    const response = await fetch(fullUrl, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
+    // Preserve query parameters
+    request.nextUrl.searchParams.forEach((value, key) => {
+      if (key !== 'path') {
+        url.searchParams.append(key, value);
+      }
     });
 
-    const data = await response.json();
+    // Different timeouts for different endpoints
+    let timeoutMs = 15000; // default 15 seconds
+    if (path.includes('/forecast/all')) {
+      timeoutMs = 5000; // forecast is slow, timeout faster
+    } else if (path.includes('/weather/all')) {
+      timeoutMs = 10000; // weather needs more time
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const response = await fetch(url.toString(), {
+      method: request.method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: request.method === 'GET' ? undefined : await request.text(),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    // Try to parse JSON, but handle non-JSON responses gracefully
+    let data;
+    const contentType = response.headers.get('content-type');
+
+    if (contentType && contentType.includes('application/json')) {
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error(`JSON parse error for ${path}:`, parseError);
+        return NextResponse.json(
+          { error: 'Invalid JSON response from API' },
+          { status: 502 }
+        );
+      }
+    } else {
+      // Non-JSON response - likely an error page or timeout
+      const text = await response.text();
+      console.warn(`Non-JSON response from ${path}: ${response.status} ${contentType}`);
+
+      if (!response.ok) {
+        return NextResponse.json(
+          { error: `API returned ${response.status}`, path },
+          { status: response.status }
+        );
+      }
+
+      data = { raw: text };
+    }
 
     return NextResponse.json(data, {
       status: response.status,
       headers: {
         'Content-Type': 'application/json',
-        'Cache-Control': 'public, max-age=60',
       },
     });
-  } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch from backend' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const path = searchParams.get('path');
-
-    if (!path) {
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error(`Request timeout for ${path}`);
       return NextResponse.json(
-        { error: 'Missing path parameter' },
-        { status: 400 }
+        { error: 'Request timeout - backend service slow to respond' },
+        { status: 504 }
       );
     }
 
-    const body = await request.json();
-    const fullUrl = `${BACKEND_URL}${path}`;
-
-    const response = await fetch(fullUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    const data = await response.json();
-
-    return NextResponse.json(data, { status: response.status });
-  } catch (error) {
-    console.error('Proxy error:', error);
+    console.error(`Proxy error for ${path}:`, error.message);
     return NextResponse.json(
-      { error: 'Failed to fetch from backend' },
+      { error: 'Proxy request failed', details: error.message },
       { status: 500 }
     );
   }

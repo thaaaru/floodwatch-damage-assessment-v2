@@ -185,15 +185,16 @@ class ApiClient {
       }
 
       const data = await response.json();
-      
+
       // Additional safety check: ensure forecast endpoints return arrays
-      if (endpoint.includes('/forecast') || endpoint.includes('/alerts') || endpoint.includes('/history')) {
+      // Note: /early-warning/alerts returns {total_alerts, alerts} not an array
+      if ((endpoint.includes('/forecast') || endpoint.includes('/history') || (endpoint.includes('/alerts') && !endpoint.includes('/early-warning')))) {
         if (!Array.isArray(data)) {
           console.warn(`Expected array but got ${typeof data} for ${endpoint}, returning empty array`);
           return [] as T;
         }
       }
-      
+
       return data;
     } catch (error: any) {
       // Handle network errors, timeouts, etc.
