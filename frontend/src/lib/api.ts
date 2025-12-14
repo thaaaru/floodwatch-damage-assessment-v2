@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Production API URL - use environment variable or fallback
-// Note: The backend API runs on http://198.199.76.11:8000
-const PRODUCTION_API = process.env.NEXT_PUBLIC_PROD_API_URL || 'http://198.199.76.11:8000';
+// Note: In production, we proxy requests through Next.js to avoid mixed content issues
+const PRODUCTION_API = 'http://198.199.76.11:8000';
 
 // Use production API in production, localhost in development
 const BACKEND_BASE = process.env.NODE_ENV === 'production'
   ? PRODUCTION_API
   : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000');
 
-// Use proxy in development to avoid CORS issues with remote backends
-// Only needed when backend is a remote IP (198.199.76.11) in development
-const USE_PROXY = process.env.NODE_ENV === 'development' &&
-                  process.env.NEXT_PUBLIC_API_URL?.includes('198.199.76.11');
+// Always use proxy when:
+// 1. Backend is a remote IP (198.199.76.11) in development - avoids CORS with localhost/different IPs
+// 2. In production - required because frontend is HTTPS and backend is HTTP (mixed content)
+const USE_PROXY = (process.env.NODE_ENV === 'development' &&
+                  process.env.NEXT_PUBLIC_API_URL?.includes('198.199.76.11')) ||
+                 process.env.NODE_ENV === 'production';
 
 const API_BASE = USE_PROXY ? '/api/proxy' : BACKEND_BASE;
 
