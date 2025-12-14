@@ -1544,8 +1544,9 @@ function WeatherMap(props: MapProps = {} as MapProps) {
     // Don't block the map - show error overlay instead
   }
 
-  const ankumburaCenter: [number, number] = [7.4393, 80.571];
-  const mapCenter: [number, number] = ankumburaCenter;
+  // Sri Lanka geographic center (approximately in Matale district)
+  const sriLankaCenter: [number, number] = [7.29, 80.77];
+  const mapCenter: [number, number] = sriLankaCenter;
   const mapZoom = 8;
 
   return (
@@ -1581,6 +1582,13 @@ function WeatherMap(props: MapProps = {} as MapProps) {
             attribution='<a href="https://rainviewer.com">RainViewer</a>'
           />
         )}
+        {/* Sri Lanka label at center */}
+        <Marker position={sriLankaCenter} icon={L.divIcon({
+          className: 'sri-lanka-label',
+          html: '<div style="background: none; border: none; color: rgba(0,0,0,0.3); font-size: 36px; font-weight: 700; text-shadow: 1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8); letter-spacing: 1px; white-space: nowrap; pointer-events: none;">Sri Lanka</div>',
+          iconSize: [250, 60],
+          iconAnchor: [125, 30]
+        })} />
         {riverMarkers}
         {marineMarkers}
         {Array.isArray(markers) && markers.length > 0 ? markers : null}
