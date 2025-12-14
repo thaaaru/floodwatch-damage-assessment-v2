@@ -77,7 +77,7 @@ export default function Dashboard() {
   const [showForecastExpanded, setShowForecastExpanded] = useState(false);
   const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
   const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
-  const [showRiverStations, setShowRiverStations] = useState(false); // Hide by default - show only raindrops
+  const [showRiverStations, setShowRiverStations] = useState(true); // Show 40 river water level stations by default
 
   // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
 

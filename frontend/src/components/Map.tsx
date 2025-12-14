@@ -585,7 +585,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
   const [satelliteData, setSatelliteData] = useState<SatelliteData | null>(null);
   const [frameIndex, setFrameIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
-  const [showRiversInternal, setShowRiversInternal] = useState(false);
+  const [showRiversInternal, setShowRiversInternal] = useState(true);
   const showRivers = showRiversProp !== undefined ? showRiversProp : showRiversInternal;
   const setShowRivers = onShowRiversChange || setShowRiversInternal;
   const [riverStations, setRiverStations] = useState<RiverStation[]>([]);
@@ -1582,13 +1582,6 @@ function WeatherMap(props: MapProps = {} as MapProps) {
             attribution='<a href="https://rainviewer.com">RainViewer</a>'
           />
         )}
-        {/* Sri Lanka label at center */}
-        <Marker position={sriLankaCenter} icon={L.divIcon({
-          className: 'sri-lanka-label',
-          html: '<div style="background: none; border: none; color: rgba(0,0,0,0.3); font-size: 36px; font-weight: 700; text-shadow: 1px 1px 2px rgba(255,255,255,0.8), -1px -1px 2px rgba(255,255,255,0.8); letter-spacing: 1px; white-space: nowrap; pointer-events: none;">Sri Lanka</div>',
-          iconSize: [250, 60],
-          iconAnchor: [125, 30]
-        })} />
         {riverMarkers}
         {marineMarkers}
         {Array.isArray(markers) && markers.length > 0 ? markers : null}
