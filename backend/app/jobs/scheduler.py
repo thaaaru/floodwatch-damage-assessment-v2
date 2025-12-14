@@ -18,7 +18,7 @@ settings = get_settings()
 
 scheduler = AsyncIOScheduler()
 
-WEATHER_CACHE_INTERVAL_MINUTES = 60  # Refresh every 60 minutes to minimize API calls
+WEATHER_CACHE_INTERVAL_MINUTES = 30  # Refresh every 30 minutes for more timely data
 INTEL_ANALYSIS_INTERVAL_MINUTES = 30  # Reduced to minimize API load
 FACILITIES_REFRESH_INTERVAL_HOURS = 24  # Daily refresh for OSM facilities
 
@@ -90,7 +90,7 @@ def start_scheduler():
     """Initialize and start the background scheduler."""
     interval_minutes = settings.alert_check_interval_minutes
 
-    # Weather cache refresh job - every 30 minutes
+    # Weather cache refresh job - every 30 minutes for more timely data updates
     scheduler.add_job(
         refresh_weather_cache,
         trigger=IntervalTrigger(minutes=WEATHER_CACHE_INTERVAL_MINUTES),
