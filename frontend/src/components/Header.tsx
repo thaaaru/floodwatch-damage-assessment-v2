@@ -5,23 +5,64 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
 
 const navigation = [
   { name: 'Dashboard', href: '/' },
   { name: 'News', href: '/news' },
-  { name: 'Early Warning', href: '/early-warning' },
+  { name: 'Early Warning', href: '/early-warning', dynamic: true },
   { name: 'Flood Info', href: '/flood-info' },
   { name: 'Intel', href: '/intel' },
-  { name: 'Damage Assessment', href: '/damage-assessment' },
   { name: 'External Links', href: '/external-links' },
   { name: 'Data Sources', href: '/data-sources' },
   { name: 'Contacts', href: '/contacts' },
 ];
 
+const getRiskColor = (riskLevel: string) => {
+  switch (riskLevel) {
+    case 'extreme':
+      return 'bg-violet-600 text-white hover:bg-violet-700';
+    case 'high':
+      return 'bg-red-500 text-white hover:bg-red-600';
+    case 'medium':
+      return 'bg-amber-500 text-white hover:bg-amber-600';
+    case 'low':
+      return 'bg-emerald-500 text-white hover:bg-emerald-600';
+    default:
+      return 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50';
+  }
+};
+
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [highestRiskLevel, setHighestRiskLevel] = useState<string | null>(null);
   const pathname = usePathname();
+
+  // Fetch early warning data to determine the highest risk level across all districts
+  useEffect(() => {
+    const fetchEarlyWarningData = async () => {
+      try {
+        const data = await api.getEarlyWarning();
+        if (data && data.districts && data.districts.length > 0) {
+          // Find the highest risk level across all districts
+          const riskOrder = { extreme: 0, high: 1, medium: 2, low: 3, unknown: 4 };
+          const highestRisk = data.districts.reduce((max, district) => {
+            const currentRiskValue = riskOrder[district.risk_level as keyof typeof riskOrder] ?? 4;
+            const maxRiskValue = riskOrder[max.risk_level as keyof typeof riskOrder] ?? 4;
+            return currentRiskValue < maxRiskValue ? district : max;
+          });
+          setHighestRiskLevel(highestRisk.risk_level);
+        }
+      } catch (err) {
+        console.error('Failed to fetch early warning data:', err);
+      }
+    };
+    fetchEarlyWarningData();
+    // Refresh every 30 minutes
+    const interval = setInterval(fetchEarlyWarningData, 30 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -77,13 +118,20 @@ export default function Header() {
           <div className="hidden md:flex items-center gap-1">
             {navigation.map((item) => {
               const isActive = pathname === item.href;
+              const isDynamic = item.dynamic && item.name === 'Early Warning';
+              const riskColor = isDynamic && highestRiskLevel ? getRiskColor(highestRiskLevel) : null;
+
               return (
                 <Link
                   key={item.name}
                   href={item.href}
                   className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                    isActive
+                    isActive && isDynamic && highestRiskLevel
+                      ? `${riskColor} shadow-sm`
+                      : isActive
                       ? 'bg-brand-50 text-brand-700'
+                      : isDynamic && highestRiskLevel
+                      ? `${riskColor}`
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/50'
                   }`}
                 >
@@ -132,13 +180,20 @@ export default function Header() {
             <div className="flex flex-col gap-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
+                const isDynamic = item.dynamic && item.name === 'Early Warning';
+                const riskColor = isDynamic && highestRiskLevel ? getRiskColor(highestRiskLevel) : null;
+
                 return (
                   <Link
                     key={item.name}
                     href={item.href}
                     className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
+                      isActive && isDynamic && highestRiskLevel
+                        ? `${riskColor}`
+                        : isActive
                         ? 'bg-brand-50 text-brand-700'
+                        : isDynamic && highestRiskLevel
+                        ? `${riskColor}`
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                     }`}
                   >
