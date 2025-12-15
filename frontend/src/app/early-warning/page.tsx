@@ -107,16 +107,16 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* AI Summary */}
         {district.overview && (
-          <div className="p-3 rounded-xl bg-brand-50 border border-brand-100">
+          <div className="glass p-3 rounded-xl shadow-md">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-5 h-5 rounded-full bg-brand-100 flex items-center justify-center">
-                <svg className="w-3 h-3 text-brand-600" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center">
+                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
               </div>
-              <span className="text-xs font-semibold text-brand-700">AI Summary</span>
+              <span className="text-xs font-semibold text-slate-700">AI Summary</span>
             </div>
-            <p className="text-sm text-brand-900 leading-relaxed">{district.overview}</p>
+            <p className="text-sm text-slate-800 leading-relaxed">{district.overview}</p>
           </div>
         )}
 
@@ -129,9 +129,9 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
               { label: '24h', value: district.precipitation.next_24h_mm },
               { label: '48h', value: district.precipitation.next_48h_mm },
             ].map((item) => (
-              <div key={item.label} className="bg-slate-50 rounded-xl p-3 text-center border border-slate-100">
+              <div key={item.label} className="glass rounded-xl p-3 text-center shadow-sm">
                 <div className="text-xs text-slate-500 mb-1">{item.label}</div>
-                <div className="text-lg font-bold text-brand-600">{item.value.toFixed(0)}<span className="text-xs font-normal">mm</span></div>
+                <div className="text-lg font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">{item.value.toFixed(0)}<span className="text-xs font-normal">mm</span></div>
               </div>
             ))}
           </div>
@@ -147,7 +147,7 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
               { label: 'Pressure', value: `${district.current.pressure} hPa`, icon: '📊' },
               { label: 'UV Index', value: district.current.uvi?.toFixed(0) || '-', icon: '☀️' },
             ].map((item) => (
-              <div key={item.label} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-100">
+              <div key={item.label} className="flex items-center gap-2 p-2 glass rounded-lg shadow-sm">
                 <span className="text-sm">{item.icon}</span>
                 <div>
                   <div className="text-xs text-slate-500">{item.label}</div>
@@ -168,9 +168,9 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
             <div className="space-y-1.5">
               {district.risk_factors.slice(0, 3).map((factor, idx) => {
                 const severityStyles = {
-                  high: 'bg-red-50 border-red-200 text-red-700',
-                  medium: 'bg-amber-50 border-amber-200 text-amber-700',
-                  low: 'bg-yellow-50 border-yellow-200 text-yellow-700',
+                  high: 'glass border-red-300 text-red-700 shadow-md',
+                  medium: 'glass border-amber-300 text-amber-700 shadow-md',
+                  low: 'glass border-yellow-300 text-yellow-700 shadow-sm',
                 };
                 return (
                   <div key={idx} className={`px-3 py-2 rounded-lg border text-sm ${severityStyles[factor.severity as keyof typeof severityStyles] || severityStyles.low}`}>
@@ -193,7 +193,7 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
             </h4>
             <div className="space-y-2">
               {district.alerts.map((alert, idx) => (
-                <div key={idx} className="p-3 rounded-xl bg-red-50 border border-red-200">
+                <div key={idx} className="glass p-3 rounded-xl border border-red-300 shadow-md">
                   <div className="font-medium text-red-800 text-sm">{alert.event}</div>
                   <p className="text-xs text-red-700 mt-1 line-clamp-2">{alert.description}</p>
                 </div>
@@ -208,10 +208,16 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
           <div className="grid grid-cols-8 gap-1">
             {district.daily_forecast.map((day, idx) => {
               const alertColors = {
-                red: 'bg-red-50 border-red-200',
-                orange: 'bg-amber-50 border-amber-200',
-                yellow: 'bg-yellow-50 border-yellow-200',
-                green: 'bg-emerald-50 border-emerald-200',
+                red: 'glass border-red-300 shadow-md',
+                orange: 'glass border-amber-300 shadow-md',
+                yellow: 'glass border-yellow-300 shadow-sm',
+                green: 'glass border-emerald-300 shadow-sm',
+              };
+              const gradientClasses = {
+                red: 'bg-gradient-to-r from-red-600 to-red-500',
+                orange: 'bg-gradient-to-r from-amber-600 to-amber-500',
+                yellow: 'bg-gradient-to-r from-yellow-600 to-yellow-500',
+                green: 'bg-gradient-to-r from-emerald-600 to-emerald-500',
               };
               return (
                 <div key={idx} className={`p-1.5 rounded-lg border text-center ${alertColors[day.alert_level as keyof typeof alertColors] || alertColors.green}`}>
@@ -219,7 +225,7 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
                   {day.weather_icon && (
                     <img src={getWeatherIcon(day.weather_icon)} alt="" className="w-6 h-6 mx-auto" />
                   )}
-                  <div className="text-xs font-bold text-brand-600">{day.rain_mm.toFixed(0)}</div>
+                  <div className={`text-xs font-bold ${gradientClasses[day.alert_level as keyof typeof gradientClasses] || gradientClasses.green} bg-clip-text text-transparent`}>{day.rain_mm.toFixed(0)}</div>
                 </div>
               );
             })}
@@ -336,10 +342,10 @@ export default function EarlyWarningPage() {
         <div className="absolute top-6 left-6 z-[1000]" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="map-control px-4 py-3 flex items-center gap-3 hover:shadow-soft-lg transition-all min-w-[260px]"
+            className="glass px-4 py-3 flex items-center gap-3 hover:shadow-lg transition-all min-w-[260px] rounded-xl"
           >
-            <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center">
-              <svg className="w-4 h-4 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
@@ -356,9 +362,9 @@ export default function EarlyWarningPage() {
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute top-full left-0 right-0 mt-2 map-control max-h-[60vh] overflow-y-auto animate-fade-in">
-              <div className="p-2 border-b border-slate-100">
-                <span className="text-xs text-slate-500 font-medium">25 Districts</span>
+            <div className="absolute top-full left-0 right-0 mt-2 glass rounded-xl shadow-lg max-h-[60vh] overflow-y-auto animate-fade-in">
+              <div className="p-2 border-b border-slate-200">
+                <span className="text-xs text-slate-600 font-medium">25 Districts</span>
               </div>
               <div className="p-1">
                 {sortedDistricts.map((district) => {
@@ -369,18 +375,18 @@ export default function EarlyWarningPage() {
                       onClick={() => handleDistrictSelect(district.district)}
                       className={`w-full px-3 py-2 text-left rounded-lg transition-colors flex items-center justify-between ${
                         (selectedDistrict || displayDistrict?.district) === district.district
-                          ? 'bg-brand-50 text-brand-700'
-                          : 'hover:bg-slate-50'
+                          ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+                          : 'hover:bg-white/50'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span className={`w-6 h-6 rounded-md ${styles.bg} text-white text-xs font-bold flex items-center justify-center`}>
                           {district.risk_level.slice(0, 1).toUpperCase()}
                         </span>
-                        <span className="font-medium text-sm text-slate-700">{district.district}</span>
+                        <span className={`font-medium text-sm ${(selectedDistrict || displayDistrict?.district) === district.district ? 'text-white' : 'text-slate-700'}`}>{district.district}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold text-brand-600">
+                        <span className={`text-xs font-semibold ${(selectedDistrict || displayDistrict?.district) === district.district ? 'text-white' : 'text-cyan-600'}`}>
                           {district.precipitation.next_24h_mm.toFixed(0)}mm
                         </span>
                         {district.current.weather_icon && (
@@ -397,7 +403,7 @@ export default function EarlyWarningPage() {
 
         {/* Mobile Info Panel */}
         {selectedDistrictData && (
-          <div className="absolute bottom-4 left-4 right-4 card max-h-[50vh] overflow-hidden z-[999] md:hidden animate-slide-up">
+          <div className="absolute bottom-4 left-4 right-4 glass rounded-2xl max-h-[50vh] overflow-hidden z-[999] md:hidden animate-slide-up shadow-lg">
             <div className="relative">
               <button
                 onClick={() => setSelectedDistrict(null)}
@@ -416,7 +422,7 @@ export default function EarlyWarningPage() {
       {/* Desktop Sidebar */}
       {displayDistrict && (
         <div className="hidden md:block w-96 p-4 pl-4">
-          <div className="h-full card overflow-hidden">
+          <div className="h-full glass rounded-2xl overflow-hidden shadow-lg">
             <InfoPanelContent district={displayDistrict} />
           </div>
         </div>

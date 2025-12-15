@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloodWatch Sri Lanka - News & Updates</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* Glass Morphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        /* Smooth Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #94a3b8, #64748b);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #64748b, #475569);
+        }
+        
+        /* Button Hover Effects */
+        .btn-hover {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-hover::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+        
+        .btn-hover:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* News Article Card */
+        .news-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .news-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -8px rgba(0,0,0,0.15);
+        }
+        
+        /* Category Badge */
+        .category-badge {
+            transition: all 0.2s;
+        }
+        
+        .category-badge:hover {
+            transform: scale(1.05);
+        }
+        
+        /* Animated Gradients */
+        .gradient-animate {
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            margin-bottom: 8px;
+            z-index: 1000;
+        }
+        
+        /* Skeleton Loading */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+    
+    <!-- Top Navigation -->
+    <nav class="glass border-b border-white/20 shadow-lg sticky top-0 z-50">
+        <div class="px-6 py-2.5">
+            <div class="flex items-center justify-between">
+                <!-- Logo & Title - Two Lines -->
+                <div class="flex items-center gap-3 group">
+                    <a href="floodwatch-final.html" class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl blur-sm opacity-75 group-hover:opacity-100 transition"></div>
+                        <div class="relative w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                            </svg>
+                        </div>
+                    </a>
+                    <div>
+                        <h1 class="text-lg font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
+                            FloodWatch<br/>Sri Lanka
+                        </h1>
+                        <p class="text-[10px] font-medium text-slate-500">by Hack & Build</p>
+                    </div>
+                </div>
+                
+                <!-- Main Menu -->
+                <div class="hidden lg:flex items-center gap-1">
+                    <a href="floodwatch-final.html" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Dashboard</a>
+                    <a href="#" class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg shadow-lg shadow-blue-500/30 transform hover:scale-105 transition whitespace-nowrap">News</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Early Warning</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Flood Info</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Intel</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Damage Assessment</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">External Links</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Data Sources</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Contacts</a>
+                    
+                    <button class="btn-hover ml-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-500 rounded-lg shadow-lg shadow-red-500/30 flex items-center gap-2 transform hover:scale-105 transition whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span class="relative z-10">Report Emergency</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Filter Bar -->
+    <div class="glass-dark border-b border-white/10">
+        <div class="px-6 py-2.5">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
+                    <button class="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-xs font-bold whitespace-nowrap shadow-lg shadow-blue-500/30 transform hover:scale-105 transition">
+                        All News
+                    </button>
+                    <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg text-xs font-semibold whitespace-nowrap transition">
+                        Weather Forecasts
+                    </button>
+                    <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg text-xs font-semibold whitespace-nowrap transition">
+                        Alerts
+                    </button>
+                    <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg text-xs font-semibold whitespace-nowrap transition">
+                        International
+                    </button>
+                    <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg text-xs font-semibold whitespace-nowrap transition">
+                        Research
+                    </button>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <div class="relative">
+                        <input type="text" placeholder="Search news..." 
+                               class="w-64 bg-white/10 border border-white/20 text-white placeholder-white/60 rounded-lg px-4 py-2 pl-10 text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                        <svg class="w-4 h-4 absolute left-3 top-2.5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-6 py-6">
+        
+        <!-- Page Header -->
+        <div class="mb-6">
+            <h2 class="text-3xl font-extrabold text-slate-900 mb-2">News & Updates</h2>
+            <p class="text-slate-600 font-medium">Latest weather updates, forecasts, and emergency alerts for Sri Lanka</p>
+        </div>
+
+        <!-- Featured Story -->
+        <div class="mb-8">
+            <div class="news-card bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+                <div class="grid md:grid-cols-2 gap-0">
+                    <div class="relative h-64 md:h-auto bg-gradient-to-br from-blue-500 to-cyan-500">
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <svg class="w-32 h-32 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                            </svg>
+                        </div>
+                        <div class="absolute top-4 left-4">
+                            <span class="px-3 py-1 bg-red-500 text-white text-xs font-bold rounded-full">BREAKING</span>
+                        </div>
+                    </div>
+                    <div class="p-8">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg">Weather Alert</span>
+                            <span class="text-xs text-slate-500 font-medium">2 hours ago</span>
+                        </div>
+                        <h3 class="text-2xl font-extrabold text-slate-900 mb-3">Heavy Rainfall Warning Issued for Western and Southern Provinces</h3>
+                        <p class="text-slate-600 mb-4 leading-relaxed">The Department of Meteorology has issued an amber weather warning for Western and Southern provinces, with expected rainfall exceeding 100mm in the next 24 hours. Residents are advised to take necessary precautions.</p>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2 text-sm text-slate-600">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span class="font-semibold">SL Met Department</span>
+                            </div>
+                            <button class="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-sm font-bold hover:shadow-lg transition">
+                                Read More
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- News Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- News Card 1 -->
+            <div class="news-card bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+                <div class="relative h-48 bg-gradient-to-br from-amber-400 to-orange-500">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold rounded uppercase">Advisory</span>
+                        <span class="text-xs text-slate-500">15h ago</span>
+                    </div>
+                    <h4 class="text-base font-bold text-slate-900 mb-2 line-clamp-2">Sea Weather Advisory: Rough Seas Expected Off Southern Coast</h4>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3">Fishermen are advised to be vigilant as sea areas extending from Galle to Pottuvil are expected to experience rough conditions.</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">SL Met</span>
+                        <button class="text-blue-600 font-bold hover:underline">Read →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Card 2 -->
+            <div class="news-card bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+                <div class="relative h-48 bg-gradient-to-br from-blue-400 to-indigo-500">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase">Forecast</span>
+                        <span class="text-xs text-slate-500">1 day ago</span>
+                    </div>
+                    <h4 class="text-base font-bold text-slate-900 mb-2 line-clamp-2">Weather Forecast for December 15, 2025</h4>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3">Showers or thundershowers will occur in Western, Sabaragamuwa, and Southern provinces during the afternoon or night.</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">SL Met</span>
+                        <button class="text-blue-600 font-bold hover:underline">Read →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Card 3 -->
+            <div class="news-card bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+                <div class="relative h-48 bg-gradient-to-br from-purple-400 to-pink-500">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-purple-100 text-purple-700 text-[10px] font-bold rounded uppercase">International</span>
+                        <span class="text-xs text-slate-500">Dec 8</span>
+                    </div>
+                    <h4 class="text-base font-bold text-slate-900 mb-2 line-clamp-2">BBC Weather: Storm System Approaching South Asia</h4>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3">A developing low-pressure system in the Bay of Bengal could bring significant rainfall to the region by mid-December.</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">BBC Weather</span>
+                        <button class="text-blue-600 font-bold hover:underline">Read →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Card 4 -->
+            <div class="news-card bg-white rounded-xl shadow-lg overflow-hidden border border-red-200 border-l-4">
+                <div class="relative h-48 bg-gradient-to-br from-red-400 to-rose-500">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                    </div>
+                    <div class="absolute top-4 left-4">
+                        <span class="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded-full animate-pulse">URGENT</span>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-red-100 text-red-700 text-[10px] font-bold rounded uppercase">Emergency</span>
+                        <span class="text-xs text-slate-500">3 days ago</span>
+                    </div>
+                    <h4 class="text-base font-bold text-slate-900 mb-2 line-clamp-2">Deadly Storms Sweep South and Southeast Asia</h4>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3">Severe weather systems have caused significant damage across multiple countries, with authorities urging vigilance.</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">Reuters</span>
+                        <button class="text-blue-600 font-bold hover:underline">Read →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Card 5 -->
+            <div class="news-card bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+                <div class="relative h-48 bg-gradient-to-br from-green-400 to-teal-500">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Update</span>
+                        <span class="text-xs text-slate-500">5 days ago</span>
+                    </div>
+                    <h4 class="text-base font-bold text-slate-900 mb-2 line-clamp-2">FloodWatch System Upgraded with New Alert Features</h4>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3">Enhanced monitoring capabilities now include real-time SMS alerts and improved district-level rainfall tracking.</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">FloodWatch Team</span>
+                        <button class="text-blue-600 font-bold hover:underline">Read →</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Card 6 -->
+            <div class="news-card bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
+                <div class="relative h-48 bg-gradient-to-br from-cyan-400 to-blue-500">
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <svg class="w-20 h-20 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                    </div>
+                </div>
+                <div class="p-5">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2 py-1 bg-cyan-100 text-cyan-700 text-[10px] font-bold rounded uppercase">Research</span>
+                        <span class="text-xs text-slate-500">1 week ago</span>
+                    </div>
+                    <h4 class="text-base font-bold text-slate-900 mb-2 line-clamp-2">Climate Patterns Show Increased Monsoon Variability</h4>
+                    <p class="text-sm text-slate-600 mb-3 line-clamp-3">New research indicates changing rainfall patterns may require updated flood prediction models for South Asian regions.</p>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-600 font-semibold">Nature Journal</span>
+                        <button class="text-blue-600 font-bold hover:underline">Read →</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Load More -->
+        <div class="mt-8 text-center">
+            <button class="px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:shadow-xl transform hover:scale-105 transition">
+                Load More Articles
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="glass border-t border-white/20 mt-12">
+        <div class="max-w-7xl mx-auto px-6 py-8">
+            <div class="grid md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="font-extrabold text-slate-900 mb-3">FloodWatch Sri Lanka</h3>
+                    <p class="text-sm text-slate-600">Real-time flood monitoring and early warning system for Sri Lanka.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-3 text-sm">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-slate-600">
+                        <li><a href="#" class="hover:text-blue-600">Dashboard</a></li>
+                        <li><a href="#" class="hover:text-blue-600">News</a></li>
+                        <li><a href="#" class="hover:text-blue-600">Early Warning</a></li>
+                        <li><a href="#" class="hover:text-blue-600">Contacts</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-3 text-sm">Resources</h4>
+                    <ul class="space-y-2 text-sm text-slate-600">
+                        <li><a href="#" class="hover:text-blue-600">Data Sources</a></li>
+                        <li><a href="#" class="hover:text-blue-600">API Documentation</a></li>
+                        <li><a href="#" class="hover:text-blue-600">Research Papers</a></li>
+                        <li><a href="#" class="hover:text-blue-600">About Us</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-slate-900 mb-3 text-sm">Connect</h4>
+                    <p class="text-sm text-slate-600 mb-3">Stay updated with the latest alerts and forecasts.</p>
+                    <div class="flex gap-2">
+                        <a href="#" class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center hover:bg-blue-700 transition">
+                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        </a>
+                        <a href="#" class="w-8 h-8 bg-blue-400 rounded-lg flex items-center justify-center hover:bg-blue-500 transition">
+                            <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-slate-200 mt-8 pt-6 text-center text-sm text-slate-600">
+                <p>&copy; 2025 FloodWatch Sri Lanka by Hack & Build. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

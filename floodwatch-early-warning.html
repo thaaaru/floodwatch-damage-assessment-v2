@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloodWatch Sri Lanka - Early Warning System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        #alertMap {
+            height: 100%;
+            width: 100%;
+        }
+        
+        /* Glass Morphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        /* Smooth Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #94a3b8, #64748b);
+            border-radius: 3px;
+        }
+        
+        /* Button Hover Effects */
+        .btn-hover {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-hover::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+        
+        .btn-hover:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Alert Card Animation */
+        .alert-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .alert-card:hover {
+            transform: translateX(8px);
+            box-shadow: 0 8px 24px -8px currentColor;
+        }
+        
+        /* Pulse Animation */
+        @keyframes pulse-alert {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+        }
+        
+        .pulse-severe {
+            animation: pulse-alert 2s infinite;
+        }
+        
+        /* Animated Gradients */
+        .gradient-animate {
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            margin-bottom: 8px;
+            z-index: 1000;
+        }
+        
+        /* Timeline Connector */
+        .timeline-connector {
+            position: absolute;
+            left: 19px;
+            top: 48px;
+            bottom: -16px;
+            width: 2px;
+            background: linear-gradient(180deg, currentColor 0%, transparent 100%);
+        }
+        
+        /* Leaflet Custom */
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+        
+        .leaflet-control-zoom a {
+            background: white !important;
+            color: #1f2937 !important;
+            border: none !important;
+            border-radius: 8px !important;
+            margin: 4px !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+    
+    <!-- Top Navigation -->
+    <nav class="glass border-b border-white/20 shadow-lg sticky top-0 z-50">
+        <div class="px-6 py-2.5">
+            <div class="flex items-center justify-between">
+                <!-- Logo & Title - Two Lines -->
+                <div class="flex items-center gap-3 group">
+                    <a href="floodwatch-final.html" class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl blur-sm opacity-75 group-hover:opacity-100 transition"></div>
+                        <div class="relative w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                            </svg>
+                        </div>
+                    </a>
+                    <div>
+                        <h1 class="text-lg font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
+                            FloodWatch<br/>Sri Lanka
+                        </h1>
+                        <p class="text-[10px] font-medium text-slate-500">by Hack & Build</p>
+                    </div>
+                </div>
+                
+                <!-- Main Menu -->
+                <div class="hidden lg:flex items-center gap-1">
+                    <a href="floodwatch-final.html" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Dashboard</a>
+                    <a href="floodwatch-news.html" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">News</a>
+                    <a href="#" class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg shadow-lg shadow-blue-500/30 transform hover:scale-105 transition whitespace-nowrap">Early Warning</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Flood Info</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Intel</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Damage Assessment</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">External Links</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Data Sources</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Contacts</a>
+                    
+                    <button class="btn-hover ml-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-500 rounded-lg shadow-lg shadow-red-500/30 flex items-center gap-2 transform hover:scale-105 transition whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span class="relative z-10">Report Emergency</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Alert Status Bar -->
+    <div class="glass-dark border-b border-white/10">
+        <div class="px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                        <span class="text-sm font-bold text-white">System Active</span>
+                    </div>
+                    <div class="h-4 w-px bg-white/20"></div>
+                    <div class="text-sm text-white/90">
+                        <span class="font-semibold">Last Update:</span> 2 minutes ago
+                    </div>
+                    <div class="h-4 w-px bg-white/20"></div>
+                    <div class="text-sm text-white/90">
+                        <span class="font-semibold">Monitoring:</span> 24 Districts, 156 Stations
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button class="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold transition flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        Subscribe to Alerts
+                    </button>
+                    <button class="px-4 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold transition">
+                        Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex h-[calc(100vh-135px)]">
+        
+        <!-- Left Sidebar - Active Alerts -->
+        <aside class="w-96 glass border-r border-white/20 overflow-y-auto custom-scrollbar shadow-2xl">
+            <div class="p-5 space-y-4">
+                
+                <!-- Alert Summary -->
+                <div class="gradient-animate bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-xl p-4 shadow-xl shadow-blue-500/30 border border-white/20">
+                    <h2 class="text-sm font-extrabold text-white mb-3 uppercase tracking-wide">Alert Summary</h2>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="bg-white/20 rounded-lg p-2 text-center backdrop-blur">
+                            <div class="text-2xl font-black text-white">0</div>
+                            <div class="text-[9px] font-bold text-blue-100 uppercase">Severe</div>
+                        </div>
+                        <div class="bg-white/20 rounded-lg p-2 text-center backdrop-blur">
+                            <div class="text-2xl font-black text-white">0</div>
+                            <div class="text-[9px] font-bold text-blue-100 uppercase">High</div>
+                        </div>
+                        <div class="bg-white/20 rounded-lg p-2 text-center backdrop-blur">
+                            <div class="text-2xl font-black text-white">1</div>
+                            <div class="text-[9px] font-bold text-blue-100 uppercase">Moderate</div>
+                        </div>
+                        <div class="bg-white/20 rounded-lg p-2 text-center backdrop-blur">
+                            <div class="text-2xl font-black text-white">23</div>
+                            <div class="text-[9px] font-bold text-blue-100 uppercase">Normal</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Status -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl p-4 shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg shadow-green-500/30 flex-shrink-0">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-sm font-extrabold text-green-900">All Systems Normal</h3>
+                            <p class="text-xs text-green-700 font-semibold">No severe alerts at this time</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert History -->
+                <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-200">
+                    <h3 class="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Recent Alert History
+                    </h3>
+                    
+                    <!-- Timeline -->
+                    <div class="space-y-4 relative">
+                        
+                        <!-- Alert Item 1 - Moderate -->
+                        <div class="relative pl-10">
+                            <div class="absolute left-0 top-0 w-10 h-10 bg-gradient-to-br from-amber-400 to-yellow-500 rounded-lg flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                            </div>
+                            <div class="timeline-connector text-amber-500"></div>
+                            <div class="bg-gradient-to-r from-amber-50 to-transparent border-l-4 border-amber-500 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-bold text-amber-700">MODERATE ALERT</span>
+                                    <span class="text-[10px] text-slate-500">2:30 PM</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 mb-1">Ratnapura District</h4>
+                                <p class="text-xs text-slate-600 mb-2">Rainfall: 52mm | Threshold: 65%</p>
+                                <div class="flex items-center gap-2 text-[10px]">
+                                    <span class="px-2 py-0.5 bg-amber-100 text-amber-700 rounded font-semibold">Active</span>
+                                    <span class="text-slate-500">SMS: 45 sent</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alert Item 2 - Resolved -->
+                        <div class="relative pl-10">
+                            <div class="absolute left-0 top-0 w-10 h-10 bg-gradient-to-br from-green-400 to-green-500 rounded-lg flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="timeline-connector text-green-500"></div>
+                            <div class="bg-gradient-to-r from-green-50 to-transparent border-l-4 border-green-500 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-bold text-green-700">RESOLVED</span>
+                                    <span class="text-[10px] text-slate-500">Yesterday</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 mb-1">Colombo District</h4>
+                                <p class="text-xs text-slate-600 mb-2">Peak: 85mm | Duration: 4 hours</p>
+                                <div class="flex items-center gap-2 text-[10px]">
+                                    <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded font-semibold">Cleared</span>
+                                    <span class="text-slate-500">SMS: 62 sent</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alert Item 3 - Resolved -->
+                        <div class="relative pl-10">
+                            <div class="absolute left-0 top-0 w-10 h-10 bg-gradient-to-br from-slate-400 to-slate-500 rounded-lg flex items-center justify-center shadow-md">
+                                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="bg-gradient-to-r from-slate-50 to-transparent border-l-4 border-slate-300 rounded-lg p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-bold text-slate-600">ADVISORY</span>
+                                    <span class="text-[10px] text-slate-500">2 days ago</span>
+                                </div>
+                                <h4 class="text-sm font-bold text-slate-900 mb-1">Galle District</h4>
+                                <p class="text-xs text-slate-600 mb-2">Advisory: Sea conditions</p>
+                                <div class="flex items-center gap-2 text-[10px]">
+                                    <span class="px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-semibold">Expired</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Alert Settings -->
+                <div class="bg-white rounded-xl p-4 shadow-lg border border-slate-200">
+                    <h3 class="text-sm font-extrabold text-slate-800 mb-3">Alert Preferences</h3>
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between cursor-pointer">
+                            <span class="text-xs font-semibold text-slate-700">Email Notifications</span>
+                            <div class="relative">
+                                <input type="checkbox" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between cursor-pointer">
+                            <span class="text-xs font-semibold text-slate-700">SMS Alerts</span>
+                            <div class="relative">
+                                <input type="checkbox" class="sr-only peer" checked>
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </label>
+                        <label class="flex items-center justify-between cursor-pointer">
+                            <span class="text-xs font-semibold text-slate-700">Push Notifications</span>
+                            <div class="relative">
+                                <input type="checkbox" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                            </div>
+                        </label>
+                    </div>
+                    <button class="w-full mt-4 px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-xs font-bold shadow-lg hover:shadow-xl transition">
+                        Save Preferences
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Area - Map & Info -->
+        <div class="flex-1 flex flex-col">
+            
+            <!-- Map Container -->
+            <div class="flex-1 relative">
+                <div id="alertMap" class="w-full h-full"></div>
+                
+                <!-- Map Legend -->
+                <div class="absolute bottom-6 left-6 glass rounded-xl shadow-2xl p-3 border border-white/20 w-56">
+                    <h3 class="text-xs font-extrabold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide">
+                        <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        Alert Levels
+                    </h3>
+                    <div class="space-y-1.5 text-[11px] font-semibold">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-md"></div>
+                                <span class="text-slate-700">Severe</span>
+                            </div>
+                            <span class="text-slate-500">&gt;100mm</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 shadow-md"></div>
+                                <span class="text-slate-700">High</span>
+                            </div>
+                            <span class="text-slate-500">80-100mm</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 shadow-md"></div>
+                                <span class="text-slate-700">Moderate</span>
+                            </div>
+                            <span class="text-slate-500">50-80mm</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 shadow-md"></div>
+                                <span class="text-slate-700">Normal</span>
+                            </div>
+                            <span class="text-slate-500">&lt;50mm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions Floating Panel -->
+                <div class="absolute top-6 right-6 glass rounded-xl shadow-2xl p-3 border border-white/20">
+                    <h4 class="text-xs font-bold text-slate-800 mb-2">Quick Actions</h4>
+                    <div class="space-y-2">
+                        <button class="w-full px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Export Report
+                        </button>
+                        <button class="w-full px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-2 transition">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"></path>
+                            </svg>
+                            Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alert Thresholds Info Bar -->
+            <div class="glass border-t border-white/20 p-4">
+                <div class="max-w-6xl mx-auto">
+                    <h3 class="text-xs font-extrabold text-slate-800 mb-3 uppercase tracking-wide">District Threshold Configuration</h3>
+                    <div class="grid grid-cols-4 gap-4">
+                        <div class="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 border border-slate-200">
+                            <div class="text-xs text-slate-600 mb-1">Western Province</div>
+                            <div class="text-lg font-black text-slate-900">68<span class="text-xs">mm</span></div>
+                            <div class="text-[10px] text-slate-500">Alert threshold</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 border border-slate-200">
+                            <div class="text-xs text-slate-600 mb-1">Southern Province</div>
+                            <div class="text-lg font-black text-slate-900">75<span class="text-xs">mm</span></div>
+                            <div class="text-[10px] text-slate-500">Alert threshold</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 border border-slate-200">
+                            <div class="text-xs text-slate-600 mb-1">Central Province</div>
+                            <div class="text-lg font-black text-slate-900">82<span class="text-xs">mm</span></div>
+                            <div class="text-[10px] text-slate-500">Alert threshold</div>
+                        </div>
+                        <div class="bg-gradient-to-br from-slate-50 to-white rounded-lg p-3 border border-slate-200">
+                            <div class="text-xs text-slate-600 mb-1">Eastern Province</div>
+                            <div class="text-lg font-black text-slate-900">65<span class="text-xs">mm</span></div>
+                            <div class="text-[10px] text-slate-500">Alert threshold</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize the map
+        const map = L.map('alertMap', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([7.8731, 80.7718], 8);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Station data
+        const stations = [
+            { name: 'Ratnapura', lat: 6.6828, lng: 80.4014, level: 'moderate', rainfall: 52, alert: true },
+            { name: 'Colombo', lat: 6.9271, lng: 79.8612, level: 'normal', rainfall: 12, alert: false },
+            { name: 'Kandy', lat: 7.2906, lng: 80.6337, level: 'normal', rainfall: 8, alert: false },
+            { name: 'Galle', lat: 6.0535, lng: 80.2210, level: 'normal', rainfall: 15, alert: false },
+            { name: 'Jaffna', lat: 9.6615, lng: 80.0255, level: 'normal', rainfall: 5, alert: false },
+        ];
+
+        function getAlertLevel(rainfall) {
+            if (rainfall >= 100) return { level: 'severe', color: '#ef4444', class: 'marker-severe' };
+            if (rainfall >= 80) return { level: 'high', color: '#f97316', class: 'marker-high' };
+            if (rainfall >= 50) return { level: 'moderate', color: '#f59e0b', class: 'marker-moderate' };
+            return { level: 'normal', color: '#22c55e', class: 'marker-normal' };
+        }
+
+        stations.forEach(station => {
+            const alert = getAlertLevel(station.rainfall);
+            
+            const markerHtml = station.alert 
+                ? `<div style="width: 50px; height: 50px; background: linear-gradient(135deg, ${alert.color}, ${alert.color}dd); border: 4px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 0 0 0 ${alert.color}; animation: pulse-alert 2s infinite;">
+                    <svg style="width: 24px; height: 24px; color: white;" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                    </svg>
+                </div>`
+                : `<div style="width: 40px; height: 40px; background: linear-gradient(135deg, ${alert.color}, ${alert.color}dd); border: 3px solid white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                    <svg style="width: 20px; height: 20px; color: white;" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                    </svg>
+                </div>`;
+            
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: markerHtml,
+                iconSize: station.alert ? [50, 50] : [40, 40],
+                iconAnchor: station.alert ? [25, 50] : [20, 40]
+            });
+
+            const marker = L.marker([station.lat, station.lng], { icon: icon }).addTo(map);
+            
+            const alertBadge = station.alert 
+                ? '<span style="display: inline-block; padding: 4px 8px; background: #f59e0b; color: white; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;">ACTIVE ALERT</span>'
+                : '<span style="display: inline-block; padding: 4px 8px; background: #10b981; color: white; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase;">NORMAL</span>';
+            
+            marker.bindPopup(`
+                <div style="padding: 12px; min-width: 220px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0;">
+                        <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0;">${station.name}</h3>
+                        ${alertBadge}
+                    </div>
+                    <div style="display: flex; justify-content: space-between; background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), transparent); padding: 8px; border-radius: 8px; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 600; color: #64748b;">Rainfall</span>
+                        <span style="font-size: 16px; font-weight: 900; color: ${alert.color};">${station.rainfall}mm</span>
+                    </div>
+                    <div style="font-size: 10px; color: #64748b; text-align: center; margin-top: 12px; padding-top: 8px; border-top: 1px solid #e2e8f0;">
+                        Updated 2 minutes ago
+                    </div>
+                </div>
+            `, {
+                maxWidth: 260,
+                className: 'custom-popup'
+            });
+        });
+
+        const bounds = L.latLngBounds(stations.map(s => [s.lat, s.lng]));
+        map.fitBounds(bounds, { padding: [50, 50] });
+    </script>
+
+</body>
+</html>

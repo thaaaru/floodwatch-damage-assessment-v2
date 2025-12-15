@@ -66,7 +66,7 @@ const formatDate = (dateStr: string | null | undefined, options: Intl.DateTimeFo
 
 export default function Dashboard() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const [selectedDistrict, setSelectedDistrict] = useState<string | null>('Nawalapitiya');
   const [selectedHours, setSelectedHours] = useState<number>(24);
   const [selectedLayer, setSelectedLayer] = useState<MapLayer>('rainfall');
   const [loading, setLoading] = useState(true);
@@ -208,7 +208,7 @@ export default function Dashboard() {
         {/* Top Controls Overlay */}
         <div className="absolute top-6 left-6 right-6 z-[1000] flex flex-col gap-3">
           {/* Layer Selection */}
-          <div className="bg-white/30 backdrop-blur-xl rounded-xl shadow-lg border border-white/40 p-3">
+          <div className="glass rounded-xl shadow-lg p-3">
             <div className="flex flex-wrap items-center gap-3">
               {/* Current Layers */}
               <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function Dashboard() {
                       title={layer.description}
                       className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
                         selectedLayer === layer.id
-                          ? 'bg-brand-600 text-white shadow-sm'
+                          ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
                           : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
                       }`}
                     >
@@ -244,7 +244,7 @@ export default function Dashboard() {
                       onClick={() => setSelectedHours(hours)}
                       className={`px-2.5 py-1.5 text-xs font-bold transition-all ${
                         selectedHours === hours
-                          ? 'bg-brand-600 text-white'
+                          ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
                           : 'bg-white text-slate-900 hover:bg-slate-100'
                       }`}
                     >
@@ -324,7 +324,7 @@ export default function Dashboard() {
                     />
 
                     {/* Dropdown Menu - Drops down vertically */}
-                    <div className="absolute top-full left-0 right-0 sm:left-0 sm:right-auto mt-2 z-[9999] bg-white/95 backdrop-blur-xl rounded-xl shadow-2xl border border-white/60 p-3 w-full sm:min-w-[280px] sm:w-auto max-w-[320px]">
+                    <div className="absolute top-full left-0 right-0 sm:left-0 sm:right-auto mt-2 z-[9999] glass rounded-xl shadow-2xl p-3 w-full sm:min-w-[280px] sm:w-auto max-w-[320px]">
                       <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-2">Select Forecast Day</div>
                       <div className="flex flex-col gap-2">
                         {forecastLayersWithDates.map((layer) => (
@@ -359,7 +359,7 @@ export default function Dashboard() {
           {/* Windy Icon - Left Side */}
           <a
             href="/windy"
-            className="fixed bottom-6 left-6 z-[2000] w-14 h-14 bg-purple-600 hover:bg-purple-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-purple-300/40"
+            className="fixed bottom-6 left-6 z-[2000] w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-500 hover:shadow-lg hover:shadow-pink-500/30 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-purple-300/40"
             title="Windy Weather Map"
           >
             <span className="text-2xl">🌀</span>
@@ -393,7 +393,7 @@ export default function Dashboard() {
                 />
 
                 {/* Panel Content - Bottom on mobile */}
-                <div className="fixed inset-x-0 bottom-0 z-[1600] bg-white/95 backdrop-blur-xl rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col border border-slate-200 animate-in slide-in-from-bottom duration-300">
+                <div className="fixed inset-x-0 bottom-0 z-[1600] glass rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
                 {/* Handle */}
                 <div className="flex items-center justify-center pt-3 pb-2 lg:hidden">
                   <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
@@ -527,7 +527,7 @@ export default function Dashboard() {
         </div>
 
         {/* Desktop Only: Fixed Sidebar */}
-        <div className="hidden lg:flex flex-col h-full bg-white/95 backdrop-blur-xl border-l border-slate-200">
+        <div className="hidden lg:flex flex-col h-full glass border-l border-slate-200">
           {/* Panel Header */}
           <div className="px-4 py-4 border-b border-slate-200">
             <h2 className="text-lg font-bold text-slate-900">Dashboard Info</h2>

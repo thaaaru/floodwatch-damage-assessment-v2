@@ -1544,8 +1544,8 @@ function WeatherMap(props: MapProps = {} as MapProps) {
     // Don't block the map - show error overlay instead
   }
 
-  // Sri Lanka geographic center (approximately in Matale district)
-  const sriLankaCenter: [number, number] = [7.29, 80.77];
+  // Sri Lanka geographic center (same as Early Warning page)
+  const sriLankaCenter: [number, number] = [7.8731, 80.7718];
   const mapCenter: [number, number] = sriLankaCenter;
   const mapZoom = 8;
 

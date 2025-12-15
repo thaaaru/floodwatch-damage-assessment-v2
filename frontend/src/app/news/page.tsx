@@ -51,7 +51,7 @@ export default function NewsPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <div className="glass border-b border-slate-200 sticky top-0 z-10 shadow-md">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center gap-3 mb-4">
             <a href="/" className="text-slate-400 hover:text-slate-900 transition-colors flex-shrink-0">
@@ -71,8 +71,8 @@ export default function NewsPage() {
               onClick={() => setSelectedCategory('all')}
               className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all font-medium ${
                 selectedCategory === 'all'
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+                  : 'glass text-slate-700 hover:bg-white/90'
               }`}
             >
               All Updates
@@ -83,8 +83,8 @@ export default function NewsPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all flex items-center gap-1.5 font-medium ${
                   selectedCategory === cat
-                    ? 'bg-brand-600 text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+                    : 'glass text-slate-700 hover:bg-white/90'
                 }`}
               >
                 <span>{categoryConfig[cat].icon}</span>
@@ -100,32 +100,82 @@ export default function NewsPage() {
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse bg-white rounded-xl h-32 border border-slate-200" />
+              <div key={i} className="animate-pulse glass rounded-xl h-32 shadow-sm" />
             ))}
           </div>
         ) : filteredNews.length === 0 ? (
-          <div className="text-center py-16">
+          <div className="glass rounded-2xl text-center py-16 shadow-md">
             <div className="text-6xl mb-4">📰</div>
             <h3 className="text-xl font-bold text-slate-900 mb-2">No updates available</h3>
             <p className="text-slate-600">Check back later for the latest news and alerts.</p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredNews.map((item) => (
-              <NewsCard key={item.id} item={item} />
-            ))}
-          </div>
+          <>
+            {/* Featured Story - First Item */}
+            {filteredNews.length > 0 && (
+              <div className="glass rounded-2xl overflow-hidden shadow-lg mb-6 border border-white/20">
+                <a
+                  href={filteredNews[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group"
+                >
+                  <div className="relative bg-gradient-to-br from-blue-600 to-cyan-500 p-8 sm:p-12">
+                    <div className="absolute top-4 right-4">
+                      <span className="px-3 py-1.5 rounded-full text-xs font-bold uppercase bg-white/20 text-white backdrop-blur-sm">
+                        Featured Story
+                      </span>
+                    </div>
+                    <div className="max-w-3xl">
+                      <div className="flex items-center gap-2 mb-4">
+                        <span className="text-4xl">{categoryConfig[filteredNews[0].category].icon}</span>
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-white/20 text-white backdrop-blur-sm">
+                          {filteredNews[0].category}
+                        </span>
+                        {filteredNews[0].severity && (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-white/20 text-white backdrop-blur-sm">
+                            {filteredNews[0].severity}
+                          </span>
+                        )}
+                      </div>
+                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 leading-tight group-hover:underline">
+                        {filteredNews[0].title}
+                      </h2>
+                      <p className="text-base sm:text-lg text-white/90 mb-6 leading-relaxed">
+                        {filteredNews[0].summary}
+                      </p>
+                      <div className="flex items-center gap-3 text-sm text-white/80">
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-xl">{filteredNews[0].sourceIcon}</span>
+                          <span className="font-medium">{filteredNews[0].source}</span>
+                        </span>
+                        <span>•</span>
+                        <span>{formatRelativeTime(filteredNews[0].publishedAt)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </a>
+              </div>
+            )}
+
+            {/* News Grid - 3 columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredNews.slice(1).map((item) => (
+                <NewsCard key={item.id} item={item} />
+              ))}
+            </div>
+          </>
         )}
 
         {/* Source Attribution */}
-        <div className="mt-12 p-6 bg-white rounded-xl border border-slate-200">
+        <div className="mt-12 p-6 glass rounded-2xl shadow-md">
           <h3 className="text-sm font-bold text-slate-900 mb-3">Official Sources</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <a
               href="https://www.nbro.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-brand-600 transition-colors"
+              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -136,7 +186,7 @@ export default function NewsPage() {
               href="https://www.dmc.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-brand-600 transition-colors"
+              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -147,7 +197,7 @@ export default function NewsPage() {
               href="https://www.meteo.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-brand-600 transition-colors"
+              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -158,7 +208,7 @@ export default function NewsPage() {
               href="https://www.irrigation.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-brand-600 transition-colors"
+              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -181,7 +231,7 @@ function NewsCard({ item }: { item: NewsItem }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block rounded-xl border border-slate-200 hover:border-slate-300 hover:shadow-md transition-all p-4 sm:p-6 bg-white border-l-4 ${severity.border}`}
+      className={`block rounded-xl glass hover:shadow-lg transition-all p-4 sm:p-6 border-l-4 ${severity.border} group`}
     >
       <div className="flex items-start gap-4">
         {/* Category Badge */}
@@ -219,7 +269,7 @@ function NewsCard({ item }: { item: NewsItem }) {
               <span className="text-base">{item.sourceIcon}</span>
               <span className="font-medium">{item.source}</span>
             </span>
-            <span className="flex items-center gap-1 text-brand-600 hover:text-brand-700 font-medium">
+            <span className="flex items-center gap-1 text-cyan-600 group-hover:text-cyan-700 font-medium">
               <span>Read more</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />

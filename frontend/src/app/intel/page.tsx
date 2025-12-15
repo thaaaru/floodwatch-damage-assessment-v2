@@ -420,7 +420,7 @@ export default function IntelDashboard() {
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
-      <header className="bg-slate-800/95 backdrop-blur-sm border-b border-slate-700/50 px-4 py-4">
+      <header className="glass-dark border-b border-slate-700/50 px-4 py-4 shadow-lg">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
@@ -452,7 +452,7 @@ export default function IntelDashboard() {
               href="https://floodsupport.org"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-red-600 hover:bg-red-500 text-white px-4 py-2 rounded-xl text-sm font-medium transition-colors"
+              className="bg-gradient-to-r from-red-600 to-red-500 hover:shadow-lg text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-md"
             >
               Report Emergency
             </a>
@@ -467,8 +467,8 @@ export default function IntelDashboard() {
             onClick={() => setActiveTab('threat')}
             className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all ${
               activeTab === 'threat'
-                ? 'bg-brand-600 text-white shadow-sm'
-                : 'bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+                : 'glass-dark text-slate-400 hover:text-white hover:bg-white/10'
             }`}
           >
             Flood Threat Intel
@@ -478,8 +478,8 @@ export default function IntelDashboard() {
             onClick={() => setActiveTab('infrastructure')}
             className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
               activeTab === 'infrastructure'
-                ? 'bg-purple-600 text-white'
-                : 'bg-gray-800 text-gray-400 hover:text-white'
+                ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md'
+                : 'glass-dark text-gray-400 hover:text-white'
             }`}
           >
             Infrastructure Intel
@@ -491,7 +491,7 @@ export default function IntelDashboard() {
         {activeTab === 'threat' && (
           <>
             {/* Historical Flood Patterns Analysis */}
-            <div className="bg-gray-800 rounded-lg p-4">
+            <div className="glass-dark rounded-2xl p-4 shadow-lg">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span>📊</span> Historical Flood Pattern Analysis (30-Year Data)
                 {loadingPatterns && <span className="text-sm text-gray-400 font-normal">(Loading...)</span>}
@@ -501,20 +501,20 @@ export default function IntelDashboard() {
                 <div className="space-y-6">
                   {/* Summary Stats with Gauge Charts */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-blue-400">{fmt(floodPatterns.summary.avg_annual_rainfall_mm)}</div>
+                    <div className="glass border border-blue-400/30 rounded-xl p-3 text-center shadow-md">
+                      <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">{fmt(floodPatterns.summary.avg_annual_rainfall_mm)}</div>
                       <div className="text-xs text-blue-300">Avg Annual Rainfall (mm)</div>
                     </div>
-                    <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-orange-400">{fmt(floodPatterns.summary.max_daily_rainfall_mm)}</div>
+                    <div className="glass border border-orange-400/30 rounded-xl p-3 text-center shadow-md">
+                      <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">{fmt(floodPatterns.summary.max_daily_rainfall_mm)}</div>
                       <div className="text-xs text-orange-300">Max Daily Rainfall (mm)</div>
                     </div>
-                    <div className="bg-cyan-900/50 border border-cyan-700 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-cyan-400">{floodPatterns.summary.heavy_rain_days}</div>
+                    <div className="glass border border-cyan-400/30 rounded-xl p-3 text-center shadow-md">
+                      <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">{floodPatterns.summary.heavy_rain_days}</div>
                       <div className="text-xs text-cyan-300">Heavy Rain Days (&gt;50mm)</div>
                     </div>
-                    <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-center">
-                      <div className="text-2xl font-bold text-red-400">{floodPatterns.summary.extreme_rain_days}</div>
+                    <div className="glass border border-red-400/30 rounded-xl p-3 text-center shadow-md">
+                      <div className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">{floodPatterns.summary.extreme_rain_days}</div>
                       <div className="text-xs text-red-300">Extreme Days (&gt;100mm)</div>
                     </div>
                   </div>
@@ -528,7 +528,7 @@ export default function IntelDashboard() {
 
                       {/* Key Findings Banner */}
                       {floodPatterns.climate_change.key_findings.length > 0 && (
-                        <div className="bg-gray-800/80 rounded-lg p-3 mb-4">
+                        <div className="glass-dark rounded-xl p-3 mb-4 shadow-md">
                           <div className="text-sm font-semibold text-yellow-400 mb-2">Key Findings:</div>
                           <ul className="space-y-1">
                             {floodPatterns.climate_change.key_findings.map((finding, idx) => (
@@ -544,7 +544,7 @@ export default function IntelDashboard() {
                       {/* Decade Comparison Cards */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
                         {floodPatterns.climate_change.decades.first && (
-                          <div className="bg-gray-800 rounded-lg p-3 border-l-4 border-blue-500">
+                          <div className="glass-dark rounded-xl p-3 border-l-4 border-blue-400 shadow-md">
                             <div className="text-xs text-blue-400 font-semibold mb-1">First Decade</div>
                             <div className="text-lg font-bold text-white">{floodPatterns.climate_change.decades.first.years}</div>
                             <div className="mt-2 space-y-1 text-xs">
@@ -564,7 +564,7 @@ export default function IntelDashboard() {
                           </div>
                         )}
                         {floodPatterns.climate_change.decades.second && (
-                          <div className="bg-gray-800 rounded-lg p-3 border-l-4 border-purple-500">
+                          <div className="glass-dark rounded-xl p-3 border-l-4 border-purple-400 shadow-md">
                             <div className="text-xs text-purple-400 font-semibold mb-1">Second Decade</div>
                             <div className="text-lg font-bold text-white">{floodPatterns.climate_change.decades.second.years}</div>
                             <div className="mt-2 space-y-1 text-xs">
@@ -584,7 +584,7 @@ export default function IntelDashboard() {
                           </div>
                         )}
                         {floodPatterns.climate_change.decades.third && (
-                          <div className="bg-gray-800 rounded-lg p-3 border-l-4 border-green-500">
+                          <div className="glass-dark rounded-xl p-3 border-l-4 border-green-400 shadow-md">
                             <div className="text-xs text-green-400 font-semibold mb-1">Last Decade</div>
                             <div className="text-lg font-bold text-white">{floodPatterns.climate_change.decades.third.years}</div>
                             <div className="mt-2 space-y-1 text-xs">
@@ -607,7 +607,7 @@ export default function IntelDashboard() {
 
                       {/* Change Metrics Table */}
                       {floodPatterns.climate_change.changes.length > 0 && (
-                        <div className="bg-gray-800/80 rounded-lg p-3 mb-4">
+                        <div className="glass-dark rounded-xl p-3 mb-4 shadow-md">
                           <div className="text-sm font-semibold text-gray-300 mb-3">Change Over 30 Years (First vs Last Decade)</div>
                           <div className="space-y-2">
                             {floodPatterns.climate_change.changes.map((change, idx) => (
@@ -1042,7 +1042,7 @@ export default function IntelDashboard() {
                     <h3 className="text-sm font-semibold text-gray-300 mb-3">30-Year Trend Sparklines</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {/* Total Rainfall Sparkline */}
-                      <div className="bg-gray-800 rounded-lg p-3">
+                      <div className="glass-dark rounded-xl p-3 shadow-md">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-xs text-gray-400">Annual Rainfall</span>
                           <span className="text-sm font-bold text-blue-400">
@@ -1069,7 +1069,7 @@ export default function IntelDashboard() {
                         </div>
                       </div>
                       {/* Extreme Days Sparkline */}
-                      <div className="bg-gray-800 rounded-lg p-3">
+                      <div className="glass-dark rounded-xl p-3 shadow-md">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-xs text-gray-400">Extreme Days/Year</span>
                           <span className="text-sm font-bold text-red-400">
@@ -1096,7 +1096,7 @@ export default function IntelDashboard() {
                         </div>
                       </div>
                       {/* Max Daily Sparkline */}
-                      <div className="bg-gray-800 rounded-lg p-3">
+                      <div className="glass-dark rounded-xl p-3 shadow-md">
                         <div className="flex justify-between items-center mb-2">
                           <span className="text-xs text-gray-400">Max Daily/Year</span>
                           <span className="text-sm font-bold text-orange-400">
@@ -1183,7 +1183,7 @@ export default function IntelDashboard() {
                     <h3 className="text-sm font-semibold text-gray-300 mb-3">Monsoon Season Analysis</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       {Object.entries(floodPatterns.seasonal_patterns).map(([key, season]) => (
-                        <div key={key} className="bg-gray-800 rounded-lg p-4">
+                        <div key={key} className="glass-dark rounded-xl p-4 shadow-md">
                           <div className="font-semibold text-sm mb-2">{season.name}</div>
                           <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
@@ -1303,7 +1303,7 @@ export default function IntelDashboard() {
             </div>
 
             {/* Yesterday's Weather Stats */}
-            <div className="bg-gray-800 rounded-lg p-4">
+            <div className="glass-dark rounded-2xl p-4 shadow-lg">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span>📅</span> Yesterday&apos;s Weather Summary
                 {loadingYesterdayStats && <span className="text-sm text-gray-400 font-normal">(Loading...)</span>}
@@ -1456,7 +1456,7 @@ export default function IntelDashboard() {
             </div>
 
             {/* Environmental Factors & Flood Risk Correlation */}
-            <div className="bg-gray-800 rounded-lg p-4">
+            <div className="glass-dark rounded-2xl p-4 shadow-lg">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span>🌳</span> Environmental Factors & Flood Risk (30-Year Analysis)
                 {loadingEnvironmental && <span className="text-sm text-gray-400 font-normal">(Loading...)</span>}
@@ -1648,7 +1648,7 @@ export default function IntelDashboard() {
                       <h3 className="text-sm font-semibold text-gray-300 mb-3">Environmental Risk Factors</h3>
                       <div className="space-y-3">
                         {environmentalData.flood_risk_factors.factors.map((factor, idx) => (
-                          <div key={idx} className="bg-gray-800 rounded-lg p-3">
+                          <div key={idx} className="glass-dark rounded-xl p-3 shadow-sm">
                             <div className="flex items-center justify-between mb-1">
                               <span className="font-semibold text-white">{factor.factor}</span>
                               <span className={`px-2 py-0.5 rounded text-xs font-bold ${
@@ -1732,7 +1732,7 @@ export default function IntelDashboard() {
             </a>
 
             {/* Data Sources Info */}
-            <div className="bg-gray-800/50 rounded-lg p-4 text-sm text-gray-400">
+            <div className="glass-dark rounded-xl p-4 text-sm text-gray-400 shadow-md">
               <div className="font-semibold text-gray-300 mb-2">Data Sources:</div>
               <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
                 <div>🌧️ <span className="text-gray-300">Rainfall:</span> Open-Meteo API</div>
@@ -1750,7 +1750,7 @@ export default function IntelDashboard() {
           <>
             {/* Traffic Flow Overview */}
             {trafficFlow && (
-              <div className="bg-gray-800 rounded-lg p-4">
+              <div className="glass-dark rounded-2xl p-4 shadow-lg">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <span>🚗</span> Road Network Status
                   <span className="text-sm font-normal text-gray-400">({trafficFlow.total_locations} monitoring points)</span>
@@ -1830,7 +1830,7 @@ export default function IntelDashboard() {
             )}
 
             {/* Road Incidents & Closures */}
-            <div className="bg-gray-800 rounded-lg p-4">
+            <div className="glass-dark rounded-2xl p-4 shadow-lg">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span>⚠️</span> Road Incidents & Closures
                 <span className="text-sm font-normal text-gray-400">({trafficIncidents?.length ?? 0} active)</span>
@@ -1916,7 +1916,7 @@ export default function IntelDashboard() {
 
             {/* Emergency Facilities */}
             {allFacilities && (
-              <div className="bg-gray-800 rounded-lg p-4">
+              <div className="glass-dark rounded-2xl p-4 shadow-lg">
                 <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <span>🏥</span> Emergency Facilities
                   <span className="text-sm font-normal text-gray-400">
@@ -1994,7 +1994,7 @@ export default function IntelDashboard() {
             )}
 
             {/* Route Impact Assessment */}
-            <div className="bg-gray-800 rounded-lg p-4">
+            <div className="glass-dark rounded-2xl p-4 shadow-lg">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <span>🛣️</span> Evacuation Route Assessment
               </h2>
@@ -2077,7 +2077,7 @@ export default function IntelDashboard() {
             </div>
 
             {/* Data Sources Info */}
-            <div className="bg-gray-800/50 rounded-lg p-4 text-sm text-gray-400">
+            <div className="glass-dark rounded-xl p-4 text-sm text-gray-400 shadow-md">
               <div className="font-semibold text-gray-300 mb-2">Data Sources:</div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <div>🚗 <span className="text-gray-300">Traffic Flow:</span> HERE & TomTom APIs (5min cache)</div>

@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FloodWatch Sri Lanka - Real-time Monitoring</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        /* Custom Leaflet Controls */
+        .leaflet-control-zoom {
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+        }
+        
+        .leaflet-control-zoom a {
+            background: white !important;
+            color: #1f2937 !important;
+            border: none !important;
+            border-radius: 8px !important;
+            margin: 4px !important;
+            width: 36px !important;
+            height: 36px !important;
+            line-height: 36px !important;
+            font-size: 20px !important;
+            font-weight: 600 !important;
+        }
+        
+        .leaflet-control-zoom a:hover {
+            background: #f3f4f6 !important;
+        }
+        
+        /* Station Markers */
+        .station-marker {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 4px solid white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 10px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2), 0 0 0 0 rgba(239, 68, 68, 0);
+            position: relative;
+        }
+        
+        .station-marker::before {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .station-marker:hover {
+            transform: scale(1.25);
+            z-index: 1000;
+        }
+        
+        .station-marker:hover::before {
+            opacity: 0.2;
+        }
+        
+        .marker-severe {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            animation: pulse-severe 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.6), 0 0 0 0 rgba(239, 68, 68, 0.7);
+        }
+        
+        .marker-severe::before {
+            background: #ef4444;
+        }
+        
+        @keyframes pulse-severe {
+            0%, 100% {
+                box-shadow: 0 4px 20px rgba(239, 68, 68, 0.6), 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            50% {
+                box-shadow: 0 4px 20px rgba(239, 68, 68, 0.6), 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+        }
+        
+        .marker-high {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+        }
+        
+        .marker-high::before {
+            background: #f97316;
+        }
+        
+        .marker-moderate {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+        
+        .marker-moderate::before {
+            background: #f59e0b;
+        }
+        
+        .marker-normal {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        }
+        
+        .marker-normal::before {
+            background: #22c55e;
+        }
+        
+        /* Compact Metric Cards */
+        .compact-metric {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        
+        .compact-metric:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px -4px currentColor;
+        }
+        
+        /* News Items */
+        .news-item {
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .news-item:hover {
+            background: linear-gradient(90deg, rgba(59, 130, 246, 0.05) 0%, transparent 100%);
+            border-left-color: #3b82f6;
+            transform: translateX(4px);
+        }
+        
+        /* Animated Gradients */
+        .gradient-animate {
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        /* Glass Morphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        .glass-dark {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        
+        /* Smooth Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #94a3b8, #64748b);
+            border-radius: 3px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #64748b, #475569);
+        }
+        
+        /* Button Hover Effects */
+        .btn-hover {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-hover::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.5s, height 0.5s;
+        }
+        
+        .btn-hover:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Status Badge Animation */
+        .status-badge {
+            animation: badge-glow 2s ease-in-out infinite;
+        }
+        
+        @keyframes badge-glow {
+            0%, 100% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 20px currentColor; }
+        }
+        
+        /* Leaflet Popup Custom Styling */
+        .leaflet-popup-content-wrapper {
+            border-radius: 12px !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15) !important;
+            padding: 0 !important;
+        }
+        
+        .leaflet-popup-content {
+            margin: 0 !important;
+        }
+        
+        .leaflet-popup-tip {
+            box-shadow: 0 3px 14px rgba(0,0,0,0.1) !important;
+        }
+        
+        /* Number Counter Animation */
+        @keyframes countUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .count-up {
+            animation: countUp 0.5s ease-out;
+        }
+        
+        /* Skeleton Loading */
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 1000px 100%;
+            animation: shimmer 2s infinite;
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+        
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            margin-bottom: 8px;
+            z-index: 1000;
+        }
+        
+        /* Progress Ring */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-ring {
+            animation: rotate 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+    
+    <!-- Top Navigation -->
+    <nav class="glass border-b border-white/20 shadow-lg sticky top-0 z-50">
+        <div class="px-6 py-2.5">
+            <div class="flex items-center justify-between">
+                <!-- Logo & Title - Two Lines -->
+                <div class="flex items-center gap-3 group">
+                    <div class="relative">
+                        <div class="absolute inset-0 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl blur-sm opacity-75 group-hover:opacity-100 transition"></div>
+                        <div class="relative w-11 h-11 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-extrabold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent leading-tight">
+                            FloodWatch<br/>Sri Lanka
+                        </h1>
+                        <p class="text-[10px] font-medium text-slate-500">by Hack & Build</p>
+                    </div>
+                </div>
+                
+                <!-- Main Menu - Improved spacing -->
+                <div class="hidden lg:flex items-center gap-1">
+                    <a href="#" class="px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-blue-500 rounded-lg shadow-lg shadow-blue-500/30 transform hover:scale-105 transition whitespace-nowrap">Dashboard</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">News</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Early Warning</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Flood Info</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Intel</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Damage Assessment</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">External Links</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Data Sources</a>
+                    <a href="#" class="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-white/60 rounded-lg transition whitespace-nowrap">Contacts</a>
+                    
+                    <button class="btn-hover ml-2 px-4 py-2 text-sm font-bold text-white bg-gradient-to-r from-red-600 to-red-500 rounded-lg shadow-lg shadow-red-500/30 flex items-center gap-2 transform hover:scale-105 transition whitespace-nowrap">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span class="relative z-10">Report Emergency</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Weather Type Selector Bar - Icon Only with Tooltips -->
+    <div class="glass-dark border-b border-white/10">
+        <div class="px-6 py-2.5">
+            <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1">
+                <button class="btn-hover px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-lg font-bold shadow-lg shadow-blue-500/30 transform hover:scale-105 transition tooltip" data-tooltip="Rainfall">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                    </svg>
+                </button>
+                
+                <button class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg font-semibold transition tooltip" data-tooltip="Temperature">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                    </svg>
+                </button>
+                
+                <button class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg font-semibold transition tooltip" data-tooltip="Humidity">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                    </svg>
+                </button>
+                
+                <button class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg font-semibold transition tooltip" data-tooltip="Wind Speed">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                    </svg>
+                </button>
+                
+                <button class="px-3 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg font-semibold transition tooltip" data-tooltip="Pressure">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                </button>
+                
+                <div class="h-6 w-px bg-white/20 mx-1"></div>
+                
+                <div class="flex items-center gap-1.5 bg-white/10 rounded-lg px-2 py-1">
+                    <span class="text-xs font-semibold text-white/70 whitespace-nowrap">Period:</span>
+                    <button class="px-3 py-1 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-md text-xs font-bold shadow-lg shadow-cyan-500/30 whitespace-nowrap">24h</button>
+                    <button class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white/90 rounded-md text-xs font-semibold transition whitespace-nowrap">48h</button>
+                    <button class="px-3 py-1 bg-white/10 hover:bg-white/20 text-white/90 rounded-md text-xs font-semibold transition whitespace-nowrap">72h</button>
+                </div>
+                
+                <div class="h-6 w-px bg-white/20 mx-1"></div>
+                
+                <button class="btn-hover px-4 py-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-white rounded-lg text-xs font-bold flex items-center gap-2 whitespace-nowrap shadow-lg shadow-amber-500/30 transform hover:scale-105 transition tooltip" data-tooltip="Show all alert levels">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    <span class="relative z-10">All Levels</span>
+                </button>
+                
+                <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg text-xs font-semibold flex items-center gap-2 border border-white/20 whitespace-nowrap transition tooltip" data-tooltip="View all 24 stations">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                    </svg>
+                    24 Stations
+                </button>
+                
+                <!-- NEW: Quick Filter -->
+                <div class="h-6 w-px bg-white/20 mx-1"></div>
+                
+                <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg text-xs font-semibold flex items-center gap-2 whitespace-nowrap transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                    </svg>
+                    Filter
+                </button>
+                
+                <button class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white/90 rounded-lg text-xs font-semibold flex items-center gap-2 border border-white/20 whitespace-nowrap transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                    </svg>
+                    Forecast
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="flex h-[calc(100vh-135px)]">
+        
+        <!-- Map Container -->
+        <div class="flex-1 relative">
+            <div id="map" class="w-full h-full"></div>
+            
+            <!-- IMPROVED: Floating Legend with better design -->
+            <div class="absolute bottom-6 left-6 glass rounded-xl shadow-2xl p-3 border border-white/20 w-56">
+                <h3 class="text-xs font-extrabold text-slate-800 mb-2 flex items-center gap-2 uppercase tracking-wide">
+                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Alert Levels
+                </h3>
+                <div class="space-y-1.5 text-[11px] font-semibold">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-gradient-to-br from-red-500 to-red-600 shadow-md"></div>
+                            <span class="text-slate-700">Severe</span>
+                        </div>
+                        <span class="text-slate-500">&gt;100mm</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-gradient-to-br from-orange-500 to-orange-600 shadow-md"></div>
+                            <span class="text-slate-700">High</span>
+                        </div>
+                        <span class="text-slate-500">80-100mm</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-gradient-to-br from-amber-500 to-yellow-500 shadow-md"></div>
+                            <span class="text-slate-700">Moderate</span>
+                        </div>
+                        <span class="text-slate-500">50-80mm</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 rounded-full bg-gradient-to-br from-green-500 to-green-600 shadow-md"></div>
+                            <span class="text-slate-700">Normal</span>
+                        </div>
+                        <span class="text-slate-500">&lt;50mm</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- IMPROVED: Map Attribution with more info -->
+            <div class="absolute bottom-4 right-4 glass rounded-lg px-3 py-1.5 text-[11px] text-slate-600 shadow-lg border border-white/20">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="font-bold">LIVE</span>
+                    <span class="text-slate-400">•</span>
+                    <span>Updated 2m ago</span>
+                    <span class="text-slate-400">•</span>
+                    <span class="font-semibold text-blue-600">24 Active</span>
+                </div>
+            </div>
+            
+            <!-- NEW: Quick Stats Overlay (Top Right) -->
+            <div class="absolute top-6 right-6 flex flex-col gap-2">
+                <div class="glass rounded-lg px-3 py-2 shadow-lg border border-white/20">
+                    <div class="text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Today's Peak</div>
+                    <div class="text-2xl font-black text-orange-600">52<span class="text-xs">mm</span></div>
+                    <div class="text-[10px] font-semibold text-slate-600">Ratnapura</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Further Optimized -->
+        <aside class="w-80 glass border-l border-white/20 overflow-y-auto custom-scrollbar shadow-2xl">
+            <div class="p-4 space-y-3">
+                
+                <!-- Dashboard Info - More Compact -->
+                <div class="gradient-animate bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-lg p-3 shadow-xl shadow-blue-500/30 border border-white/20">
+                    <div class="flex items-center gap-2">
+                        <div class="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur flex-shrink-0">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h2 class="text-sm font-extrabold text-white leading-tight">Dashboard</h2>
+                            <p class="text-[10px] text-blue-100 font-medium">Real-time monitoring</p>
+                        </div>
+                        <!-- NEW: Refresh button -->
+                        <button class="w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg flex items-center justify-center transition">
+                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- River Network Status - ULTRA COMPACT -->
+                <div class="bg-white rounded-lg p-3 shadow-lg border border-slate-200/50">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-xs font-extrabold text-slate-800 flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            River Status
+                        </h3>
+                        <a href="#" class="text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-0.5">
+                            24 stations
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </a>
+                    </div>
+                    
+                    <!-- Single Row Layout -->
+                    <div class="grid grid-cols-4 gap-1.5">
+                        <div class="compact-metric bg-gradient-to-br from-red-50 to-red-100 border border-red-300 rounded-md p-1.5 text-red-600 text-center">
+                            <div class="text-xl font-black leading-none count-up">0</div>
+                            <div class="text-[9px] font-bold mt-0.5 uppercase tracking-wide">Major</div>
+                        </div>
+                        
+                        <div class="compact-metric bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-300 rounded-md p-1.5 text-orange-600 text-center">
+                            <div class="text-xl font-black leading-none count-up">0</div>
+                            <div class="text-[9px] font-bold mt-0.5 uppercase tracking-wide">Minor</div>
+                        </div>
+                        
+                        <div class="compact-metric bg-gradient-to-br from-amber-50 to-yellow-100 border border-amber-300 rounded-md p-1.5 text-amber-600 text-center">
+                            <div class="text-xl font-black leading-none count-up">1</div>
+                            <div class="text-[9px] font-bold mt-0.5 uppercase tracking-wide">Alert</div>
+                        </div>
+                        
+                        <div class="compact-metric bg-gradient-to-br from-green-50 to-green-100 border border-green-300 rounded-md p-1.5 text-green-600 text-center">
+                            <div class="text-xl font-black leading-none count-up">23</div>
+                            <div class="text-[9px] font-bold mt-0.5 uppercase tracking-wide">Normal</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Active Alert - Compact -->
+                <div class="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-300 rounded-lg p-2.5 shadow-lg">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-lg shadow-green-500/30 flex-shrink-0">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-xs font-extrabold text-green-900 leading-tight">No Active Alerts</h3>
+                            <p class="text-[10px] text-green-700 font-semibold">All areas safe</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News & Updates - Compact -->
+                <div class="bg-white rounded-lg p-3 shadow-lg border border-slate-200/50">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>
+                            </svg>
+                            <h3 class="text-xs font-extrabold text-slate-800">News & Updates</h3>
+                        </div>
+                        <button class="text-[10px] font-bold text-blue-600 hover:text-blue-700">View all →</button>
+                    </div>
+                    
+                    <div class="space-y-1.5">
+                        <div class="news-item bg-gradient-to-r from-slate-50 to-transparent border border-slate-200 rounded-md p-2">
+                            <div class="flex items-start gap-2">
+                                <div class="w-6 h-6 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-[11px] font-bold text-slate-900 line-clamp-2 leading-tight">Weather Forecast for 14 DEC 2025</h4>
+                                    <div class="flex items-center gap-1 text-[9px] text-slate-500 font-medium mt-0.5">
+                                        <span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded font-semibold">SL Met</span>
+                                        <span>•</span>
+                                        <span>14h ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="news-item bg-gradient-to-r from-amber-50 to-transparent border border-amber-200 rounded-md p-2">
+                            <div class="flex items-start gap-2">
+                                <div class="w-6 h-6 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm">
+                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-[11px] font-bold text-slate-900 line-clamp-2 leading-tight">Sea Weather Advisory</h4>
+                                    <div class="flex items-center gap-1 text-[9px] text-slate-500 font-medium mt-0.5">
+                                        <span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-semibold">SL Met</span>
+                                        <span>•</span>
+                                        <span>15h ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="news-item bg-gradient-to-r from-red-50 to-transparent border-l-4 border-red-500 border border-red-200 rounded-md p-2">
+                            <div class="flex items-start gap-2">
+                                <div class="w-6 h-6 bg-gradient-to-br from-red-500 to-red-600 rounded-md flex items-center justify-center flex-shrink-0 shadow-sm status-badge">
+                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h4 class="text-[11px] font-bold text-slate-900 line-clamp-2 leading-tight">Deadly Storms Sweep SE Asia</h4>
+                                    <div class="flex items-center gap-1 text-[9px] text-slate-500 font-medium mt-0.5">
+                                        <span class="px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-semibold">Alert</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Yesterday's Summary - Compact -->
+                <div class="gradient-animate bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 rounded-lg p-3 shadow-xl shadow-orange-500/30 border border-white/20">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-[10px] font-extrabold text-white flex items-center gap-1.5 uppercase tracking-wide">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                            Yesterday
+                        </h3>
+                        <span class="text-[9px] text-orange-100 font-semibold">Dec 14, 2025</span>
+                    </div>
+                    
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-3xl font-black text-white count-up drop-shadow-lg leading-none">14</div>
+                            <div class="text-[9px] font-bold text-orange-100 uppercase tracking-wide">Max Rainfall (mm)</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[9px] font-bold text-orange-100 mb-0.5">Highest</div>
+                            <div class="text-xs font-extrabold text-white">Ahungalla</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- NEW: Quick Actions -->
+                <div class="bg-white rounded-lg p-3 shadow-lg border border-slate-200/50">
+                    <h3 class="text-xs font-extrabold text-slate-800 mb-2">Quick Actions</h3>
+                    <div class="space-y-1.5">
+                        <button class="w-full px-3 py-2 bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 border border-blue-200 text-blue-700 rounded-md text-[11px] font-bold flex items-center justify-center gap-2 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Export Report
+                        </button>
+                        <button class="w-full px-3 py-2 bg-gradient-to-r from-slate-50 to-gray-50 hover:from-slate-100 hover:to-gray-100 border border-slate-200 text-slate-700 rounded-md text-[11px] font-bold flex items-center justify-center gap-2 transition">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            </svg>
+                            Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // Initialize the map
+        const map = L.map('map', {
+            zoomControl: true,
+            attributionControl: false
+        }).setView([7.8731, 80.7718], 8);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        // Station data with different alert levels
+        const stations = [
+            { name: 'Colombo', lat: 6.9271, lng: 79.8612, level: 'normal', rainfall: 12, temp: 28, humidity: 85 },
+            { name: 'Kandy', lat: 7.2906, lng: 80.6337, level: 'normal', rainfall: 8, temp: 24, humidity: 78 },
+            { name: 'Galle', lat: 6.0535, lng: 80.2210, level: 'normal', rainfall: 15, temp: 29, humidity: 82 },
+            { name: 'Jaffna', lat: 9.6615, lng: 80.0255, level: 'normal', rainfall: 5, temp: 31, humidity: 70 },
+            { name: 'Trincomalee', lat: 8.5874, lng: 81.2152, level: 'normal', rainfall: 7, temp: 30, humidity: 75 },
+            { name: 'Anuradhapura', lat: 8.3114, lng: 80.4037, level: 'normal', rainfall: 10, temp: 32, humidity: 65 },
+            { name: 'Batticaloa', lat: 7.7310, lng: 81.6747, level: 'normal', rainfall: 9, temp: 29, humidity: 80 },
+            { name: 'Badulla', lat: 6.9934, lng: 81.0550, level: 'normal', rainfall: 11, temp: 22, humidity: 88 },
+            { name: 'Ratnapura', lat: 6.6828, lng: 80.4014, level: 'moderate', rainfall: 52, temp: 26, humidity: 90 },
+            { name: 'Kurunegala', lat: 7.4818, lng: 80.3609, level: 'normal', rainfall: 13, temp: 27, humidity: 77 },
+            { name: 'Matara', lat: 5.9549, lng: 80.5550, level: 'normal', rainfall: 14, temp: 28, humidity: 83 },
+            { name: 'Gampaha', lat: 7.0840, lng: 80.0098, level: 'normal', rainfall: 10, temp: 28, humidity: 84 },
+            { name: 'Kalutara', lat: 6.5854, lng: 79.9607, level: 'normal', rainfall: 16, temp: 29, humidity: 86 },
+            { name: 'Nuwara Eliya', lat: 6.9497, lng: 80.7891, level: 'normal', rainfall: 18, temp: 18, humidity: 92 },
+            { name: 'Ampara', lat: 7.2974, lng: 81.6681, level: 'normal', rainfall: 6, temp: 30, humidity: 74 },
+            { name: 'Monaragala', lat: 6.8728, lng: 81.3506, level: 'normal', rainfall: 8, temp: 26, humidity: 76 },
+            { name: 'Polonnaruwa', lat: 7.9403, lng: 81.0188, level: 'normal', rainfall: 7, temp: 31, humidity: 68 },
+            { name: 'Hambantota', lat: 6.1429, lng: 81.1212, level: 'normal', rainfall: 5, temp: 30, humidity: 72 },
+            { name: 'Vavuniya', lat: 8.7542, lng: 80.4982, level: 'normal', rainfall: 4, temp: 32, humidity: 66 },
+            { name: 'Mannar', lat: 8.9810, lng: 79.9044, level: 'normal', rainfall: 3, temp: 33, humidity: 64 },
+            { name: 'Puttalam', lat: 8.0362, lng: 79.8283, level: 'normal', rainfall: 9, temp: 30, humidity: 73 },
+            { name: 'Kegalle', lat: 7.2513, lng: 80.3464, level: 'normal', rainfall: 20, temp: 25, humidity: 87 },
+            { name: 'Matale', lat: 7.4675, lng: 80.6234, level: 'normal', rainfall: 12, temp: 26, humidity: 79 },
+            { name: 'Mullaitivu', lat: 9.2671, lng: 80.8142, level: 'normal', rainfall: 4, temp: 31, humidity: 69 }
+        ];
+
+        // Function to get alert level based on rainfall
+        function getAlertLevel(rainfall) {
+            if (rainfall >= 100) return { level: 'severe', color: '#ef4444', class: 'marker-severe' };
+            if (rainfall >= 80) return { level: 'high', color: '#f97316', class: 'marker-high' };
+            if (rainfall >= 50) return { level: 'moderate', color: '#f59e0b', class: 'marker-moderate' };
+            return { level: 'normal', color: '#22c55e', class: 'marker-normal' };
+        }
+
+        // Add markers to map
+        stations.forEach(station => {
+            const alert = getAlertLevel(station.rainfall);
+            
+            const icon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="station-marker ${alert.class}">
+                    <svg class="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+                    </svg>
+                </div>`,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40]
+            });
+
+            const marker = L.marker([station.lat, station.lng], { icon: icon }).addTo(map);
+            
+            marker.bindPopup(`
+                <div class="p-4 min-w-[240px]">
+                    <div class="flex items-center justify-between mb-3 pb-3 border-b-2 border-slate-200">
+                        <h3 class="text-lg font-extrabold text-slate-900">${station.name}</h3>
+                        <span class="px-3 py-1 rounded-lg text-xs font-bold uppercase" style="background: ${alert.color}20; color: ${alert.color};">${alert.level}</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between items-center bg-gradient-to-r from-blue-50 to-transparent rounded-lg p-2">
+                            <span class="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                                </svg>
+                                Rainfall
+                            </span>
+                            <span class="text-lg font-black" style="color: ${alert.color};">${station.rainfall}mm</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gradient-to-r from-orange-50 to-transparent rounded-lg p-2">
+                            <span class="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                                </svg>
+                                Temperature
+                            </span>
+                            <span class="text-lg font-black text-orange-600">${station.temp}°C</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-gradient-to-r from-cyan-50 to-transparent rounded-lg p-2">
+                            <span class="text-sm font-semibold text-slate-600 flex items-center gap-2">
+                                <svg class="w-4 h-4 text-cyan-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"></path>
+                                </svg>
+                                Humidity
+                            </span>
+                            <span class="text-lg font-black text-cyan-600">${station.humidity}%</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-200 text-xs text-slate-500 font-medium text-center">
+                        Updated 2 minutes ago
+                    </div>
+                </div>
+            `, {
+                maxWidth: 280,
+                className: 'custom-popup'
+            });
+        });
+
+        // Fit bounds to show all stations
+        const bounds = L.latLngBounds(stations.map(s => [s.lat, s.lng]));
+        map.fitBounds(bounds, { padding: [50, 50] });
+    </script>
+
+</body>
+</html>
