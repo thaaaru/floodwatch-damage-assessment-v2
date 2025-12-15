@@ -410,33 +410,6 @@ export default function DataSourcesPage() {
           </div>
         </section>
 
-        {/* Performance Stats */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <span className="text-2xl">📈</span>
-            Performance Optimization
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-green-400">120-150</div>
-              <div className="text-xs text-slate-400 mt-1">API calls per hour (with caching)</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-red-400">1,000+</div>
-              <div className="text-xs text-slate-400 mt-1">Without caching (avoided)</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-blue-400">85-90%</div>
-              <div className="text-xs text-slate-400 mt-1">Cache hit rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold text-purple-400">200-500ms</div>
-              <div className="text-xs text-slate-400 mt-1">Average response time</div>
-            </div>
-          </div>
-        </section>
-
         {/* API Keys Required */}
         <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
           <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
