@@ -11,7 +11,7 @@ const navigation = [
   { name: 'Dashboard', href: '/' },
   { name: 'News', href: '/news' },
   { name: 'Early Warning', href: '/early-warning', dynamic: true },
-  { name: 'Flood Info', href: '/flood-info' },
+  { name: 'Rivers', href: '/rivers' },
   { name: 'Intel', href: '/intel' },
   { name: 'External Links', href: '/external-links' },
   { name: 'Data Sources', href: '/data-sources' },
