@@ -2,6 +2,8 @@
 
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+from typing import Dict, List, Any
+from .config.region_config import get_region_config
 
 
 class Settings(BaseSettings):
@@ -29,7 +31,10 @@ class Settings(BaseSettings):
     frontend_url: str = "https://weather.hackandbuild.dev"
     debug: bool = False
 
-    # Alert thresholds (mm in 24 hours)
+    # Region Configuration
+    current_region: str = "srilanka"  # Default region: srilanka, south_india
+
+    # Alert thresholds (mm in 24 hours) - Legacy, use region-specific thresholds
     threshold_yellow: float = 50.0
     threshold_orange: float = 100.0
     threshold_red: float = 150.0
@@ -37,6 +42,102 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+
+    def get_region_data(self) -> Dict[str, Any]:
+        """
+        Get the current region configuration.
+
+        Returns:
+            Dictionary containing region configuration
+        """
+        region_config = get_region_config()
+        return region_config.get_region(self.current_region)
+
+    def get_region_alert_threshold(self, rainfall_mm: float) -> str:
+        """
+        Get alert level for the current region based on rainfall.
+
+        Args:
+            rainfall_mm: Rainfall amount in millimeters
+
+        Returns:
+            Alert level: 'green', 'yellow', 'orange', or 'red'
+        """
+        region_config = get_region_config()
+        return region_config.get_alert_threshold(self.current_region, rainfall_mm)
+
+    def get_region_bounds(self) -> Dict[str, float]:
+        """
+        Get geographic bounds for the current region.
+
+        Returns:
+            Dictionary with minLat, maxLat, minLon, maxLon
+        """
+        region_config = get_region_config()
+        return region_config.get_bounds(self.current_region)
+
+    def get_region_center(self) -> Dict[str, float]:
+        """
+        Get center coordinates for the current region.
+
+        Returns:
+            Dictionary with lat and lon
+        """
+        region_config = get_region_config()
+        return region_config.get_center(self.current_region)
+
+    def get_region_data_providers(self, provider_type: str = None) -> Dict[str, List[str]]:
+        """
+        Get data providers for the current region.
+
+        Args:
+            provider_type: Optional type to filter by ('weather', 'rivers', 'emergencyServices')
+
+        Returns:
+            Dictionary of data providers or list if provider_type specified
+        """
+        region_config = get_region_config()
+        return region_config.get_data_providers(self.current_region, provider_type)
+
+    def get_region_languages(self) -> List[str]:
+        """
+        Get supported languages for the current region.
+
+        Returns:
+            List of language codes
+        """
+        region_config = get_region_config()
+        return region_config.get_languages(self.current_region)
+
+    def get_region_timezone(self) -> str:
+        """
+        Get timezone for the current region.
+
+        Returns:
+            Timezone string (e.g., 'Asia/Colombo')
+        """
+        region_config = get_region_config()
+        return region_config.get_timezone(self.current_region)
+
+    def get_all_regions(self) -> List[Dict[str, Any]]:
+        """
+        Get all configured regions.
+
+        Returns:
+            List of all region configurations
+        """
+        region_config = get_region_config()
+        return region_config.get_all_regions()
+
+    def get_active_regions(self) -> List[Dict[str, Any]]:
+        """
+        Get only active regions.
+
+        Returns:
+            List of active region configurations
+        """
+        region_config = get_region_config()
+        return region_config.get_active_regions()
 
 
 @lru_cache()

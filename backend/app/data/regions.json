@@ -1,0 +1,70 @@
+{
+  "regions": [
+    {
+      "id": "srilanka",
+      "name": "Sri Lanka",
+      "displayName": "Sri Lanka",
+      "code": "SL",
+      "bounds": {
+        "minLat": 5.7,
+        "maxLat": 10.0,
+        "minLon": 79.4,
+        "maxLon": 82.1
+      },
+      "center": {
+        "lat": 7.8736,
+        "lon": 80.7713
+      },
+      "languages": ["en", "si", "ta"],
+      "timeZone": "Asia/Colombo",
+      "alertThresholds": {
+        "green": { "minRain": 0, "maxRain": 50 },
+        "yellow": { "minRain": 50, "maxRain": 100 },
+        "orange": { "minRain": 100, "maxRain": 150 },
+        "red": { "minRain": 150, "maxRain": 999 }
+      },
+      "districts": 25,
+      "dataProviders": {
+        "weather": ["open_meteo", "here_weather"],
+        "rivers": ["srilanka_navy"],
+        "emergencyServices": ["colombo_disaster", "police_lk"]
+      },
+      "smsGateway": "twilio",
+      "currency": "LKR",
+      "active": true
+    },
+    {
+      "id": "south_india",
+      "name": "South India",
+      "displayName": "South India (Tamil Nadu, Karnataka, AP, Telangana)",
+      "code": "SI",
+      "bounds": {
+        "minLat": 8.0,
+        "maxLat": 18.0,
+        "minLon": 75.0,
+        "maxLon": 80.5
+      },
+      "center": {
+        "lat": 13.0,
+        "lon": 77.5
+      },
+      "languages": ["en", "hi", "ta", "ka", "te"],
+      "timeZone": "Asia/Kolkata",
+      "alertThresholds": {
+        "green": { "minRain": 0, "maxRain": 75 },
+        "yellow": { "minRain": 75, "maxRain": 125 },
+        "orange": { "minRain": 125, "maxRain": 200 },
+        "red": { "minRain": 200, "maxRain": 999 }
+      },
+      "districts": 28,
+      "dataProviders": {
+        "weather": ["open_meteo", "imd"],
+        "rivers": ["central_water_commission", "tamil_nadu_wr", "karnataka_cauvery", "andhra_pradesh", "telangana"],
+        "emergencyServices": ["ndma", "sdma_tn", "sdma_ka"]
+      },
+      "smsGateway": "twilio",
+      "currency": "INR",
+      "active": false
+    }
+  ]
+}

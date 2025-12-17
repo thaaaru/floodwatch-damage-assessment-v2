@@ -1,0 +1,542 @@
+{
+  "districts": [
+    {
+      "id": "tamil_nadu_chennai",
+      "name": "Chennai",
+      "state": "Tamil Nadu",
+      "region": "south_india",
+      "latitude": 13.0827,
+      "longitude": 80.2707,
+      "population": 4646732,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Cooum", "Adyar"],
+      "language_names": {
+        "en": "Chennai",
+        "hi": "चेन्नई",
+        "ta": "சென்னை",
+        "ka": "ಚೆನ್ನೈ",
+        "te": "చెన్నై"
+      }
+    },
+    {
+      "id": "tamil_nadu_coimbatore",
+      "name": "Coimbatore",
+      "state": "Tamil Nadu",
+      "region": "south_india",
+      "latitude": 11.0168,
+      "longitude": 76.9558,
+      "population": 3458045,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Noyyal", "Bhavani"],
+      "language_names": {
+        "en": "Coimbatore",
+        "hi": "कोयंबटूर",
+        "ta": "கோயம்புத்தூர்",
+        "ka": "ಕೊಯಮತ್ತೂರು",
+        "te": "కోయంబత్తూరు"
+      }
+    },
+    {
+      "id": "tamil_nadu_madurai",
+      "name": "Madurai",
+      "state": "Tamil Nadu",
+      "region": "south_india",
+      "latitude": 9.9252,
+      "longitude": 78.1198,
+      "population": 3038252,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Vaigai"],
+      "language_names": {
+        "en": "Madurai",
+        "hi": "मदुरै",
+        "ta": "மதுரை",
+        "ka": "ಮದುರೈ",
+        "te": "మదురై"
+      }
+    },
+    {
+      "id": "tamil_nadu_tiruchirappalli",
+      "name": "Tiruchirappalli",
+      "state": "Tamil Nadu",
+      "region": "south_india",
+      "latitude": 10.7905,
+      "longitude": 78.7047,
+      "population": 2722290,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Cauvery", "Kollidam"],
+      "language_names": {
+        "en": "Tiruchirappalli",
+        "hi": "तिरुचिरापल्ली",
+        "ta": "திருச்சிராப்பள்ளி",
+        "ka": "ತಿರುಚ್ಚಿರಾಪಳ್ಳಿ",
+        "te": "తిరుచ్చిరాపల్లి"
+      }
+    },
+    {
+      "id": "tamil_nadu_salem",
+      "name": "Salem",
+      "state": "Tamil Nadu",
+      "region": "south_india",
+      "latitude": 11.6643,
+      "longitude": 78.146,
+      "population": 3482056,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Thirumanimuthar"],
+      "language_names": {
+        "en": "Salem",
+        "hi": "सलेम",
+        "ta": "சேலம்",
+        "ka": "ಸೇಲಂ",
+        "te": "సేలం"
+      }
+    },
+    {
+      "id": "tamil_nadu_tirunelveli",
+      "name": "Tirunelveli",
+      "state": "Tamil Nadu",
+      "region": "south_india",
+      "latitude": 8.7139,
+      "longitude": 77.7567,
+      "population": 3077233,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Thamirabarani"],
+      "language_names": {
+        "en": "Tirunelveli",
+        "hi": "तिरुनेलवेली",
+        "ta": "திருநெல்வேலி",
+        "ka": "ತಿರುನೆಲ್ವೇಲಿ",
+        "te": "తిరునెల్వేలి"
+      }
+    },
+    {
+      "id": "tamil_nadu_thanjavur",
+      "name": "Thanjavur",
+      "state": "Tamil Nadu",
+      "region": "south_india",
+      "latitude": 10.7870,
+      "longitude": 79.1378,
+      "population": 2405890,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Cauvery", "Vennar"],
+      "language_names": {
+        "en": "Thanjavur",
+        "hi": "तंजावुर",
+        "ta": "தஞ்சாவூர்",
+        "ka": "ತಂಜಾವೂರು",
+        "te": "తంజావూరు"
+      }
+    },
+    {
+      "id": "karnataka_bangalore_urban",
+      "name": "Bengaluru Urban",
+      "state": "Karnataka",
+      "region": "south_india",
+      "latitude": 12.9716,
+      "longitude": 77.5946,
+      "population": 9621551,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Vrishabhavathi", "Arkavathi"],
+      "language_names": {
+        "en": "Bengaluru",
+        "hi": "बेंगलुरु",
+        "ta": "பெங்களூரு",
+        "ka": "ಬೆಂಗಳೂರು",
+        "te": "బెంగుళూరు"
+      }
+    },
+    {
+      "id": "karnataka_mysuru",
+      "name": "Mysuru",
+      "state": "Karnataka",
+      "region": "south_india",
+      "latitude": 12.2958,
+      "longitude": 76.6394,
+      "population": 3001127,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Cauvery", "Kabini"],
+      "language_names": {
+        "en": "Mysuru",
+        "hi": "मैसूरु",
+        "ta": "மைசூரு",
+        "ka": "ಮೈಸೂರು",
+        "te": "మైసూరు"
+      }
+    },
+    {
+      "id": "karnataka_mangaluru",
+      "name": "Dakshina Kannada (Mangaluru)",
+      "state": "Karnataka",
+      "region": "south_india",
+      "latitude": 12.9141,
+      "longitude": 74.8560,
+      "population": 2089649,
+      "alert_threshold_low": 100,
+      "alert_threshold_high": 175,
+      "river_names": ["Netravathi", "Gurupura"],
+      "language_names": {
+        "en": "Mangaluru",
+        "hi": "मंगलुरु",
+        "ta": "மங்களூரு",
+        "ka": "ಮಂಗಳೂರು",
+        "te": "మంగళూరు"
+      }
+    },
+    {
+      "id": "karnataka_belagavi",
+      "name": "Belagavi",
+      "state": "Karnataka",
+      "region": "south_india",
+      "latitude": 15.8497,
+      "longitude": 74.4977,
+      "population": 4779661,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Krishna", "Ghataprabha"],
+      "language_names": {
+        "en": "Belagavi",
+        "hi": "बेलगावी",
+        "ta": "பெலகாவி",
+        "ka": "ಬೆಳಗಾವಿ",
+        "te": "బెలగావి"
+      }
+    },
+    {
+      "id": "karnataka_hubballi_dharwad",
+      "name": "Hubballi-Dharwad",
+      "state": "Karnataka",
+      "region": "south_india",
+      "latitude": 15.3647,
+      "longitude": 75.1240,
+      "population": 1959857,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Tungabhadra"],
+      "language_names": {
+        "en": "Hubballi",
+        "hi": "हुबली",
+        "ta": "உபளி",
+        "ka": "ಹುಬ್ಬಳ್ಳಿ",
+        "te": "హుబ్బళ్ళి"
+      }
+    },
+    {
+      "id": "karnataka_kalaburagi",
+      "name": "Kalaburagi",
+      "state": "Karnataka",
+      "region": "south_india",
+      "latitude": 17.3297,
+      "longitude": 76.8343,
+      "population": 2566326,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Bhima"],
+      "language_names": {
+        "en": "Kalaburagi",
+        "hi": "कलबुर्गी",
+        "ta": "களபுரகி",
+        "ka": "ಕಲಬುರಗಿ",
+        "te": "కలబురగి"
+      }
+    },
+    {
+      "id": "karnataka_shivamogga",
+      "name": "Shivamogga",
+      "state": "Karnataka",
+      "region": "south_india",
+      "latitude": 13.9299,
+      "longitude": 75.5681,
+      "population": 1752753,
+      "alert_threshold_low": 100,
+      "alert_threshold_high": 175,
+      "river_names": ["Tunga", "Bhadra"],
+      "language_names": {
+        "en": "Shivamogga",
+        "hi": "शिवमोग्गा",
+        "ta": "சிவமொக்கா",
+        "ka": "ಶಿವಮೊಗ್ಗ",
+        "te": "శివమొగ్గ"
+      }
+    },
+    {
+      "id": "andhra_pradesh_visakhapatnam",
+      "name": "Visakhapatnam",
+      "state": "Andhra Pradesh",
+      "region": "south_india",
+      "latitude": 17.6869,
+      "longitude": 83.2185,
+      "population": 2035922,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Gosthani", "Meghadrigedda"],
+      "language_names": {
+        "en": "Visakhapatnam",
+        "hi": "विशाखापत्तनम",
+        "ta": "விசாகப்பட்டினம்",
+        "ka": "ವಿಶಾಖಪಟ್ಟಣಂ",
+        "te": "విశాఖపట్టణం"
+      }
+    },
+    {
+      "id": "andhra_pradesh_vijayawada",
+      "name": "Krishna (Vijayawada)",
+      "state": "Andhra Pradesh",
+      "region": "south_india",
+      "latitude": 16.5062,
+      "longitude": 80.6480,
+      "population": 4517398,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Krishna"],
+      "language_names": {
+        "en": "Vijayawada",
+        "hi": "विजयवाड़ा",
+        "ta": "விஜயவாடா",
+        "ka": "ವಿಜಯವಾಡ",
+        "te": "విజయవాడ"
+      }
+    },
+    {
+      "id": "andhra_pradesh_guntur",
+      "name": "Guntur",
+      "state": "Andhra Pradesh",
+      "region": "south_india",
+      "latitude": 16.3067,
+      "longitude": 80.4365,
+      "population": 4889230,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Krishna"],
+      "language_names": {
+        "en": "Guntur",
+        "hi": "गुंटूर",
+        "ta": "கண்டூர்",
+        "ka": "ಗುಂಟೂರು",
+        "te": "గుంటూరు"
+      }
+    },
+    {
+      "id": "andhra_pradesh_nellore",
+      "name": "Nellore",
+      "state": "Andhra Pradesh",
+      "region": "south_india",
+      "latitude": 14.4426,
+      "longitude": 79.9865,
+      "population": 2966082,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Pennar"],
+      "language_names": {
+        "en": "Nellore",
+        "hi": "नेल्लोर",
+        "ta": "நெல்லூர்",
+        "ka": "ನೆಲ್ಲೋರ್",
+        "te": "నెల్లూరు"
+      }
+    },
+    {
+      "id": "andhra_pradesh_kurnool",
+      "name": "Kurnool",
+      "state": "Andhra Pradesh",
+      "region": "south_india",
+      "latitude": 15.8281,
+      "longitude": 78.0373,
+      "population": 4053463,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Tungabhadra", "Handri"],
+      "language_names": {
+        "en": "Kurnool",
+        "hi": "कुरनूल",
+        "ta": "கர்னூல்",
+        "ka": "ಕುರ್ನೂಲ್",
+        "te": "కర్నూలు"
+      }
+    },
+    {
+      "id": "andhra_pradesh_kadapa",
+      "name": "Kadapa",
+      "state": "Andhra Pradesh",
+      "region": "south_india",
+      "latitude": 14.4674,
+      "longitude": 78.8241,
+      "population": 2884524,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Pennar", "Chitravathi"],
+      "language_names": {
+        "en": "Kadapa",
+        "hi": "कडप्पा",
+        "ta": "கடப்பா",
+        "ka": "ಕಡಪ್ಪ",
+        "te": "కడప"
+      }
+    },
+    {
+      "id": "andhra_pradesh_anantapur",
+      "name": "Anantapur",
+      "state": "Andhra Pradesh",
+      "region": "south_india",
+      "latitude": 14.6819,
+      "longitude": 77.6006,
+      "population": 4081148,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Pennar", "Vedavathi"],
+      "language_names": {
+        "en": "Anantapur",
+        "hi": "अनंतपुर",
+        "ta": "அனந்தப்பூர்",
+        "ka": "ಅನಂತಪುರ",
+        "te": "అనంతపురం"
+      }
+    },
+    {
+      "id": "telangana_hyderabad",
+      "name": "Hyderabad",
+      "state": "Telangana",
+      "region": "south_india",
+      "latitude": 17.3850,
+      "longitude": 78.4867,
+      "population": 3943323,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Musi"],
+      "language_names": {
+        "en": "Hyderabad",
+        "hi": "हैदराबाद",
+        "ta": "ஹைதராபாத்",
+        "ka": "ಹೈದರಾಬಾದ್",
+        "te": "హైదరాబాద్"
+      }
+    },
+    {
+      "id": "telangana_warangal",
+      "name": "Warangal Urban",
+      "state": "Telangana",
+      "region": "south_india",
+      "latitude": 17.9689,
+      "longitude": 79.5941,
+      "population": 811844,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Manair"],
+      "language_names": {
+        "en": "Warangal",
+        "hi": "वारंगल",
+        "ta": "வாரங்கல்",
+        "ka": "ವಾರಂಗಲ್",
+        "te": "వరంగల్"
+      }
+    },
+    {
+      "id": "telangana_khammam",
+      "name": "Khammam",
+      "state": "Telangana",
+      "region": "south_india",
+      "latitude": 17.2473,
+      "longitude": 80.1514,
+      "population": 2797370,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Munneru"],
+      "language_names": {
+        "en": "Khammam",
+        "hi": "खम्मम",
+        "ta": "கம்மம்",
+        "ka": "ಖಮ್ಮಂ",
+        "te": "ఖమ్మం"
+      }
+    },
+    {
+      "id": "telangana_nizamabad",
+      "name": "Nizamabad",
+      "state": "Telangana",
+      "region": "south_india",
+      "latitude": 18.6725,
+      "longitude": 78.0941,
+      "population": 2551335,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Godavari"],
+      "language_names": {
+        "en": "Nizamabad",
+        "hi": "निजामाबाद",
+        "ta": "நிஜாமாபாத்",
+        "ka": "ನಿಜಾಮಾಬಾದ್",
+        "te": "నిజామాబాద్"
+      }
+    },
+    {
+      "id": "telangana_karimnagar",
+      "name": "Karimnagar",
+      "state": "Telangana",
+      "region": "south_india",
+      "latitude": 18.4386,
+      "longitude": 79.1288,
+      "population": 1001032,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Manair"],
+      "language_names": {
+        "en": "Karimnagar",
+        "hi": "करीमनगर",
+        "ta": "காரிம்நகர்",
+        "ka": "ಕರೀಂನಗರ",
+        "te": "కరీంనగర్"
+      }
+    },
+    {
+      "id": "telangana_nalgonda",
+      "name": "Nalgonda",
+      "state": "Telangana",
+      "region": "south_india",
+      "latitude": 17.0488,
+      "longitude": 79.2678,
+      "population": 3488809,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Krishna", "Musi"],
+      "language_names": {
+        "en": "Nalgonda",
+        "hi": "नालगोंडा",
+        "ta": "நல்கொண்டா",
+        "ka": "ನಲ್ಗೊಂಡ",
+        "te": "నల్గొండ"
+      }
+    },
+    {
+      "id": "telangana_rangareddy",
+      "name": "Rangareddy",
+      "state": "Telangana",
+      "region": "south_india",
+      "latitude": 17.2543,
+      "longitude": 78.1982,
+      "population": 5296741,
+      "alert_threshold_low": 75,
+      "alert_threshold_high": 150,
+      "river_names": ["Musi"],
+      "language_names": {
+        "en": "Rangareddy",
+        "hi": "रंगारेड्डी",
+        "ta": "ரங்கரெட்டி",
+        "ka": "ರಂಗಾರೆಡ್ಡಿ",
+        "te": "రంగారెడ్డి"
+      }
+    }
+  ],
+  "bounding_box": {
+    "min_lat": 8.0,
+    "max_lat": 18.0,
+    "min_lon": 75.0,
+    "max_lon": 83.5
+  }
+}
