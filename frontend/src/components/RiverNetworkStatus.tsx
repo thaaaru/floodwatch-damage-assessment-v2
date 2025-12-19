@@ -121,59 +121,59 @@ export default function RiverNetworkStatus() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-hidden p-2.5 space-y-2">
         {/* Critical Alert Banner */}
         {criticalCount > 0 && (
           <a
             href="/rivers"
-            className="bg-rose-50 border border-rose-200 rounded-lg p-3 flex items-center gap-3 w-full text-left hover:bg-rose-100 transition-colors cursor-pointer"
+            className="bg-rose-50 border border-rose-200 rounded-lg p-2 flex items-center gap-2 w-full text-left hover:bg-rose-100 transition-colors cursor-pointer"
           >
-            <span className="text-2xl">⚠️</span>
-            <div>
-              <div className="text-sm font-bold text-rose-900">
+            <span className="text-lg flex-shrink-0">⚠️</span>
+            <div className="min-w-0">
+              <div className="text-xs font-bold text-rose-900 truncate">
                 {summary.rising > 0 && `${summary.rising} Rising`}{summary.rising > 0 && summary.alert > 0 && ', '}{summary.alert > 0 && `${summary.alert} Alert`}
               </div>
-              <div className="text-xs text-rose-700">Click to view details</div>
+              <div className="text-[10px] text-rose-700">Click to view</div>
             </div>
           </a>
         )}
 
         {/* Status Grid */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-1.5">
           <a
             href="/rivers"
-            className={`border rounded-lg p-2.5 ${getStatusBgColor('rising')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
+            className={`border rounded-lg p-2 ${getStatusBgColor('rising')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
           >
-            <div className="text-xs opacity-75">Rising</div>
-            <div className="text-xl font-bold">{summary.rising}</div>
+            <div className="text-[10px] opacity-75">Rising</div>
+            <div className="text-lg font-bold">{summary.rising}</div>
           </a>
           <a
             href="/rivers"
-            className={`border rounded-lg p-2.5 ${getStatusBgColor('alert')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
+            className={`border rounded-lg p-2 ${getStatusBgColor('alert')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
           >
-            <div className="text-xs opacity-75">Alert</div>
-            <div className="text-xl font-bold">{summary.alert}</div>
+            <div className="text-[10px] opacity-75">Alert</div>
+            <div className="text-lg font-bold">{summary.alert}</div>
           </a>
           <a
             href="/rivers"
-            className={`border rounded-lg p-2.5 ${getStatusBgColor('falling')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
+            className={`border rounded-lg p-2 ${getStatusBgColor('falling')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
           >
-            <div className="text-xs opacity-75">Falling</div>
-            <div className="text-xl font-bold">{summary.falling}</div>
+            <div className="text-[10px] opacity-75">Falling</div>
+            <div className="text-lg font-bold">{summary.falling}</div>
           </a>
           <a
             href="/rivers"
-            className={`border rounded-lg p-2.5 ${getStatusBgColor('normal')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
+            className={`border rounded-lg p-2 ${getStatusBgColor('normal')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
           >
-            <div className="text-xs opacity-75">Normal</div>
-            <div className="text-xl font-bold">{summary.normal}</div>
+            <div className="text-[10px] opacity-75">Normal</div>
+            <div className="text-lg font-bold">{summary.normal}</div>
           </a>
         </div>
 
         {/* View All Button */}
         <a
           href="/rivers"
-          className="block w-full text-center text-xs text-blue-700 hover:text-blue-900 font-bold py-2 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200"
+          className="block w-full text-center text-[10px] text-blue-700 hover:text-blue-900 font-bold py-1.5 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200"
         >
           View all {data.count} stations →
         </a>
