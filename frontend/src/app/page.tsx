@@ -93,7 +93,9 @@ export default function Dashboard() {
       }
     };
     fetchAlerts();
-    // No auto-refresh - data is cached on backend, manual refresh only
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchAlerts, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Get user location for Windy map focus

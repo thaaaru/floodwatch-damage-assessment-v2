@@ -3,24 +3,35 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api, IrrigationResponse } from '@/lib/api';
+import { api } from '@/lib/api';
+
+interface RiverLevelsResponse {
+  count: number;
+  summary: {
+    normal: number;
+    alert: number;
+    rising: number;
+    falling: number;
+  };
+  stations: any[];
+}
 
 interface RiverStatusSummary {
   total: number;
-  major_flood: number;
-  minor_flood: number;
   alert: number;
+  rising: number;
+  falling: number;
   normal: number;
 }
 
 export default function RiverNetworkStatus() {
-  const [data, setData] = useState<IrrigationResponse | null>(null);
+  const [data, setData] = useState<RiverLevelsResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchRiverData = async () => {
       try {
-        const riverData = await api.getIrrigationData();
+        const riverData = await api.getRiverLevels();
         setData(riverData);
       } catch (err) {
         console.error('Failed to fetch river data:', err);
@@ -29,6 +40,9 @@ export default function RiverNetworkStatus() {
       }
     };
     fetchRiverData();
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchRiverData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -53,22 +67,22 @@ export default function RiverNetworkStatus() {
 
   const summary = data.summary;
 
-  // Data for donut chart
+  // Data for status display (rising is most critical)
   const chartData = [
     {
-      name: 'Major Flood',
-      value: summary.major_flood,
+      name: 'Rising',
+      value: summary.rising,
       color: 'rose',
-    },
-    {
-      name: 'Minor Flood',
-      value: summary.minor_flood,
-      color: 'orange',
     },
     {
       name: 'Alert',
       value: summary.alert,
       color: 'amber',
+    },
+    {
+      name: 'Falling',
+      value: summary.falling,
+      color: 'blue',
     },
     {
       name: 'Normal',
@@ -79,14 +93,14 @@ export default function RiverNetworkStatus() {
 
   const getStatusBgColor = (status: string) => {
     switch (status) {
-      case 'major_flood': return 'bg-rose-100 text-rose-700 border-rose-300';
-      case 'minor_flood': return 'bg-orange-100 text-orange-700 border-orange-300';
+      case 'rising': return 'bg-rose-100 text-rose-700 border-rose-300';
       case 'alert': return 'bg-amber-100 text-amber-700 border-amber-300';
+      case 'falling': return 'bg-blue-100 text-blue-700 border-blue-300';
       default: return 'bg-emerald-100 text-emerald-700 border-emerald-300';
     }
   };
 
-  const criticalCount = summary.major_flood + summary.minor_flood;
+  const criticalCount = summary.rising + summary.alert;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: '320px' }}>
@@ -98,10 +112,10 @@ export default function RiverNetworkStatus() {
         </div>
         <div className="flex items-center gap-2">
           <a
-            href="/flood-info"
+            href="/rivers"
             className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
           >
-            {summary.total_stations} stations
+            {data.count} stations
           </a>
         </div>
       </div>
@@ -111,15 +125,15 @@ export default function RiverNetworkStatus() {
         {/* Critical Alert Banner */}
         {criticalCount > 0 && (
           <a
-            href="/flood-info"
+            href="/rivers"
             className="bg-rose-50 border border-rose-200 rounded-lg p-3 flex items-center gap-3 w-full text-left hover:bg-rose-100 transition-colors cursor-pointer"
           >
             <span className="text-2xl">⚠️</span>
             <div>
               <div className="text-sm font-bold text-rose-900">
-                {criticalCount} {criticalCount === 1 ? 'River' : 'Rivers'} in Flood
+                {summary.rising > 0 && `${summary.rising} Rising`}{summary.rising > 0 && summary.alert > 0 && ', '}{summary.alert > 0 && `${summary.alert} Alert`}
               </div>
-              <div className="text-xs text-rose-700">Immediate attention required</div>
+              <div className="text-xs text-rose-700">Click to view details</div>
             </div>
           </a>
         )}
@@ -127,28 +141,28 @@ export default function RiverNetworkStatus() {
         {/* Status Grid */}
         <div className="grid grid-cols-2 gap-2">
           <a
-            href="/flood-info"
-            className={`border rounded-lg p-2.5 ${getStatusBgColor('major_flood')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
+            href="/rivers"
+            className={`border rounded-lg p-2.5 ${getStatusBgColor('rising')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
           >
-            <div className="text-xs opacity-75">Major Flood</div>
-            <div className="text-xl font-bold">{summary.major_flood}</div>
+            <div className="text-xs opacity-75">Rising</div>
+            <div className="text-xl font-bold">{summary.rising}</div>
           </a>
           <a
-            href="/flood-info"
-            className={`border rounded-lg p-2.5 ${getStatusBgColor('minor_flood')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
-          >
-            <div className="text-xs opacity-75">Minor Flood</div>
-            <div className="text-xl font-bold">{summary.minor_flood}</div>
-          </a>
-          <a
-            href="/flood-info"
+            href="/rivers"
             className={`border rounded-lg p-2.5 ${getStatusBgColor('alert')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
           >
             <div className="text-xs opacity-75">Alert</div>
             <div className="text-xl font-bold">{summary.alert}</div>
           </a>
           <a
-            href="/flood-info"
+            href="/rivers"
+            className={`border rounded-lg p-2.5 ${getStatusBgColor('falling')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
+          >
+            <div className="text-xs opacity-75">Falling</div>
+            <div className="text-xl font-bold">{summary.falling}</div>
+          </a>
+          <a
+            href="/rivers"
             className={`border rounded-lg p-2.5 ${getStatusBgColor('normal')} hover:opacity-80 transition-opacity cursor-pointer text-left block`}
           >
             <div className="text-xs opacity-75">Normal</div>
@@ -158,10 +172,10 @@ export default function RiverNetworkStatus() {
 
         {/* View All Button */}
         <a
-          href="/flood-info"
+          href="/rivers"
           className="block w-full text-center text-xs text-blue-700 hover:text-blue-900 font-bold py-2 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200"
         >
-          View all stations →
+          View all {data.count} stations →
         </a>
       </div>
     </div>

@@ -33,8 +33,8 @@ export default function FloodInformationPage() {
 
   useEffect(() => {
     fetchData();
-    // Auto-refresh every 30 minutes
-    const interval = setInterval(fetchData, 1800000);
+    // Auto-refresh every 30 seconds for frequent updates
+    const interval = setInterval(fetchData, 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 

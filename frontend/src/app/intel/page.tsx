@@ -149,8 +149,8 @@ export default function IntelDashboard() {
 
   useEffect(() => {
     fetchData();
-    // Auto-refresh every 24 hours (cache TTL)
-    const interval = setInterval(() => fetchData(true), CACHE_TTL_MS);
+    // Auto-refresh every 30 seconds for frequent updates
+    const interval = setInterval(() => fetchData(true), 30000);
     return () => clearInterval(interval);
   }, [fetchData]);
 

@@ -648,7 +648,9 @@ function WeatherMap(props: MapProps = {} as MapProps) {
     };
 
     fetchRiverData();
-    // No auto-refresh - data is cached on backend
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchRiverData, 30000);
+    return () => clearInterval(interval);
   }, [showRivers]);
 
   // Fetch marine data when enabled
@@ -665,7 +667,9 @@ function WeatherMap(props: MapProps = {} as MapProps) {
     };
 
     fetchMarineData();
-    // No auto-refresh - data is cached on backend
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchMarineData, 30000);
+    return () => clearInterval(interval);
   }, [showMarine]);
 
   // Fetch flood gauge (irrigation) data when enabled
@@ -683,7 +687,9 @@ function WeatherMap(props: MapProps = {} as MapProps) {
     };
 
     fetchFloodGaugeData();
-    // No auto-refresh - data is cached on backend
+    // Auto-refresh every 30 seconds
+    const interval = setInterval(fetchFloodGaugeData, 30000);
+    return () => clearInterval(interval);
   }, [showFloodGauges]);
 
   // Fetch early warning alerts
