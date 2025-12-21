@@ -243,7 +243,13 @@ export default function EarlyWarningPage() {
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [shouldZoomToDistrict, setShouldZoomToDistrict] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Prevent SSR hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const fetchData = async (forceRefresh = false) => {
@@ -296,6 +302,11 @@ export default function EarlyWarningPage() {
     }) || [];
 
   const displayDistrict = selectedDistrictData || sortedDistricts[0];
+
+  // Prevent SSR, only render after client-side hydration
+  if (!mounted) {
+    return null;
+  }
 
   if (loading) {
     return (
