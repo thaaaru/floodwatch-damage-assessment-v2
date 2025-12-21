@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
       timeoutMs = 5000; // forecast is slow, timeout faster
     } else if (path.includes('/weather/all')) {
       timeoutMs = 10000; // weather needs more time
+    } else if (path.includes('/flood-threat')) {
+      timeoutMs = 30000; // flood-threat is slow, needs more time
     }
 
     const controller = new AbortController();
