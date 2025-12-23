@@ -11,6 +11,7 @@ from ..services.alert_engine import AlertEngine
 from ..services.weather_cache import weather_cache
 from ..services.intel_engine import intel_engine
 from ..services.osm_facilities import fetch_all_facilities
+from ..services.flood_threat_cache import flood_threat_cache
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ scheduler = AsyncIOScheduler()
 WEATHER_CACHE_INTERVAL_MINUTES = 30  # Refresh every 30 minutes for more timely data
 INTEL_ANALYSIS_INTERVAL_MINUTES = 30  # Reduced to minimize API load
 FACILITIES_REFRESH_INTERVAL_HOURS = 24  # Daily refresh for OSM facilities
+FLOOD_THREAT_INTERVAL_MINUTES = 15  # Refresh every 15 minutes for real-time threat assessment
 
 
 async def refresh_weather_cache():
@@ -86,6 +88,27 @@ async def refresh_osm_facilities():
         logger.error(f"Error refreshing OSM facilities: {e}")
 
 
+async def refresh_flood_threat():
+    """Background job to refresh flood threat assessment cache."""
+    logger.info("Starting flood threat assessment refresh...")
+    try:
+        success = await flood_threat_cache.refresh_cache(force=True)
+        if success:
+            cache_info = flood_threat_cache.get_cache_info()
+            cached_data = flood_threat_cache.get_cached_data()
+            if cached_data:
+                logger.info(
+                    f"Flood threat cache refreshed: {cached_data.get('national_threat_level')} "
+                    f"(score: {cached_data.get('national_threat_score')})"
+                )
+            else:
+                logger.info("Flood threat cache refreshed successfully")
+        else:
+            logger.warning("Flood threat cache refresh failed")
+    except Exception as e:
+        logger.error(f"Error refreshing flood threat cache: {e}")
+
+
 def start_scheduler():
     """Initialize and start the background scheduler."""
     interval_minutes = settings.alert_check_interval_minutes
@@ -126,17 +149,28 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # Flood threat assessment - every 15 minutes
+    scheduler.add_job(
+        refresh_flood_threat,
+        trigger=IntervalTrigger(minutes=FLOOD_THREAT_INTERVAL_MINUTES),
+        id="flood_threat_refresh",
+        name="Refresh flood threat assessment cache",
+        replace_existing=True
+    )
+
     scheduler.start()
     logger.info(
         f"Scheduler started. Cache: {WEATHER_CACHE_INTERVAL_MINUTES}min, "
         f"Alerts: {interval_minutes}min, Intel: {INTEL_ANALYSIS_INTERVAL_MINUTES}min, "
-        f"Facilities: {FACILITIES_REFRESH_INTERVAL_HOURS}h"
+        f"Facilities: {FACILITIES_REFRESH_INTERVAL_HOURS}h, "
+        f"Flood Threat: {FLOOD_THREAT_INTERVAL_MINUTES}min"
     )
 
     # Initial tasks on startup
     asyncio.get_event_loop().create_task(refresh_weather_cache())
     asyncio.get_event_loop().create_task(refresh_intel_analysis())
     asyncio.get_event_loop().create_task(refresh_osm_facilities())
+    asyncio.get_event_loop().create_task(refresh_flood_threat())
 
 
 def stop_scheduler():

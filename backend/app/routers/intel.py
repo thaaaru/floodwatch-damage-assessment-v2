@@ -27,6 +27,7 @@ from ..services.irrigation_fetcher import irrigation_fetcher
 from ..services.weather_cache import weather_cache
 from ..services.flood_patterns import flood_analyzer, DISTRICT_COORDS
 from ..services.environmental_data import environmental_service
+from ..services.flood_threat_cache import flood_threat_cache
 
 router = APIRouter(prefix="/api/intel", tags=["intelligence"])
 
@@ -954,7 +955,7 @@ async def refresh_irrigation_data():
 @router.get("/flood-threat")
 async def get_flood_threat_assessment():
     """
-    Get composite flood threat assessment for all districts.
+    Get composite flood threat assessment for all districts (cached for instant response).
 
     Combines multiple data sources into a single threat score (0-100):
     - Current rainfall (24/48/72h accumulated) - 30%
@@ -966,220 +967,42 @@ async def get_flood_threat_assessment():
     - Per-district threat scores
     - Top risk districts
     - Contributing factors
+
+    NOTE: Data is pre-computed by background job every 15 minutes for fast response.
     """
-    # Ensure data is fresh
-    if not weather_cache.is_cache_valid():
-        await weather_cache.refresh_cache()
-    if not irrigation_fetcher.is_cache_valid():
-        await irrigation_fetcher.fetch_water_levels()
+    # Try to get cached data first (instant response)
+    cached_data = flood_threat_cache.get_cached_data()
 
-    weather_data = weather_cache.get_all_weather(hours=24)
-    forecast_data = weather_cache.get_all_forecast()
-    river_data = irrigation_fetcher.get_cached_data()
+    if cached_data:
+        return cached_data
 
-    # Build district threat assessments
-    district_threats = []
+    # Cache miss or stale - trigger refresh
+    logger.warning("Flood threat cache miss - triggering immediate refresh")
+    success = await flood_threat_cache.refresh_cache(force=True)
 
-    for weather in weather_data:
-        district = weather.get("district", "")
-        if not district:
-            continue
+    # Return refreshed data
+    cached_data = flood_threat_cache.get_cached_data()
+    if cached_data:
+        return cached_data
 
-        threat = _calculate_district_threat(
-            district=district,
-            weather=weather,
-            forecast_data=forecast_data,
-            river_data=river_data,
-        )
-        district_threats.append(threat)
-
-    # Sort by threat score
-    district_threats.sort(key=lambda x: x["threat_score"], reverse=True)
-
-    # Calculate national threat level
-    if district_threats:
-        avg_score = sum(d["threat_score"] for d in district_threats) / len(district_threats)
-        max_score = max(d["threat_score"] for d in district_threats)
-        # National level is weighted toward max (emergencies matter more)
-        national_score = (avg_score * 0.3) + (max_score * 0.7)
-    else:
-        national_score = 0
-
-    # Determine national threat level
-    if national_score >= 70:
-        national_level = "CRITICAL"
-    elif national_score >= 50:
-        national_level = "HIGH"
-    elif national_score >= 30:
-        national_level = "MEDIUM"
-    else:
-        national_level = "LOW"
-
-    # Summary stats
-    critical_count = sum(1 for d in district_threats if d["threat_level"] == "CRITICAL")
-    high_count = sum(1 for d in district_threats if d["threat_level"] == "HIGH")
-    medium_count = sum(1 for d in district_threats if d["threat_level"] == "MEDIUM")
-
-    # River summary
-    river_summary = irrigation_fetcher.get_summary()
-
+    # Fallback error response if refresh failed
+    logger.error("Failed to refresh flood threat cache - returning fallback response")
     return {
-        "national_threat_level": national_level,
-        "national_threat_score": round(national_score, 1),
+        "error": "Flood threat data temporarily unavailable",
+        "national_threat_level": "UNKNOWN",
+        "national_threat_score": 0,
         "summary": {
-            "critical_districts": critical_count,
-            "high_risk_districts": high_count,
-            "medium_risk_districts": medium_count,
-            "rivers_at_major_flood": river_summary.get("major_flood", 0),
-            "rivers_at_minor_flood": river_summary.get("minor_flood", 0),
-            "rivers_at_alert": river_summary.get("alert", 0),
+            "critical_districts": 0,
+            "high_risk_districts": 0,
+            "medium_risk_districts": 0,
+            "rivers_at_major_flood": 0,
+            "rivers_at_minor_flood": 0,
+            "rivers_at_alert": 0,
         },
-        "top_risk_districts": district_threats[:10],
-        "all_districts": district_threats,
-        "highest_risk_river": river_summary.get("highest_risk_station"),
-        "analyzed_at": weather_cache.get_cache_info().get("last_updated"),
-    }
-
-
-def _calculate_district_threat(
-    district: str,
-    weather: dict,
-    forecast_data: list,
-    river_data: list,
-) -> dict:
-    """Calculate composite threat score for a district."""
-    factors = []
-
-    # 1. Current rainfall score (0-30 points)
-    rainfall_24h = weather.get("rainfall_24h_mm", 0) or 0
-    rainfall_48h = weather.get("rainfall_48h_mm", 0) or 0
-    rainfall_72h = weather.get("rainfall_72h_mm", 0) or 0
-
-    # Use max of different periods, scaled
-    max_rainfall = max(rainfall_24h, rainfall_48h / 2, rainfall_72h / 3)
-
-    if max_rainfall >= 150:
-        rainfall_score = 30
-    elif max_rainfall >= 100:
-        rainfall_score = 25
-    elif max_rainfall >= 75:
-        rainfall_score = 20
-    elif max_rainfall >= 50:
-        rainfall_score = 15
-    elif max_rainfall >= 25:
-        rainfall_score = 10
-    else:
-        rainfall_score = max_rainfall / 25 * 10
-
-    if rainfall_score > 0:
-        factors.append({
-            "factor": "rainfall",
-            "value": f"{rainfall_24h:.0f}mm (24h), {rainfall_72h:.0f}mm (72h)",
-            "score": round(rainfall_score, 1),
-        })
-
-    # 2. River water level score (0-40 points)
-    river_score = 0
-    river_factor = None
-
-    # Find rivers affecting this district
-    district_rivers = [
-        r for r in river_data
-        if district in r.get("districts", [])
-    ]
-
-    if district_rivers:
-        # Use highest risk station
-        highest_pct = max(r.get("pct_to_major_flood", 0) for r in district_rivers)
-        highest_station = next(
-            (r for r in district_rivers if r.get("pct_to_major_flood", 0) == highest_pct),
-            None
-        )
-
-        if highest_pct >= 100:
-            river_score = 40  # Major flood
-        elif highest_pct >= 80:
-            river_score = 35
-        elif highest_pct >= 60:
-            river_score = 25
-        elif highest_pct >= 40:
-            river_score = 15
-        elif highest_pct >= 20:
-            river_score = 8
-        else:
-            river_score = highest_pct / 20 * 8
-
-        if highest_station and river_score > 0:
-            river_factor = {
-                "factor": "river_level",
-                "value": f"{highest_station['station']} at {highest_station['water_level_m']:.2f}m ({highest_pct:.0f}% to flood)",
-                "score": round(river_score, 1),
-                "station": highest_station["station"],
-                "river": highest_station["river"],
-            }
-            factors.append(river_factor)
-
-    # 3. Forecast score (0-30 points)
-    forecast_score = 0
-    forecast_factor = None
-
-    # Find forecast for this district
-    district_forecast = next(
-        (f for f in forecast_data if f.get("district", "").lower() == district.lower()),
-        None
-    )
-
-    if district_forecast:
-        forecast_24h = district_forecast.get("forecast_precip_24h_mm", 0) or 0
-        forecast_48h = district_forecast.get("forecast_precip_48h_mm", 0) or 0
-
-        # Next 24h forecast is most important
-        if forecast_24h >= 150:
-            forecast_score = 30
-        elif forecast_24h >= 100:
-            forecast_score = 25
-        elif forecast_24h >= 75:
-            forecast_score = 20
-        elif forecast_24h >= 50:
-            forecast_score = 15
-        elif forecast_24h >= 25:
-            forecast_score = 10
-        else:
-            forecast_score = forecast_24h / 25 * 10
-
-        if forecast_score > 0:
-            forecast_factor = {
-                "factor": "forecast",
-                "value": f"{forecast_24h:.0f}mm (next 24h), {forecast_48h:.0f}mm (next 48h)",
-                "score": round(forecast_score, 1),
-            }
-            factors.append(forecast_factor)
-
-    # Calculate total threat score
-    threat_score = rainfall_score + river_score + forecast_score
-    threat_score = min(threat_score, 100)  # Cap at 100
-
-    # Determine threat level
-    if threat_score >= 70:
-        threat_level = "CRITICAL"
-    elif threat_score >= 50:
-        threat_level = "HIGH"
-    elif threat_score >= 30:
-        threat_level = "MEDIUM"
-    else:
-        threat_level = "LOW"
-
-    return {
-        "district": district,
-        "threat_score": round(threat_score, 1),
-        "threat_level": threat_level,
-        "rainfall_score": round(rainfall_score, 1),
-        "river_score": round(river_score, 1),
-        "forecast_score": round(forecast_score, 1),
-        "factors": factors,
-        "current_alert_level": weather.get("alert_level", "green"),
-        "lat": weather.get("latitude"),
-        "lon": weather.get("longitude"),
+        "top_risk_districts": [],
+        "all_districts": [],
+        "highest_risk_river": None,
+        "analyzed_at": None,
     }
 
 
