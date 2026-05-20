@@ -5,6 +5,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, GoogleFloodGauge, GoogleFloodsResponse } from '@/lib/api';
 
+// HydroSHEDS reference data clipped to Sri Lanka (bundled at build time).
+// Source: HydroBASINS L8 + HydroRIVERS v1.0 (Lehner & Grill 2013).
+// License: free for non-commercial use; attribution shown in the page footer.
+import lkBasins from './data/lk_basins.json';
+import lkRivers from './data/lk_rivers.json';
+
 declare global {
   interface Window {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -41,11 +47,22 @@ export default function FloodHubPage() {
   const [selectedGaugeId, setSelectedGaugeId] = useState<string | null>(null);
   const [severityFilter, setSeverityFilter] = useState<string | null>(null);
 
+  // HydroSHEDS overlay toggles. Both default on so the page communicates
+  // "this is a hydrology product" the moment it loads, even before the API
+  // key for live gauges is in place.
+  const [showBasins, setShowBasins] = useState(true);
+  const [showRivers, setShowRivers] = useState(true);
+
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const googleMapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
+  // Separate Data layers for each overlay so we can toggle independently.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const basinLayerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const riverLayerRef = useRef<any>(null);
 
   // ------------------------------------------------------------------
   // Data fetch — cached server-side; safe to retry every few minutes.
@@ -82,7 +99,8 @@ export default function FloodHubPage() {
   }, []);
 
   // ------------------------------------------------------------------
-  // Initialise the Google Map once on mount.
+  // Initialise the Google Map once on mount, plus the static
+  // HydroSHEDS overlays (basins + river network).
   // ------------------------------------------------------------------
   useEffect(() => {
     if (!mapRef.current) return;
@@ -98,14 +116,66 @@ export default function FloodHubPage() {
         streetViewControl: false,
         fullscreenControl: true,
       });
+
+      // --- HydroBASINS overlay: filled polygons, one per drainage basin.
+      // Each basin gets a deterministic colour from its HYBAS_ID so the same
+      // basin always looks the same across reloads.
+      basinLayerRef.current = new window.google.maps.Data({ map: googleMapRef.current });
+      basinLayerRef.current.addGeoJson(lkBasins);
+      basinLayerRef.current.setStyle((feature: { getProperty: (k: string) => unknown }) => {
+        const id = Number(feature.getProperty('HYBAS_ID')) || 0;
+        // Cycle hues so adjacent basins are visually distinct.
+        const hue = (id * 137.508) % 360;
+        return {
+          fillColor: `hsl(${hue}, 50%, 55%)`,
+          fillOpacity: 0.18,
+          strokeColor: `hsl(${hue}, 55%, 35%)`,
+          strokeOpacity: 0.45,
+          strokeWeight: 1,
+          clickable: false,
+          zIndex: 1,
+        };
+      });
+
+      // --- HydroRIVERS overlay: blue polylines, width scales with Strahler order.
+      riverLayerRef.current = new window.google.maps.Data({ map: googleMapRef.current });
+      riverLayerRef.current.addGeoJson(lkRivers);
+      riverLayerRef.current.setStyle((feature: { getProperty: (k: string) => unknown }) => {
+        const order = Number(feature.getProperty('ORD_STRA')) || 1;
+        // Order ranges 3-5 in our filtered file; map to 1.5-4px stroke.
+        const weight = Math.max(1, Math.min(4, (order - 2) * 1.25));
+        return {
+          strokeColor: '#1d4ed8',
+          strokeOpacity: 0.7,
+          strokeWeight: weight,
+          clickable: false,
+          zIndex: 2,
+        };
+      });
     };
     initMap();
     return () => {
-      // Markers are cleaned up by the data-effect; the map itself can be GC'd.
       markersRef.current.forEach((m) => m.setMap?.(null));
       markersRef.current = [];
+      basinLayerRef.current?.setMap?.(null);
+      riverLayerRef.current?.setMap?.(null);
     };
   }, []);
+
+  // ------------------------------------------------------------------
+  // Apply overlay toggle changes.
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (basinLayerRef.current && googleMapRef.current) {
+      basinLayerRef.current.setMap(showBasins ? googleMapRef.current : null);
+    }
+  }, [showBasins]);
+
+  useEffect(() => {
+    if (riverLayerRef.current && googleMapRef.current) {
+      riverLayerRef.current.setMap(showRivers ? googleMapRef.current : null);
+    }
+  }, [showRivers]);
 
   // ------------------------------------------------------------------
   // Render markers whenever data or filter changes.
@@ -250,6 +320,29 @@ export default function FloodHubPage() {
               role="application"
               aria-label="Sri Lanka flood gauge map"
             />
+            {/* Overlay toggles for the static hydrology layers. */}
+            <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-700 flex flex-wrap items-center gap-4">
+              <span className="font-medium text-slate-600">Layers:</span>
+              <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showBasins}
+                  onChange={(e) => setShowBasins(e.target.checked)}
+                  className="rounded"
+                />
+                River basins
+              </label>
+              <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showRivers}
+                  onChange={(e) => setShowRivers(e.target.checked)}
+                  className="rounded"
+                />
+                River network
+              </label>
+              <span className="ml-auto text-slate-400 text-[10px]">HydroSHEDS v1.0</span>
+            </div>
             {severityFilter && (
               <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 flex items-center justify-between">
                 <span>
@@ -284,13 +377,23 @@ export default function FloodHubPage() {
         </div>
 
         {/* ---------------------------------------------- */}
-        {/* Attribution footer (required by Google's policy)*/}
+        {/* Attribution footer                              */}
         {/* ---------------------------------------------- */}
-        {data && (
-          <div className="text-xs text-slate-500 bg-white border border-slate-200 rounded-lg p-3">
-            {data.license_note}
+        <div className="text-xs text-slate-500 bg-white border border-slate-200 rounded-lg p-3 space-y-1">
+          {data && <div>{data.license_note}</div>}
+          <div>
+            River basins and river network:{' '}
+            <a
+              href="https://www.hydrosheds.org/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-slate-700"
+            >
+              HydroSHEDS
+            </a>{' '}
+            (HydroBASINS L8, HydroRIVERS v1.0) — Lehner &amp; Grill (2013), free for non-commercial use.
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
