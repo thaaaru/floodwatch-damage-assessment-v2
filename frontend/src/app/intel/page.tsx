@@ -22,18 +22,21 @@ const fmt = (v: any, d: number = 0): string => {
 
 export default function IntelDashboard() {
   // All data is pre-baked from snapshot.json — no fetches, no loading state.
-  const [summary] = useState<IntelSummary | null>(snapshot.summary as IntelSummary);
-  const [priorities] = useState<SOSReport[]>(snapshot.priorities as SOSReport[]);
-  const [clusters] = useState<IntelCluster[]>(snapshot.clusters as IntelCluster[]);
-  const [actions] = useState<IntelAction[]>(snapshot.actions as IntelAction[]);
-  const [floodThreat] = useState<FloodThreatResponse | null>(snapshot.floodThreat as FloodThreatResponse);
-  const [riverData] = useState<IrrigationResponse | null>(snapshot.irrigation as IrrigationResponse);
-  const [trafficFlow] = useState<TrafficFlowResponse | null>(snapshot.trafficFlow as TrafficFlowResponse);
-  const [trafficIncidents] = useState<TrafficIncident[]>(snapshot.trafficIncidents as TrafficIncident[]);
-  const [allFacilities] = useState<AllFacilitiesResponse | null>(snapshot.allFacilities as AllFacilitiesResponse);
-  const [floodPatterns] = useState<FloodPatternsResponse | null>(snapshot.floodPatterns as FloodPatternsResponse);
-  const [environmentalData] = useState<EnvironmentalDataResponse | null>(snapshot.environmental as EnvironmentalDataResponse);
-  const [yesterdayStats] = useState<YesterdayStats | null>(snapshot.yesterdayStats as YesterdayStats);
+  // Cast via `unknown` because the captured JSON is a structural subset of the
+  // TS interfaces (some optional fields the API doesn't always emit). We trust
+  // the JSX to handle missing-field cases via the `fmt` helper and `?.` guards.
+  const [summary] = useState<IntelSummary | null>(snapshot.summary as unknown as IntelSummary);
+  const [priorities] = useState<SOSReport[]>(snapshot.priorities as unknown as SOSReport[]);
+  const [clusters] = useState<IntelCluster[]>(snapshot.clusters as unknown as IntelCluster[]);
+  const [actions] = useState<IntelAction[]>(snapshot.actions as unknown as IntelAction[]);
+  const [floodThreat] = useState<FloodThreatResponse | null>(snapshot.floodThreat as unknown as FloodThreatResponse);
+  const [riverData] = useState<IrrigationResponse | null>(snapshot.irrigation as unknown as IrrigationResponse);
+  const [trafficFlow] = useState<TrafficFlowResponse | null>(snapshot.trafficFlow as unknown as TrafficFlowResponse);
+  const [trafficIncidents] = useState<TrafficIncident[]>(snapshot.trafficIncidents as unknown as TrafficIncident[]);
+  const [allFacilities] = useState<AllFacilitiesResponse | null>(snapshot.allFacilities as unknown as AllFacilitiesResponse);
+  const [floodPatterns] = useState<FloodPatternsResponse | null>(snapshot.floodPatterns as unknown as FloodPatternsResponse);
+  const [environmentalData] = useState<EnvironmentalDataResponse | null>(snapshot.environmental as unknown as EnvironmentalDataResponse);
+  const [yesterdayStats] = useState<YesterdayStats | null>(snapshot.yesterdayStats as unknown as YesterdayStats);
 
   // Snapshot capture time used as the "last updated" label.
   const [lastUpdated] = useState<string>(
@@ -592,26 +595,31 @@ export default function IntelDashboard() {
                   {/* NEW: Treemap - Seasonal Rainfall Distribution */}
                   <div className="bg-gray-700/50 rounded-lg p-4">
                     <h3 className="text-sm font-semibold text-gray-300 mb-3">Seasonal Rainfall Treemap</h3>
-                    <div className="flex flex-wrap gap-1 h-48">
+                    {/* flex-wrap + min-w-0 lets boxes drop to a second row on narrow viewports
+                        without overflowing horizontally; w-full caps the inner row. */}
+                    <div className="flex flex-wrap gap-1 w-full min-h-[12rem]">
                       {(() => {
                         const seasons = Object.entries(floodPatterns.seasonal_patterns);
-                        const totalRainDays = seasons.reduce((sum, [, s]) => sum + s.rainy_days, 0);
+                        const totalRainDays = seasons.reduce((sum, [, s]) => sum + s.rainy_days, 0) || 1;
                         const colors = {
                           southwest: { bg: 'bg-blue-600', border: 'border-blue-400' },
                           northeast: { bg: 'bg-cyan-600', border: 'border-cyan-400' },
                           inter_monsoon: { bg: 'bg-purple-600', border: 'border-purple-400' },
                         };
                         return seasons.map(([key, season]) => {
-                          const widthPct = Math.max((season.rainy_days / totalRainDays) * 100, 20);
+                          // Use a unitless flex-grow weight (NOT percentage flex-basis)
+                          // so the boxes naturally divide the row width and never overflow.
+                          // Floor of 1 keeps even tiny seasons visible.
+                          const weight = Math.max(season.rainy_days / totalRainDays, 0.05);
                           const color = colors[key as keyof typeof colors] || { bg: 'bg-gray-600', border: 'border-gray-400' };
                           return (
                             <div
                               key={key}
-                              className={`${color.bg} border-2 ${color.border} rounded-lg p-3 flex flex-col justify-between transition-all hover:opacity-90`}
-                              style={{ flexBasis: `${widthPct}%`, flexGrow: 1, minWidth: '150px' }}
+                              className={`${color.bg} border-2 ${color.border} rounded-lg p-3 flex flex-col justify-between transition-all hover:opacity-90 min-w-0 basis-[150px] h-48`}
+                              style={{ flexGrow: weight, flexShrink: 1 }}
                             >
                               <div>
-                                <div className="font-semibold text-sm text-white">{season.name}</div>
+                                <div className="font-semibold text-sm text-white truncate">{season.name}</div>
                                 <div className="text-xs text-white/70 mt-1">{season.rainy_days} rainy days</div>
                               </div>
                               <div className="mt-auto pt-2">
@@ -641,7 +649,7 @@ export default function IntelDashboard() {
                         });
                       })()}
                     </div>
-                    <div className="flex justify-center gap-4 mt-3 text-xs">
+                    <div className="flex flex-wrap justify-center gap-4 mt-3 text-xs">
                       <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-600 rounded" /> Southwest Monsoon</div>
                       <div className="flex items-center gap-1"><div className="w-3 h-3 bg-cyan-600 rounded" /> Northeast Monsoon</div>
                       <div className="flex items-center gap-1"><div className="w-3 h-3 bg-purple-600 rounded" /> Inter-Monsoon</div>
