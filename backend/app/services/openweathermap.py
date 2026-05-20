@@ -80,6 +80,28 @@ class OpenWeatherMapService:
         self._calls_today: int = 0
         self._calls_day: date = datetime.utcnow().date()
 
+        # Shared HTTP client created lazily on first use. Connection-pooling
+        # avoids a fresh TLS handshake per request (~100-200ms saved per call
+        # against api.openweathermap.org).
+        self._http_client: Optional[httpx.AsyncClient] = None
+
+    async def _get_http_client(self) -> httpx.AsyncClient:
+        if self._http_client is None or self._http_client.is_closed:
+            self._http_client = httpx.AsyncClient(
+                timeout=30.0,
+                limits=httpx.Limits(
+                    max_keepalive_connections=self.REFRESH_CONCURRENCY,
+                    max_connections=self.REFRESH_CONCURRENCY * 2,
+                    keepalive_expiry=60.0,
+                ),
+            )
+        return self._http_client
+
+    async def aclose(self) -> None:
+        """Close the shared HTTP client. Call on application shutdown."""
+        if self._http_client is not None and not self._http_client.is_closed:
+            await self._http_client.aclose()
+
     # ------------------------------------------------------------------
     # Rate-limit accounting
     # ------------------------------------------------------------------
@@ -113,8 +135,8 @@ class OpenWeatherMapService:
         while True:
             self._record_call()
             try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
-                    response = await client.get(url, params=params)
+                client = await self._get_http_client()
+                response = await client.get(url, params=params)
 
                 if response.status_code == 429:
                     if attempt >= self.MAX_429_RETRIES:

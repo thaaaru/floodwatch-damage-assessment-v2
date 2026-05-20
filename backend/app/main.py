@@ -49,6 +49,14 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down FloodWatch LK Backend...")
     stop_scheduler()
 
+    # Close the shared OpenWeatherMap HTTP client (if it was ever initialized).
+    try:
+        from .services.openweathermap import openweathermap_service
+        if openweathermap_service is not None:
+            await openweathermap_service.aclose()
+    except Exception as e:
+        logger.warning(f"Error closing OWM HTTP client: {e}")
+
 
 # Create FastAPI app
 app = FastAPI(
