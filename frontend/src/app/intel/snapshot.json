@@ -1,0 +1,3630 @@
+{
+  "captured_at": "2026-05-20T09:39:44+00:00",
+  "summary": {
+    "total_reports": 0,
+    "total_people_affected": 0,
+    "total_clusters": 0,
+    "urgency_breakdown": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0
+    },
+    "resource_needs": {
+      "needs_food": 0,
+      "needs_water": 0,
+      "medical_emergencies": 0
+    },
+    "vulnerability_counts": {
+      "with_elderly": 0,
+      "with_children": 0,
+      "with_disabled": 0
+    },
+    "most_affected_districts": [],
+    "districts": {},
+    "analyzed_at": "2026-05-20T09:39:43.849844"
+  },
+  "priorities": [],
+  "clusters": [],
+  "actions": [],
+  "floodThreat": {
+    "national_threat_level": "LOW",
+    "national_threat_score": 4.5,
+    "summary": {
+      "critical_districts": 0,
+      "high_risk_districts": 0,
+      "medium_risk_districts": 0,
+      "rivers_at_major_flood": 0,
+      "rivers_at_minor_flood": 0,
+      "rivers_at_alert": 0
+    },
+    "top_risk_districts": [
+      {
+        "district": "Adhikarigama",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.2135,
+        "lon": 80.7806
+      },
+      {
+        "district": "Agalawatta",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.5423,
+        "lon": 80.1574
+      },
+      {
+        "district": "Agarapathana",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.8641,
+        "lon": 80.7055
+      },
+      {
+        "district": "Ahangama",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 5.9735,
+        "lon": 80.3623
+      },
+      {
+        "district": "Ahungalla",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.3138,
+        "lon": 80.0351
+      },
+      {
+        "district": "Akkaraipattu",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.2141,
+        "lon": 81.8482
+      },
+      {
+        "district": "Akkarayan",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 9.3127,
+        "lon": 80.3112
+      },
+      {
+        "district": "Akuressa",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.1005,
+        "lon": 80.4775
+      },
+      {
+        "district": "Alawwa",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.294,
+        "lon": 80.2392
+      },
+      {
+        "district": "Aluthgama",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.4326,
+        "lon": 79.9989
+      }
+    ],
+    "all_districts": [
+      {
+        "district": "Adhikarigama",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.2135,
+        "lon": 80.7806
+      },
+      {
+        "district": "Agalawatta",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.5423,
+        "lon": 80.1574
+      },
+      {
+        "district": "Agarapathana",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.8641,
+        "lon": 80.7055
+      },
+      {
+        "district": "Ahangama",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 5.9735,
+        "lon": 80.3623
+      },
+      {
+        "district": "Ahungalla",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.3138,
+        "lon": 80.0351
+      },
+      {
+        "district": "Akkaraipattu",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.2141,
+        "lon": 81.8482
+      },
+      {
+        "district": "Akkarayan",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 9.3127,
+        "lon": 80.3112
+      },
+      {
+        "district": "Akuressa",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.1005,
+        "lon": 80.4775
+      },
+      {
+        "district": "Alawwa",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.294,
+        "lon": 80.2392
+      },
+      {
+        "district": "Aluthgama",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.4326,
+        "lon": 79.9989
+      },
+      {
+        "district": "Ambalangoda",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.2389,
+        "lon": 80.0541
+      },
+      {
+        "district": "Ambalantota",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.1225,
+        "lon": 81.0239
+      },
+      {
+        "district": "Ambanpola",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.9197,
+        "lon": 80.2393
+      },
+      {
+        "district": "Ampara",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.2978,
+        "lon": 81.679
+      },
+      {
+        "district": "Anamaduwa",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.8776,
+        "lon": 80.0109
+      },
+      {
+        "district": "Andigama",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.7764,
+        "lon": 79.9491
+      },
+      {
+        "district": "Angoda",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.936,
+        "lon": 79.9257
+      },
+      {
+        "district": "Angunukolapelessa",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.1669,
+        "lon": 80.8977
+      },
+      {
+        "district": "Ankumbura",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.4393,
+        "lon": 80.571
+      },
+      {
+        "district": "Anuradhapura",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 8.335,
+        "lon": 80.4106
+      },
+      {
+        "district": "Aralaganwila",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.7826,
+        "lon": 81.1847
+      },
+      {
+        "district": "Aranayake",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 7.1776,
+        "lon": 80.4572
+      },
+      {
+        "district": "Ariyalai",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 9.6591,
+        "lon": 80.0477
+      },
+      {
+        "district": "Atchuvely",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 9.7783,
+        "lon": 80.1159
+      },
+      {
+        "district": "Athurugiriya",
+        "threat_score": 4.5,
+        "threat_level": "LOW",
+        "rainfall_score": 10,
+        "river_score": 0,
+        "forecast_score": 5,
+        "factors": [],
+        "current_alert_level": "green",
+        "lat": 6.8772,
+        "lon": 79.9899
+      }
+    ],
+    "highest_risk_river": {
+      "station": "Dunamale",
+      "river": "Attanagalu Oya",
+      "lat": 7.1325,
+      "lon": 79.97916666666667,
+      "districts": [
+        "Gampaha"
+      ],
+      "district_ids": [
+        "LK-12"
+      ],
+      "water_level_m": 2.38,
+      "alert_level_m": 3.0,
+      "minor_flood_level_m": 3.5,
+      "major_flood_level_m": 4.5,
+      "status": "normal",
+      "pct_to_alert": 79.3,
+      "pct_to_minor_flood": 68.0,
+      "pct_to_major_flood": 52.9,
+      "last_updated": "2026-05-20T08:46:50.792000"
+    },
+    "analyzed_at": null
+  },
+  "irrigation": {
+    "count": 24,
+    "summary": {
+      "total_stations": 24,
+      "normal": 24,
+      "alert": 0,
+      "minor_flood": 0,
+      "major_flood": 0,
+      "highest_risk_station": {
+        "station": "Dunamale",
+        "river": "Attanagalu Oya",
+        "lat": 7.1325,
+        "lon": 79.97916666666667,
+        "districts": [
+          "Gampaha"
+        ],
+        "district_ids": [
+          "LK-12"
+        ],
+        "water_level_m": 2.38,
+        "alert_level_m": 3.0,
+        "minor_flood_level_m": 3.5,
+        "major_flood_level_m": 4.5,
+        "status": "normal",
+        "pct_to_alert": 79.3,
+        "pct_to_minor_flood": 68.0,
+        "pct_to_major_flood": 52.9,
+        "last_updated": "2026-05-20T09:33:12.720000"
+      }
+    },
+    "stations": [
+      {
+        "station": "Moraketiya",
+        "river": "Walawe Ganga",
+        "lat": 6.309722222222222,
+        "lon": 80.8463888888889,
+        "districts": [
+          "Hambantota"
+        ],
+        "district_ids": [
+          "LK-33"
+        ],
+        "water_level_m": 0.9,
+        "alert_level_m": 4.0,
+        "minor_flood_level_m": 5.0,
+        "major_flood_level_m": 6.5,
+        "status": "normal",
+        "pct_to_alert": 22.5,
+        "pct_to_minor_flood": 18.0,
+        "pct_to_major_flood": 13.8,
+        "last_updated": "2026-05-20T09:36:27.242000"
+      },
+      {
+        "station": "Kithulgala",
+        "river": "Kelani Ganga",
+        "lat": 6.989722222222222,
+        "lon": 80.41027777777778,
+        "districts": [
+          "Kegalle"
+        ],
+        "district_ids": [
+          "LK-92"
+        ],
+        "water_level_m": 1.53,
+        "alert_level_m": 7.0,
+        "minor_flood_level_m": 8.5,
+        "major_flood_level_m": 10.0,
+        "status": "normal",
+        "pct_to_alert": 21.9,
+        "pct_to_minor_flood": 18.0,
+        "pct_to_major_flood": 15.3,
+        "last_updated": "2026-05-20T09:35:38.076000"
+      },
+      {
+        "station": "Holombuwa",
+        "river": "Kelani Ganga",
+        "lat": 7.037777777777778,
+        "lon": 80.26472222222222,
+        "districts": [
+          "Kegalle"
+        ],
+        "district_ids": [
+          "LK-92"
+        ],
+        "water_level_m": 0.67,
+        "alert_level_m": 3.5,
+        "minor_flood_level_m": 4.5,
+        "major_flood_level_m": 6.0,
+        "status": "normal",
+        "pct_to_alert": 19.1,
+        "pct_to_minor_flood": 14.9,
+        "pct_to_major_flood": 11.2,
+        "last_updated": "2026-05-20T09:34:58.277000"
+      },
+      {
+        "station": "Ellagawa",
+        "river": "Kalu Ganga",
+        "lat": 6.730399127799353,
+        "lon": 80.21307042256922,
+        "districts": [
+          "Ratnapura",
+          "Kalutara"
+        ],
+        "district_ids": [
+          "LK-91",
+          "LK-13"
+        ],
+        "water_level_m": 5.23,
+        "alert_level_m": 10.0,
+        "minor_flood_level_m": 10.7,
+        "major_flood_level_m": 12.2,
+        "status": "normal",
+        "pct_to_alert": 52.3,
+        "pct_to_minor_flood": 48.9,
+        "pct_to_major_flood": 42.9,
+        "last_updated": "2026-05-20T09:34:54.114000"
+      },
+      {
+        "station": "Glencourse",
+        "river": "Kelani Ganga",
+        "lat": 6.975736673046383,
+        "lon": 80.18660711562987,
+        "districts": [
+          "Colombo",
+          "Gampaha",
+          "Kegalle"
+        ],
+        "district_ids": [
+          "LK-11",
+          "LK-12",
+          "LK-92"
+        ],
+        "water_level_m": 9.74,
+        "alert_level_m": 15.0,
+        "minor_flood_level_m": 16.5,
+        "major_flood_level_m": 19.0,
+        "status": "normal",
+        "pct_to_alert": 64.9,
+        "pct_to_minor_flood": 59.0,
+        "pct_to_major_flood": 51.3,
+        "last_updated": "2026-05-20T09:34:46.195000"
+      },
+      {
+        "station": "Putupaula",
+        "river": "Kalu Ganga",
+        "lat": 6.528611111111111,
+        "lon": 80.05583333333334,
+        "districts": [
+          "Ratnapura"
+        ],
+        "district_ids": [
+          "LK-91"
+        ],
+        "water_level_m": 0.79,
+        "alert_level_m": 3.0,
+        "minor_flood_level_m": 3.5,
+        "major_flood_level_m": 4.5,
+        "status": "normal",
+        "pct_to_alert": 26.3,
+        "pct_to_minor_flood": 22.6,
+        "pct_to_major_flood": 17.6,
+        "last_updated": "2026-05-20T09:34:26.258000"
+      },
+      {
+        "station": "Pitabeddara",
+        "river": "Nilwala Ganga",
+        "lat": 6.198611111111111,
+        "lon": 80.47527777777778,
+        "districts": [
+          "Matara"
+        ],
+        "district_ids": [
+          "LK-32"
+        ],
+        "water_level_m": 0.52,
+        "alert_level_m": 4.0,
+        "minor_flood_level_m": 5.0,
+        "major_flood_level_m": 6.5,
+        "status": "normal",
+        "pct_to_alert": 13.0,
+        "pct_to_minor_flood": 10.4,
+        "pct_to_major_flood": 8.0,
+        "last_updated": "2026-05-20T09:33:47.639000"
+      },
+      {
+        "station": "Nagalagam Street",
+        "river": "Kelani Ganga",
+        "lat": 6.96027242132317,
+        "lon": 79.87858326530204,
+        "districts": [
+          "Colombo",
+          "Gampaha"
+        ],
+        "district_ids": [
+          "LK-11",
+          "LK-12"
+        ],
+        "water_level_m": 2.4,
+        "alert_level_m": 4.0,
+        "minor_flood_level_m": 5.0,
+        "major_flood_level_m": 7.0,
+        "status": "normal",
+        "pct_to_alert": 60.0,
+        "pct_to_minor_flood": 48.0,
+        "pct_to_major_flood": 34.3,
+        "last_updated": "2026-05-20T09:33:47.004000"
+      },
+      {
+        "station": "Baddegama",
+        "river": "Gin Ganga",
+        "lat": 6.189722222222222,
+        "lon": 80.19833333333332,
+        "districts": [
+          "Galle"
+        ],
+        "district_ids": [
+          "LK-31"
+        ],
+        "water_level_m": 1.27,
+        "alert_level_m": 4.0,
+        "minor_flood_level_m": 5.0,
+        "major_flood_level_m": 6.5,
+        "status": "normal",
+        "pct_to_alert": 31.8,
+        "pct_to_minor_flood": 25.4,
+        "pct_to_major_flood": 19.5,
+        "last_updated": "2026-05-20T09:33:43.989000"
+      },
+      {
+        "station": "Thalgahagoda",
+        "river": "Nilwala Ganga",
+        "lat": 6.1,
+        "lon": 80.45,
+        "districts": [
+          "Matara"
+        ],
+        "district_ids": [
+          "LK-32"
+        ],
+        "water_level_m": 0.33,
+        "alert_level_m": 1.4,
+        "minor_flood_level_m": 1.7,
+        "major_flood_level_m": 2.8,
+        "status": "normal",
+        "pct_to_alert": 23.6,
+        "pct_to_minor_flood": 19.4,
+        "pct_to_major_flood": 11.8,
+        "last_updated": "2026-05-20T09:33:30.209000"
+      },
+      {
+        "station": "Kalawellawa (Millakanda)",
+        "river": "Kalu Ganga",
+        "lat": 6.601388888888889,
+        "lon": 80.18027777777777,
+        "districts": [
+          "Ratnapura",
+          "Kalutara"
+        ],
+        "district_ids": [
+          "LK-91",
+          "LK-13"
+        ],
+        "water_level_m": 3.22,
+        "alert_level_m": 4.0,
+        "minor_flood_level_m": 5.0,
+        "major_flood_level_m": 6.5,
+        "status": "normal",
+        "pct_to_alert": 80.5,
+        "pct_to_minor_flood": 64.4,
+        "pct_to_major_flood": 49.5,
+        "last_updated": "2026-05-20T09:33:17.904000"
+      },
+      {
+        "station": "Hanwella",
+        "river": "Kelani Ganga",
+        "lat": 6.909166666666667,
+        "lon": 80.08194444444445,
+        "districts": [
+          "Colombo",
+          "Gampaha"
+        ],
+        "district_ids": [
+          "LK-11",
+          "LK-12"
+        ],
+        "water_level_m": 1.69,
+        "alert_level_m": 5.5,
+        "minor_flood_level_m": 6.5,
+        "major_flood_level_m": 10.0,
+        "status": "normal",
+        "pct_to_alert": 30.7,
+        "pct_to_minor_flood": 26.0,
+        "pct_to_major_flood": 16.9,
+        "last_updated": "2026-05-20T09:33:15.686000"
+      },
+      {
+        "station": "Dunamale",
+        "river": "Attanagalu Oya",
+        "lat": 7.1325,
+        "lon": 79.97916666666667,
+        "districts": [
+          "Gampaha"
+        ],
+        "district_ids": [
+          "LK-12"
+        ],
+        "water_level_m": 2.38,
+        "alert_level_m": 3.0,
+        "minor_flood_level_m": 3.5,
+        "major_flood_level_m": 4.5,
+        "status": "normal",
+        "pct_to_alert": 79.3,
+        "pct_to_minor_flood": 68.0,
+        "pct_to_major_flood": 52.9,
+        "last_updated": "2026-05-20T09:33:12.720000"
+      },
+      {
+        "station": "Manampitiya",
+        "river": "Mahaweli Ganga",
+        "lat": 7.865277777777778,
+        "lon": 81.11361111111111,
+        "districts": [
+          "Polonnaruwa"
+        ],
+        "district_ids": [
+          "LK-72"
+        ],
+        "water_level_m": 0.18,
+        "alert_level_m": 10.0,
+        "minor_flood_level_m": 11.0,
+        "major_flood_level_m": 13.0,
+        "status": "normal",
+        "pct_to_alert": 1.8,
+        "pct_to_minor_flood": 1.6,
+        "pct_to_major_flood": 1.4,
+        "last_updated": "2026-05-20T09:32:55.969000"
+      },
+      {
+        "station": "Deraniyagala",
+        "river": "Seethawaka Ganga",
+        "lat": 6.951388888888888,
+        "lon": 80.3386111111111,
+        "districts": [
+          "Kegalle"
+        ],
+        "district_ids": [
+          "LK-92"
+        ],
+        "water_level_m": 0.66,
+        "alert_level_m": 2.5,
+        "minor_flood_level_m": 3.0,
+        "major_flood_level_m": 4.0,
+        "status": "normal",
+        "pct_to_alert": 26.4,
+        "pct_to_minor_flood": 22.0,
+        "pct_to_major_flood": 16.5,
+        "last_updated": "2026-05-20T09:32:52.047000"
+      },
+      {
+        "station": "Thaldena",
+        "river": "Badulu Oya",
+        "lat": 6.995,
+        "lon": 81.03333333333333,
+        "districts": [
+          "Badulla"
+        ],
+        "district_ids": [
+          "LK-81"
+        ],
+        "water_level_m": 0.32,
+        "alert_level_m": 4.0,
+        "minor_flood_level_m": 5.0,
+        "major_flood_level_m": 6.0,
+        "status": "normal",
+        "pct_to_alert": 8.0,
+        "pct_to_minor_flood": 6.4,
+        "pct_to_major_flood": 5.3,
+        "last_updated": "2026-05-20T09:32:28.807000"
+      },
+      {
+        "station": "Thanamalwila",
+        "river": "Kirindi Oya",
+        "lat": 6.443888888888889,
+        "lon": 81.12694444444443,
+        "districts": [
+          "Monaragala"
+        ],
+        "district_ids": [
+          "LK-82"
+        ],
+        "water_level_m": 0.89,
+        "alert_level_m": 2.5,
+        "minor_flood_level_m": 3.0,
+        "major_flood_level_m": 4.0,
+        "status": "normal",
+        "pct_to_alert": 35.6,
+        "pct_to_minor_flood": 29.7,
+        "pct_to_major_flood": 22.2,
+        "last_updated": "2026-05-20T09:32:15.040000"
+      },
+      {
+        "station": "Norwood",
+        "river": "Kehelgamu Oya",
+        "lat": 6.835555555555556,
+        "lon": 80.61416666666668,
+        "districts": [
+          "Nuwara Eliya"
+        ],
+        "district_ids": [
+          "LK-23"
+        ],
+        "water_level_m": 0.67,
+        "alert_level_m": 2.0,
+        "minor_flood_level_m": 2.5,
+        "major_flood_level_m": 3.5,
+        "status": "normal",
+        "pct_to_alert": 33.5,
+        "pct_to_minor_flood": 26.8,
+        "pct_to_major_flood": 19.1,
+        "last_updated": "2026-05-20T09:31:59.874000"
+      },
+      {
+        "station": "Peradeniya",
+        "river": "Mahaweli Ganga",
+        "lat": 7.258055555555556,
+        "lon": 80.59472222222222,
+        "districts": [
+          "Kandy"
+        ],
+        "district_ids": [
+          "LK-21"
+        ],
+        "water_level_m": 1.37,
+        "alert_level_m": 5.0,
+        "minor_flood_level_m": 6.0,
+        "major_flood_level_m": 7.5,
+        "status": "normal",
+        "pct_to_alert": 27.4,
+        "pct_to_minor_flood": 22.8,
+        "pct_to_major_flood": 18.3,
+        "last_updated": "2026-05-20T09:31:37.577000"
+      },
+      {
+        "station": "Wellawaya",
+        "river": "Menik Ganga",
+        "lat": 6.736388888888889,
+        "lon": 81.10305555555556,
+        "districts": [
+          "Monaragala"
+        ],
+        "district_ids": [
+          "LK-82"
+        ],
+        "water_level_m": 1.04,
+        "alert_level_m": 2.0,
+        "minor_flood_level_m": 2.5,
+        "major_flood_level_m": 3.5,
+        "status": "normal",
+        "pct_to_alert": 52.0,
+        "pct_to_minor_flood": 41.6,
+        "pct_to_major_flood": 29.7,
+        "last_updated": "2026-05-20T09:31:17.324000"
+      },
+      {
+        "station": "Nawalapitiya",
+        "river": "Mahaweli Ganga",
+        "lat": 7.05,
+        "lon": 80.53333333333333,
+        "districts": [
+          "Kandy"
+        ],
+        "district_ids": [
+          "LK-21"
+        ],
+        "water_level_m": 1.06,
+        "alert_level_m": 4.0,
+        "minor_flood_level_m": 5.0,
+        "major_flood_level_m": 6.5,
+        "status": "normal",
+        "pct_to_alert": 26.5,
+        "pct_to_minor_flood": 21.2,
+        "pct_to_major_flood": 16.3,
+        "last_updated": "2026-05-20T09:30:19.903000"
+      },
+      {
+        "station": "Urawa",
+        "river": "Nilwala Ganga",
+        "lat": 5.996388888888889,
+        "lon": 80.54944444444445,
+        "districts": [
+          "Matara"
+        ],
+        "district_ids": [
+          "LK-32"
+        ],
+        "water_level_m": 0.11,
+        "alert_level_m": 2.5,
+        "minor_flood_level_m": 4.0,
+        "major_flood_level_m": 6.0,
+        "status": "normal",
+        "pct_to_alert": 4.4,
+        "pct_to_minor_flood": 2.8,
+        "pct_to_major_flood": 1.8,
+        "last_updated": "2026-05-20T08:52:13.702000"
+      },
+      {
+        "station": "Panadugama",
+        "river": "Nilwala Ganga",
+        "lat": 6.032777777777778,
+        "lon": 80.51416666666667,
+        "districts": [
+          "Matara"
+        ],
+        "district_ids": [
+          "LK-32"
+        ],
+        "water_level_m": 2.45,
+        "alert_level_m": 5.0,
+        "minor_flood_level_m": 6.0,
+        "major_flood_level_m": 7.5,
+        "status": "normal",
+        "pct_to_alert": 49.0,
+        "pct_to_minor_flood": 40.8,
+        "pct_to_major_flood": 32.7,
+        "last_updated": "2026-05-20T08:50:56.303000"
+      },
+      {
+        "station": "Magura",
+        "river": "Maha Oya",
+        "lat": 7.198611111111111,
+        "lon": 79.94833333333332,
+        "districts": [
+          "Gampaha"
+        ],
+        "district_ids": [
+          "LK-12"
+        ],
+        "water_level_m": 1.75,
+        "alert_level_m": 3.0,
+        "minor_flood_level_m": 3.5,
+        "major_flood_level_m": 4.5,
+        "status": "normal",
+        "pct_to_alert": 58.3,
+        "pct_to_minor_flood": 50.0,
+        "pct_to_major_flood": 38.9,
+        "last_updated": "2026-05-20T07:32:21.632000"
+      }
+    ]
+  },
+  "trafficFlow": {
+    "here": {
+      "count": 0,
+      "summary": {
+        "total_locations": 0,
+        "free_flow": 0,
+        "light": 0,
+        "moderate": 0,
+        "heavy": 0,
+        "severe": 0,
+        "avg_speed_kmh": 0,
+        "avg_jam_factor": 0
+      },
+      "locations": []
+    },
+    "tomtom": {
+      "count": 0,
+      "summary": {
+        "total_locations": 0,
+        "free_flow": 0,
+        "light": 0,
+        "moderate": 0,
+        "heavy": 0,
+        "severe": 0,
+        "closed": 0,
+        "avg_speed_kmh": 0,
+        "total_delay_minutes": 0
+      },
+      "locations": []
+    },
+    "combined_count": 0
+  },
+  "trafficIncidents": [],
+  "allFacilities": {
+    "hospitals": [],
+    "police": [],
+    "fire_stations": [],
+    "shelters": [],
+    "summary": {
+      "hospitals": 0,
+      "police": 0,
+      "fire_stations": 0,
+      "shelters": 0
+    },
+    "last_updated": "2026-05-20T09:26:49.941891"
+  },
+  "floodPatterns": {
+    "district": "Colombo",
+    "coordinates": {
+      "lat": 6.9271,
+      "lon": 79.8612
+    },
+    "period": "1996-2026",
+    "total_days_analyzed": 11097,
+    "summary": {
+      "total_rainfall_mm": 81732.0,
+      "avg_annual_rainfall_mm": 2724.4,
+      "avg_daily_rainfall_mm": 7.37,
+      "max_daily_rainfall_mm": 231.4,
+      "rainy_days_total": 8238,
+      "heavy_rain_days": 88,
+      "extreme_rain_days": 8
+    },
+    "monthly_patterns": {
+      "1": {
+        "month_name": "January",
+        "avg_monthly_rainfall_mm": 83.0,
+        "max_monthly_rainfall_mm": 280.5,
+        "min_monthly_rainfall_mm": 16.4,
+        "avg_daily_rainfall_mm": 2.68,
+        "max_daily_rainfall_mm": 108.5,
+        "rainy_days_avg": 10.2,
+        "flood_risk": "MEDIUM"
+      },
+      "2": {
+        "month_name": "February",
+        "avg_monthly_rainfall_mm": 69.7,
+        "max_monthly_rainfall_mm": 174.9,
+        "min_monthly_rainfall_mm": 9.8,
+        "avg_daily_rainfall_mm": 2.47,
+        "max_daily_rainfall_mm": 59.7,
+        "rainy_days_avg": 9.3,
+        "flood_risk": "LOW"
+      },
+      "3": {
+        "month_name": "March",
+        "avg_monthly_rainfall_mm": 104.6,
+        "max_monthly_rainfall_mm": 441.0,
+        "min_monthly_rainfall_mm": 27.1,
+        "avg_daily_rainfall_mm": 3.37,
+        "max_daily_rainfall_mm": 80.7,
+        "rainy_days_avg": 15.9,
+        "flood_risk": "LOW"
+      },
+      "4": {
+        "month_name": "April",
+        "avg_monthly_rainfall_mm": 187.3,
+        "max_monthly_rainfall_mm": 408.6,
+        "min_monthly_rainfall_mm": 72.4,
+        "avg_daily_rainfall_mm": 6.24,
+        "max_daily_rainfall_mm": 67.6,
+        "rainy_days_avg": 25.2,
+        "flood_risk": "LOW"
+      },
+      "5": {
+        "month_name": "May",
+        "avg_monthly_rainfall_mm": 300.1,
+        "max_monthly_rainfall_mm": 772.4,
+        "min_monthly_rainfall_mm": 92.3,
+        "avg_daily_rainfall_mm": 9.8,
+        "max_daily_rainfall_mm": 231.4,
+        "rainy_days_avg": 28.9,
+        "flood_risk": "HIGH"
+      },
+      "6": {
+        "month_name": "June",
+        "avg_monthly_rainfall_mm": 293.5,
+        "max_monthly_rainfall_mm": 423.0,
+        "min_monthly_rainfall_mm": 164.8,
+        "avg_daily_rainfall_mm": 9.78,
+        "max_daily_rainfall_mm": 51.3,
+        "rainy_days_avg": 28.6,
+        "flood_risk": "MEDIUM"
+      },
+      "7": {
+        "month_name": "July",
+        "avg_monthly_rainfall_mm": 242.7,
+        "max_monthly_rainfall_mm": 332.0,
+        "min_monthly_rainfall_mm": 153.2,
+        "avg_daily_rainfall_mm": 7.83,
+        "max_daily_rainfall_mm": 51.5,
+        "rainy_days_avg": 28.7,
+        "flood_risk": "MEDIUM"
+      },
+      "8": {
+        "month_name": "August",
+        "avg_monthly_rainfall_mm": 224.9,
+        "max_monthly_rainfall_mm": 411.7,
+        "min_monthly_rainfall_mm": 107.1,
+        "avg_daily_rainfall_mm": 7.26,
+        "max_daily_rainfall_mm": 48.6,
+        "rainy_days_avg": 28.6,
+        "flood_risk": "MEDIUM"
+      },
+      "9": {
+        "month_name": "September",
+        "avg_monthly_rainfall_mm": 274.2,
+        "max_monthly_rainfall_mm": 554.6,
+        "min_monthly_rainfall_mm": 88.1,
+        "avg_daily_rainfall_mm": 9.14,
+        "max_daily_rainfall_mm": 202.2,
+        "rainy_days_avg": 27.7,
+        "flood_risk": "HIGH"
+      },
+      "10": {
+        "month_name": "October",
+        "avg_monthly_rainfall_mm": 366.7,
+        "max_monthly_rainfall_mm": 691.3,
+        "min_monthly_rainfall_mm": 109.1,
+        "avg_daily_rainfall_mm": 11.83,
+        "max_daily_rainfall_mm": 95.3,
+        "rainy_days_avg": 27.8,
+        "flood_risk": "HIGH"
+      },
+      "11": {
+        "month_name": "November",
+        "avg_monthly_rainfall_mm": 367.1,
+        "max_monthly_rainfall_mm": 759.5,
+        "min_monthly_rainfall_mm": 129.6,
+        "avg_daily_rainfall_mm": 12.24,
+        "max_daily_rainfall_mm": 217.5,
+        "rainy_days_avg": 23.5,
+        "flood_risk": "HIGH"
+      },
+      "12": {
+        "month_name": "December",
+        "avg_monthly_rainfall_mm": 185.6,
+        "max_monthly_rainfall_mm": 471.4,
+        "min_monthly_rainfall_mm": 30.5,
+        "avg_daily_rainfall_mm": 5.99,
+        "max_daily_rainfall_mm": 69.9,
+        "rainy_days_avg": 17.3,
+        "flood_risk": "LOW"
+      }
+    },
+    "seasonal_patterns": {
+      "southwest": {
+        "name": "Southwest Monsoon (May-Sep)",
+        "avg_daily_mm": 8.76,
+        "total_days": 4609,
+        "rainy_days": 4301,
+        "heavy_rain_days": 19,
+        "extreme_rain_days": 2,
+        "max_daily_mm": 231.4
+      },
+      "northeast": {
+        "name": "Northeast Monsoon (Nov-Feb)",
+        "avg_daily_mm": 5.81,
+        "total_days": 3667,
+        "rainy_days": 1830,
+        "heavy_rain_days": 40,
+        "extreme_rain_days": 6,
+        "max_daily_mm": 217.5
+      },
+      "inter_monsoon": {
+        "name": "Inter-Monsoon (Mar-Apr, Oct)",
+        "avg_daily_mm": 7.11,
+        "total_days": 2821,
+        "rainy_days": 2107,
+        "heavy_rain_days": 29,
+        "extreme_rain_days": 0,
+        "max_daily_mm": 95.3
+      }
+    },
+    "flood_risk_months": [
+      {
+        "month": 11,
+        "month_name": "November",
+        "flood_risk": "HIGH",
+        "risk_score": 3,
+        "avg_rainfall_mm": 367.1,
+        "max_daily_mm": 217.5
+      },
+      {
+        "month": 10,
+        "month_name": "October",
+        "flood_risk": "HIGH",
+        "risk_score": 3,
+        "avg_rainfall_mm": 366.7,
+        "max_daily_mm": 95.3
+      },
+      {
+        "month": 5,
+        "month_name": "May",
+        "flood_risk": "HIGH",
+        "risk_score": 3,
+        "avg_rainfall_mm": 300.1,
+        "max_daily_mm": 231.4
+      },
+      {
+        "month": 9,
+        "month_name": "September",
+        "flood_risk": "HIGH",
+        "risk_score": 3,
+        "avg_rainfall_mm": 274.2,
+        "max_daily_mm": 202.2
+      },
+      {
+        "month": 6,
+        "month_name": "June",
+        "flood_risk": "MEDIUM",
+        "risk_score": 2,
+        "avg_rainfall_mm": 293.5,
+        "max_daily_mm": 51.3
+      },
+      {
+        "month": 7,
+        "month_name": "July",
+        "flood_risk": "MEDIUM",
+        "risk_score": 2,
+        "avg_rainfall_mm": 242.7,
+        "max_daily_mm": 51.5
+      },
+      {
+        "month": 8,
+        "month_name": "August",
+        "flood_risk": "MEDIUM",
+        "risk_score": 2,
+        "avg_rainfall_mm": 224.9,
+        "max_daily_mm": 48.6
+      },
+      {
+        "month": 1,
+        "month_name": "January",
+        "flood_risk": "MEDIUM",
+        "risk_score": 2,
+        "avg_rainfall_mm": 83.0,
+        "max_daily_mm": 108.5
+      },
+      {
+        "month": 4,
+        "month_name": "April",
+        "flood_risk": "LOW",
+        "risk_score": 1,
+        "avg_rainfall_mm": 187.3,
+        "max_daily_mm": 67.6
+      },
+      {
+        "month": 12,
+        "month_name": "December",
+        "flood_risk": "LOW",
+        "risk_score": 1,
+        "avg_rainfall_mm": 185.6,
+        "max_daily_mm": 69.9
+      },
+      {
+        "month": 3,
+        "month_name": "March",
+        "flood_risk": "LOW",
+        "risk_score": 1,
+        "avg_rainfall_mm": 104.6,
+        "max_daily_mm": 80.7
+      },
+      {
+        "month": 2,
+        "month_name": "February",
+        "flood_risk": "LOW",
+        "risk_score": 1,
+        "avg_rainfall_mm": 69.7,
+        "max_daily_mm": 59.7
+      }
+    ],
+    "extreme_events": [
+      {
+        "date": "2016-05-15",
+        "precipitation_mm": 231.4,
+        "month": 5,
+        "year": 2016
+      },
+      {
+        "date": "2025-11-28",
+        "precipitation_mm": 217.5,
+        "month": 11,
+        "year": 2025
+      },
+      {
+        "date": "2004-09-26",
+        "precipitation_mm": 202.2,
+        "month": 9,
+        "year": 2004
+      },
+      {
+        "date": "2020-11-20",
+        "precipitation_mm": 116.8,
+        "month": 11,
+        "year": 2020
+      },
+      {
+        "date": "2006-11-07",
+        "precipitation_mm": 111.7,
+        "month": 11,
+        "year": 2006
+      },
+      {
+        "date": "2025-11-27",
+        "precipitation_mm": 111.1,
+        "month": 11,
+        "year": 2025
+      },
+      {
+        "date": "2021-01-13",
+        "precipitation_mm": 108.5,
+        "month": 1,
+        "year": 2021
+      },
+      {
+        "date": "2010-11-11",
+        "precipitation_mm": 101.0,
+        "month": 11,
+        "year": 2010
+      }
+    ],
+    "yearly_trends": [
+      {
+        "year": 1996,
+        "total_rainfall_mm": 2573.7,
+        "rainy_days": 276,
+        "extreme_days": 0,
+        "max_daily_mm": 69.1
+      },
+      {
+        "year": 1997,
+        "total_rainfall_mm": 2713.7,
+        "rainy_days": 264,
+        "extreme_days": 0,
+        "max_daily_mm": 69.7
+      },
+      {
+        "year": 1998,
+        "total_rainfall_mm": 2690.1,
+        "rainy_days": 247,
+        "extreme_days": 0,
+        "max_daily_mm": 92.3
+      },
+      {
+        "year": 1999,
+        "total_rainfall_mm": 2727.3,
+        "rainy_days": 277,
+        "extreme_days": 0,
+        "max_daily_mm": 67.6
+      },
+      {
+        "year": 2000,
+        "total_rainfall_mm": 2440.6,
+        "rainy_days": 279,
+        "extreme_days": 0,
+        "max_daily_mm": 54.8
+      },
+      {
+        "year": 2001,
+        "total_rainfall_mm": 2232.8,
+        "rainy_days": 269,
+        "extreme_days": 0,
+        "max_daily_mm": 81.6
+      },
+      {
+        "year": 2002,
+        "total_rainfall_mm": 2550.7,
+        "rainy_days": 264,
+        "extreme_days": 0,
+        "max_daily_mm": 79.9
+      },
+      {
+        "year": 2003,
+        "total_rainfall_mm": 2559.9,
+        "rainy_days": 271,
+        "extreme_days": 0,
+        "max_daily_mm": 38.7
+      },
+      {
+        "year": 2004,
+        "total_rainfall_mm": 2856.0,
+        "rainy_days": 269,
+        "extreme_days": 1,
+        "max_daily_mm": 202.2
+      },
+      {
+        "year": 2005,
+        "total_rainfall_mm": 2397.7,
+        "rainy_days": 271,
+        "extreme_days": 0,
+        "max_daily_mm": 58.9
+      },
+      {
+        "year": 2006,
+        "total_rainfall_mm": 3209.6,
+        "rainy_days": 266,
+        "extreme_days": 1,
+        "max_daily_mm": 111.7
+      },
+      {
+        "year": 2007,
+        "total_rainfall_mm": 2500.5,
+        "rainy_days": 246,
+        "extreme_days": 0,
+        "max_daily_mm": 65.6
+      },
+      {
+        "year": 2008,
+        "total_rainfall_mm": 2984.0,
+        "rainy_days": 281,
+        "extreme_days": 0,
+        "max_daily_mm": 80.2
+      },
+      {
+        "year": 2009,
+        "total_rainfall_mm": 2529.8,
+        "rainy_days": 280,
+        "extreme_days": 0,
+        "max_daily_mm": 61.2
+      },
+      {
+        "year": 2010,
+        "total_rainfall_mm": 2936.7,
+        "rainy_days": 272,
+        "extreme_days": 1,
+        "max_daily_mm": 101.0
+      },
+      {
+        "year": 2011,
+        "total_rainfall_mm": 2479.4,
+        "rainy_days": 277,
+        "extreme_days": 0,
+        "max_daily_mm": 49.5
+      },
+      {
+        "year": 2012,
+        "total_rainfall_mm": 2422.2,
+        "rainy_days": 264,
+        "extreme_days": 0,
+        "max_daily_mm": 62.1
+      },
+      {
+        "year": 2013,
+        "total_rainfall_mm": 2484.0,
+        "rainy_days": 260,
+        "extreme_days": 0,
+        "max_daily_mm": 94.5
+      },
+      {
+        "year": 2014,
+        "total_rainfall_mm": 2690.5,
+        "rainy_days": 268,
+        "extreme_days": 0,
+        "max_daily_mm": 80.3
+      },
+      {
+        "year": 2015,
+        "total_rainfall_mm": 2927.9,
+        "rainy_days": 280,
+        "extreme_days": 0,
+        "max_daily_mm": 95.3
+      },
+      {
+        "year": 2016,
+        "total_rainfall_mm": 2123.7,
+        "rainy_days": 243,
+        "extreme_days": 1,
+        "max_daily_mm": 231.4
+      },
+      {
+        "year": 2017,
+        "total_rainfall_mm": 3154.8,
+        "rainy_days": 284,
+        "extreme_days": 0,
+        "max_daily_mm": 69.9
+      },
+      {
+        "year": 2018,
+        "total_rainfall_mm": 2437.6,
+        "rainy_days": 257,
+        "extreme_days": 0,
+        "max_daily_mm": 65.0
+      },
+      {
+        "year": 2019,
+        "total_rainfall_mm": 2763.2,
+        "rainy_days": 286,
+        "extreme_days": 0,
+        "max_daily_mm": 67.7
+      },
+      {
+        "year": 2020,
+        "total_rainfall_mm": 2280.1,
+        "rainy_days": 266,
+        "extreme_days": 1,
+        "max_daily_mm": 116.8
+      },
+      {
+        "year": 2021,
+        "total_rainfall_mm": 3096.3,
+        "rainy_days": 294,
+        "extreme_days": 1,
+        "max_daily_mm": 108.5
+      },
+      {
+        "year": 2022,
+        "total_rainfall_mm": 2803.8,
+        "rainy_days": 278,
+        "extreme_days": 0,
+        "max_daily_mm": 70.5
+      },
+      {
+        "year": 2023,
+        "total_rainfall_mm": 3467.9,
+        "rainy_days": 297,
+        "extreme_days": 0,
+        "max_daily_mm": 73.8
+      },
+      {
+        "year": 2024,
+        "total_rainfall_mm": 3300.6,
+        "rainy_days": 286,
+        "extreme_days": 0,
+        "max_daily_mm": 60.0
+      },
+      {
+        "year": 2025,
+        "total_rainfall_mm": 2828.0,
+        "rainy_days": 283,
+        "extreme_days": 2,
+        "max_daily_mm": 217.5
+      },
+      {
+        "year": 2026,
+        "total_rainfall_mm": 568.9,
+        "rainy_days": 83,
+        "extreme_days": 0,
+        "max_daily_mm": 42.2
+      }
+    ],
+    "climate_change": {
+      "period_analyzed": "1996-2026",
+      "decades": {
+        "first": {
+          "years": "1996-2005",
+          "avg_annual_rainfall_mm": 2574.2,
+          "avg_rainy_days": 268.7,
+          "avg_extreme_days": 0.1,
+          "total_extreme_days": 1,
+          "max_daily_mm": 202.2,
+          "wettest_year": {
+            "year": 2004,
+            "total_rainfall_mm": 2856.0,
+            "rainy_days": 269,
+            "extreme_days": 1,
+            "max_daily_mm": 202.2
+          },
+          "driest_year": {
+            "year": 2001,
+            "total_rainfall_mm": 2232.8,
+            "rainy_days": 269,
+            "extreme_days": 0,
+            "max_daily_mm": 81.6
+          }
+        },
+        "second": {
+          "years": "2006-2015",
+          "avg_annual_rainfall_mm": 2716.5,
+          "avg_rainy_days": 269.4,
+          "avg_extreme_days": 0.2,
+          "total_extreme_days": 2,
+          "max_daily_mm": 111.7,
+          "wettest_year": {
+            "year": 2006,
+            "total_rainfall_mm": 3209.6,
+            "rainy_days": 266,
+            "extreme_days": 1,
+            "max_daily_mm": 111.7
+          },
+          "driest_year": {
+            "year": 2012,
+            "total_rainfall_mm": 2422.2,
+            "rainy_days": 264,
+            "extreme_days": 0,
+            "max_daily_mm": 62.1
+          }
+        },
+        "third": {
+          "years": "2016-2026",
+          "avg_annual_rainfall_mm": 2620.4,
+          "avg_rainy_days": 259.7,
+          "avg_extreme_days": 0.45,
+          "total_extreme_days": 5,
+          "max_daily_mm": 231.4,
+          "wettest_year": {
+            "year": 2023,
+            "total_rainfall_mm": 3467.9,
+            "rainy_days": 297,
+            "extreme_days": 0,
+            "max_daily_mm": 73.8
+          },
+          "driest_year": {
+            "year": 2026,
+            "total_rainfall_mm": 568.9,
+            "rainy_days": 83,
+            "extreme_days": 0,
+            "max_daily_mm": 42.2
+          }
+        }
+      },
+      "changes": [
+        {
+          "metric": "Annual Rainfall",
+          "first_decade": "2574 mm",
+          "last_decade": "2620 mm",
+          "change": "+46 mm",
+          "change_pct": 1.8,
+          "trend": "increasing"
+        },
+        {
+          "metric": "Extreme Rain Days (>100mm)",
+          "first_decade": "0.1 days/yr",
+          "last_decade": "0.5 days/yr",
+          "change": "+0.35 days/yr",
+          "change_pct": 350.0,
+          "trend": "increasing"
+        },
+        {
+          "metric": "Rainy Days per Year",
+          "first_decade": "269 days",
+          "last_decade": "260 days",
+          "change": "-9 days",
+          "change_pct": -3.3,
+          "trend": "decreasing"
+        },
+        {
+          "metric": "Max Daily Intensity",
+          "first_decade": "202 mm",
+          "last_decade": "231 mm",
+          "change": "+29 mm",
+          "change_pct": 14.4,
+          "trend": "increasing"
+        }
+      ],
+      "moving_average_5yr": [
+        {
+          "year": 2000,
+          "avg_rainfall_mm": 2629.1,
+          "avg_extreme_days": 0
+        },
+        {
+          "year": 2001,
+          "avg_rainfall_mm": 2560.9,
+          "avg_extreme_days": 0
+        },
+        {
+          "year": 2002,
+          "avg_rainfall_mm": 2528.3,
+          "avg_extreme_days": 0
+        },
+        {
+          "year": 2003,
+          "avg_rainfall_mm": 2502.3,
+          "avg_extreme_days": 0
+        },
+        {
+          "year": 2004,
+          "avg_rainfall_mm": 2528.0,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2005,
+          "avg_rainfall_mm": 2519.4,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2006,
+          "avg_rainfall_mm": 2714.8,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2007,
+          "avg_rainfall_mm": 2704.7,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2008,
+          "avg_rainfall_mm": 2789.6,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2009,
+          "avg_rainfall_mm": 2724.3,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2010,
+          "avg_rainfall_mm": 2832.1,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2011,
+          "avg_rainfall_mm": 2686.1,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2012,
+          "avg_rainfall_mm": 2670.4,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2013,
+          "avg_rainfall_mm": 2570.4,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2014,
+          "avg_rainfall_mm": 2602.6,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2015,
+          "avg_rainfall_mm": 2600.8,
+          "avg_extreme_days": 0
+        },
+        {
+          "year": 2016,
+          "avg_rainfall_mm": 2529.7,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2017,
+          "avg_rainfall_mm": 2676.2,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2018,
+          "avg_rainfall_mm": 2666.9,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2019,
+          "avg_rainfall_mm": 2681.4,
+          "avg_extreme_days": 0.2
+        },
+        {
+          "year": 2020,
+          "avg_rainfall_mm": 2551.9,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2021,
+          "avg_rainfall_mm": 2746.4,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2022,
+          "avg_rainfall_mm": 2676.2,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2023,
+          "avg_rainfall_mm": 2882.3,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2024,
+          "avg_rainfall_mm": 2989.7,
+          "avg_extreme_days": 0.4
+        },
+        {
+          "year": 2025,
+          "avg_rainfall_mm": 3099.3,
+          "avg_extreme_days": 0.6
+        },
+        {
+          "year": 2026,
+          "avg_rainfall_mm": 2593.8,
+          "avg_extreme_days": 0.4
+        }
+      ],
+      "extreme_events_by_decade": {
+        "decade1": {
+          "years": "1996-2005",
+          "count": 1,
+          "events": [
+            {
+              "date": "2004-09-26",
+              "precipitation_mm": 202.2
+            }
+          ]
+        },
+        "decade2": {
+          "years": "2006-2015",
+          "count": 2,
+          "events": [
+            {
+              "date": "2006-11-07",
+              "precipitation_mm": 111.7
+            },
+            {
+              "date": "2010-11-11",
+              "precipitation_mm": 101.0
+            }
+          ]
+        },
+        "decade3": {
+          "years": "2016-2026",
+          "count": 5,
+          "events": [
+            {
+              "date": "2016-05-15",
+              "precipitation_mm": 231.4
+            },
+            {
+              "date": "2025-11-28",
+              "precipitation_mm": 217.5
+            },
+            {
+              "date": "2020-11-20",
+              "precipitation_mm": 116.8
+            },
+            {
+              "date": "2025-11-27",
+              "precipitation_mm": 111.1
+            },
+            {
+              "date": "2021-01-13",
+              "precipitation_mm": 108.5
+            }
+          ]
+        }
+      },
+      "key_findings": [
+        "Extreme rainfall events (>100mm/day) have increased by 350%",
+        "Maximum daily rainfall intensity has increased by 14%",
+        "Extreme events in the last decade (5) are significantly higher than the first decade (1)"
+      ]
+    },
+    "analyzed_at": "2026-05-20T09:29:13.387861",
+    "cached": true
+  },
+  "environmental": {
+    "country": "Sri Lanka",
+    "country_code": "LKA",
+    "period": "1994-2024",
+    "forest_cover": {
+      "data": [
+        {
+          "year": 1994,
+          "value": 36.3062669430713
+        },
+        {
+          "year": 1995,
+          "value": 36.0129963323234
+        },
+        {
+          "year": 1996,
+          "value": 35.7197257215755
+        },
+        {
+          "year": 1997,
+          "value": 35.4264551108276
+        },
+        {
+          "year": 1998,
+          "value": 35.1331845000797
+        },
+        {
+          "year": 1999,
+          "value": 34.8399138893318
+        },
+        {
+          "year": 2000,
+          "value": 34.546643278584
+        },
+        {
+          "year": 2001,
+          "value": 34.4464997608037
+        },
+        {
+          "year": 2002,
+          "value": 34.3463562430234
+        },
+        {
+          "year": 2003,
+          "value": 34.2462127252432
+        },
+        {
+          "year": 2004,
+          "value": 34.1460692074629
+        },
+        {
+          "year": 2005,
+          "value": 34.0459256896827
+        },
+        {
+          "year": 2006,
+          "value": 33.9457821719024
+        },
+        {
+          "year": 2007,
+          "value": 33.8456386541221
+        },
+        {
+          "year": 2008,
+          "value": 33.7454951363419
+        },
+        {
+          "year": 2009,
+          "value": 33.6453516185616
+        },
+        {
+          "year": 2010,
+          "value": 33.5452081007814
+        },
+        {
+          "year": 2011,
+          "value": 33.625578057726
+        },
+        {
+          "year": 2012,
+          "value": 33.7059480146707
+        },
+        {
+          "year": 2013,
+          "value": 33.7863179716154
+        },
+        {
+          "year": 2014,
+          "value": 33.86668792856
+        },
+        {
+          "year": 2015,
+          "value": 34.3951658507424
+        },
+        {
+          "year": 2016,
+          "value": 34.3441099962839
+        },
+        {
+          "year": 2017,
+          "value": 34.2930541418254
+        },
+        {
+          "year": 2018,
+          "value": 34.2580499159447
+        },
+        {
+          "year": 2019,
+          "value": 34.2067102490331
+        },
+        {
+          "year": 2020,
+          "value": 34.1580989330747
+        },
+        {
+          "year": 2021,
+          "value": 34.1070158422244
+        },
+        {
+          "year": 2022,
+          "value": 34.0559327513741
+        },
+        {
+          "year": 2023,
+          "value": 34.0048496605238
+        }
+      ],
+      "unit": "% of land area",
+      "analysis": {
+        "first_year": 1994,
+        "last_year": 2023,
+        "first_value": 36.31,
+        "last_value": 34.0,
+        "absolute_change": -2.3,
+        "percent_change": -6.34,
+        "annual_rate": -0.219,
+        "trend": "decreasing",
+        "min_value": 33.55,
+        "max_value": 36.31,
+        "avg_value": 34.36,
+        "min_year": 2010,
+        "max_year": 1994
+      }
+    },
+    "population_density": {
+      "data": [
+        {
+          "year": 1994,
+          "value": 275.486732578536
+        },
+        {
+          "year": 1995,
+          "value": 280.084005740711
+        },
+        {
+          "year": 1996,
+          "value": 285.520937649498
+        },
+        {
+          "year": 1997,
+          "value": 290.993461967788
+        },
+        {
+          "year": 1998,
+          "value": 296.539674693031
+        },
+        {
+          "year": 1999,
+          "value": 302.100637856801
+        },
+        {
+          "year": 2000,
+          "value": 307.655142720459
+        },
+        {
+          "year": 2001,
+          "value": 312.55560516664
+        },
+        {
+          "year": 2002,
+          "value": 315.830840376336
+        },
+        {
+          "year": 2003,
+          "value": 318.1553340775
+        },
+        {
+          "year": 2004,
+          "value": 320.325386700686
+        },
+        {
+          "year": 2005,
+          "value": 322.381183224366
+        },
+        {
+          "year": 2006,
+          "value": 324.548094402807
+        },
+        {
+          "year": 2007,
+          "value": 326.782730027109
+        },
+        {
+          "year": 2008,
+          "value": 328.964726518896
+        },
+        {
+          "year": 2009,
+          "value": 330.990830808484
+        },
+        {
+          "year": 2010,
+          "value": 332.946723010684
+        },
+        {
+          "year": 2011,
+          "value": 335.019103811194
+        },
+        {
+          "year": 2012,
+          "value": 337.577069047999
+        },
+        {
+          "year": 2013,
+          "value": 328.257056290863
+        },
+        {
+          "year": 2014,
+          "value": 331.334715356403
+        },
+        {
+          "year": 2015,
+          "value": 338.810527846445
+        },
+        {
+          "year": 2016,
+          "value": 342.672030762768
+        },
+        {
+          "year": 2017,
+          "value": 346.614318258931
+        },
+        {
+          "year": 2018,
+          "value": 350.284495021337
+        },
+        {
+          "year": 2019,
+          "value": 352.431694638296
+        },
+        {
+          "year": 2020,
+          "value": 354.332363401229
+        },
+        {
+          "year": 2021,
+          "value": 358.163595215002
+        },
+        {
+          "year": 2022,
+          "value": 358.567733591982
+        },
+        {
+          "year": 2023,
+          "value": 356.239896540576
+        }
+      ],
+      "unit": "people per sq. km",
+      "analysis": {
+        "first_year": 1994,
+        "last_year": 2023,
+        "first_value": 275.49,
+        "last_value": 356.24,
+        "absolute_change": 80.75,
+        "percent_change": 29.31,
+        "annual_rate": 1.011,
+        "trend": "increasing",
+        "min_value": 275.49,
+        "max_value": 358.57,
+        "avg_value": 325.41,
+        "min_year": 1994,
+        "max_year": 2022
+      }
+    },
+    "population_total": {
+      "data": [
+        {
+          "year": 1994,
+          "value": 17275773.0
+        },
+        {
+          "year": 1995,
+          "value": 17564068.0
+        },
+        {
+          "year": 1996,
+          "value": 17905018.0
+        },
+        {
+          "year": 1997,
+          "value": 18248200.0
+        },
+        {
+          "year": 1998,
+          "value": 18596003.0
+        },
+        {
+          "year": 1999,
+          "value": 18944731.0
+        },
+        {
+          "year": 2000,
+          "value": 19293054.0
+        },
+        {
+          "year": 2001,
+          "value": 19600362.0
+        },
+        {
+          "year": 2002,
+          "value": 19805752.0
+        },
+        {
+          "year": 2003,
+          "value": 19951521.0
+        },
+        {
+          "year": 2004,
+          "value": 20087605.0
+        },
+        {
+          "year": 2005,
+          "value": 20216524.0
+        },
+        {
+          "year": 2006,
+          "value": 20352411.0
+        },
+        {
+          "year": 2007,
+          "value": 20492545.0
+        },
+        {
+          "year": 2008,
+          "value": 20629378.0
+        },
+        {
+          "year": 2009,
+          "value": 20756435.0
+        },
+        {
+          "year": 2010,
+          "value": 20879089.0
+        },
+        {
+          "year": 2011,
+          "value": 21009048.0
+        },
+        {
+          "year": 2012,
+          "value": 21169458.0
+        },
+        {
+          "year": 2013,
+          "value": 20585000.0
+        },
+        {
+          "year": 2014,
+          "value": 20778000.0
+        },
+        {
+          "year": 2015,
+          "value": 20970000.0
+        },
+        {
+          "year": 2016,
+          "value": 21209000.0
+        },
+        {
+          "year": 2017,
+          "value": 21453000.0
+        },
+        {
+          "year": 2018,
+          "value": 21670000.0
+        },
+        {
+          "year": 2019,
+          "value": 21803000.0
+        },
+        {
+          "year": 2020,
+          "value": 21919000.0
+        },
+        {
+          "year": 2021,
+          "value": 22156000.0
+        },
+        {
+          "year": 2022,
+          "value": 22181000.0
+        },
+        {
+          "year": 2023,
+          "value": 22037000.0
+        },
+        {
+          "year": 2024,
+          "value": 21916000.0
+        }
+      ],
+      "unit": "people",
+      "analysis": {
+        "first_year": 1994,
+        "last_year": 2024,
+        "first_value": 17275773.0,
+        "last_value": 21916000.0,
+        "absolute_change": 4640227.0,
+        "percent_change": 26.86,
+        "annual_rate": 0.895,
+        "trend": "increasing",
+        "min_value": 17275773.0,
+        "max_value": 22181000.0,
+        "avg_value": 20369483.06,
+        "min_year": 1994,
+        "max_year": 2022
+      }
+    },
+    "urban_population": {
+      "data": [
+        {
+          "year": 1994,
+          "value": 16.2630967827755
+        },
+        {
+          "year": 1995,
+          "value": 15.8652068539762
+        },
+        {
+          "year": 1996,
+          "value": 15.5065242809941
+        },
+        {
+          "year": 1997,
+          "value": 15.1948401614719
+        },
+        {
+          "year": 1998,
+          "value": 14.9379455930521
+        },
+        {
+          "year": 1999,
+          "value": 14.7436316733772
+        },
+        {
+          "year": 2000,
+          "value": 14.6196895000898
+        },
+        {
+          "year": 2001,
+          "value": 14.5739539539707
+        },
+        {
+          "year": 2002,
+          "value": 14.6107836754127
+        },
+        {
+          "year": 2003,
+          "value": 14.7256630416211
+        },
+        {
+          "year": 2004,
+          "value": 14.9130061059922
+        },
+        {
+          "year": 2005,
+          "value": 15.167273918248
+        },
+        {
+          "year": 2006,
+          "value": 15.4829275281105
+        },
+        {
+          "year": 2007,
+          "value": 15.8544279853018
+        },
+        {
+          "year": 2008,
+          "value": 16.2762363395441
+        },
+        {
+          "year": 2009,
+          "value": 16.7428136405592
+        },
+        {
+          "year": 2010,
+          "value": 17.2486209380693
+        },
+        {
+          "year": 2011,
+          "value": 17.7881192817964
+        },
+        {
+          "year": 2012,
+          "value": 18.2617686748284
+        },
+        {
+          "year": 2013,
+          "value": 18.4323136480916
+        },
+        {
+          "year": 2014,
+          "value": 18.6153877203724
+        },
+        {
+          "year": 2015,
+          "value": 18.796256612131
+        },
+        {
+          "year": 2016,
+          "value": 18.9747679368162
+        },
+        {
+          "year": 2017,
+          "value": 19.1507693078088
+        },
+        {
+          "year": 2018,
+          "value": 19.3241083384127
+        },
+        {
+          "year": 2019,
+          "value": 19.4946326418437
+        },
+        {
+          "year": 2020,
+          "value": 19.6621898312161
+        },
+        {
+          "year": 2021,
+          "value": 19.8266275195269
+        },
+        {
+          "year": 2022,
+          "value": 19.9877933196367
+        },
+        {
+          "year": 2023,
+          "value": 20.1455348442463
+        },
+        {
+          "year": 2024,
+          "value": 20.2996997058686
+        }
+      ],
+      "unit": "% of total",
+      "analysis": {
+        "first_year": 1994,
+        "last_year": 2024,
+        "first_value": 16.26,
+        "last_value": 20.3,
+        "absolute_change": 4.04,
+        "percent_change": 24.82,
+        "annual_rate": 0.827,
+        "trend": "increasing",
+        "min_value": 14.57,
+        "max_value": 20.3,
+        "avg_value": 17.14,
+        "min_year": 2001,
+        "max_year": 2024
+      }
+    },
+    "agricultural_land": {
+      "data": [
+        {
+          "year": 1994,
+          "value": 37.0435337266784
+        },
+        {
+          "year": 1995,
+          "value": 37.0913729867645
+        },
+        {
+          "year": 1996,
+          "value": 37.1073194067932
+        },
+        {
+          "year": 1997,
+          "value": 37.1232658268219
+        },
+        {
+          "year": 1998,
+          "value": 37.1392122468506
+        },
+        {
+          "year": 1999,
+          "value": 37.3943549673098
+        },
+        {
+          "year": 2000,
+          "value": 37.4740870674534
+        },
+        {
+          "year": 2001,
+          "value": 37.4900334874821
+        },
+        {
+          "year": 2002,
+          "value": 37.5697655876256
+        },
+        {
+          "year": 2003,
+          "value": 38.0465635464838
+        },
+        {
+          "year": 2004,
+          "value": 36.4917875936852
+        },
+        {
+          "year": 2005,
+          "value": 39.7464519215436
+        },
+        {
+          "year": 2006,
+          "value": 38.7529899537554
+        },
+        {
+          "year": 2007,
+          "value": 37.9907510763833
+        },
+        {
+          "year": 2008,
+          "value": 41.4224206665604
+        },
+        {
+          "year": 2009,
+          "value": 41.6137777069048
+        },
+        {
+          "year": 2010,
+          "value": 41.7796204752033
+        },
+        {
+          "year": 2011,
+          "value": 43.5337266783607
+        },
+        {
+          "year": 2012,
+          "value": 43.6931908786477
+        },
+        {
+          "year": 2013,
+          "value": 43.6931908786477
+        },
+        {
+          "year": 2014,
+          "value": 43.6931908786477
+        },
+        {
+          "year": 2015,
+          "value": 44.2699497519913
+        },
+        {
+          "year": 2016,
+          "value": 44.4315189116701
+        },
+        {
+          "year": 2017,
+          "value": 44.5963194545425
+        },
+        {
+          "year": 2018,
+          "value": 45.448079658606
+        },
+        {
+          "year": 2019,
+          "value": 45.4472947072851
+        },
+        {
+          "year": 2020,
+          "value": 45.4574846427417
+        },
+        {
+          "year": 2021,
+          "value": 45.4574846427417
+        },
+        {
+          "year": 2022,
+          "value": 45.4574846427417
+        },
+        {
+          "year": 2023,
+          "value": 48.6081474296799
+        }
+      ],
+      "unit": "% of land area",
+      "analysis": {
+        "first_year": 1994,
+        "last_year": 2023,
+        "first_value": 37.04,
+        "last_value": 48.61,
+        "absolute_change": 11.56,
+        "percent_change": 31.22,
+        "annual_rate": 1.077,
+        "trend": "increasing",
+        "min_value": 36.49,
+        "max_value": 48.61,
+        "avg_value": 41.17,
+        "min_year": 2004,
+        "max_year": 2023
+      }
+    },
+    "flood_risk_factors": {
+      "overall_risk_level": "MEDIUM",
+      "risk_score": 45.8,
+      "max_score": 80,
+      "summary": "Environmental changes have moderately increased flood vulnerability",
+      "factors": [
+        {
+          "factor": "Deforestation",
+          "description": "Forest cover reduced from 36.3% to 34.0% (6.3% loss)",
+          "impact": "Medium",
+          "explanation": "Less forest = reduced water absorption = more surface runoff during heavy rain",
+          "risk_contribution": 12.7
+        },
+        {
+          "factor": "Population Growth",
+          "description": "Population density increased from 275 to 356 people/sq.km (29.3% increase)",
+          "impact": "High",
+          "explanation": "More people = more infrastructure = more impervious surfaces = more flood exposure",
+          "risk_contribution": 25
+        },
+        {
+          "factor": "Urbanization",
+          "description": "Urban population increased from 16.3% to 20.3% of total",
+          "impact": "Medium",
+          "explanation": "Urban areas have concrete/asphalt surfaces that prevent water absorption",
+          "risk_contribution": 8.1
+        }
+      ],
+      "recommendation": "Reforestation in catchment areas can reduce flood peaks by 20-30%; Improved drainage infrastructure needed in high-density areas; Permeable surfaces and urban green spaces can mitigate urban flooding"
+    },
+    "data_source": "World Bank Open Data API",
+    "analyzed_at": "2026-05-20T09:28:38.776373"
+  },
+  "yesterdayStats": {
+    "date": "2026-05-19",
+    "total_districts": 100,
+    "districts_with_rain": 92,
+    "total_rainfall_mm": 427.2,
+    "avg_rainfall_mm": 4.4,
+    "max_rainfall_mm": 12.0,
+    "max_rainfall_district": "Bandaragama",
+    "heavy_rain_districts": [],
+    "moderate_rain_districts": [],
+    "light_rain_districts": [
+      {
+        "district": "Adhikarigama",
+        "rainfall_mm": 0.4
+      },
+      {
+        "district": "Agalawatta",
+        "rainfall_mm": 8.0
+      },
+      {
+        "district": "Agarapathana",
+        "rainfall_mm": 3.3
+      },
+      {
+        "district": "Ahangama",
+        "rainfall_mm": 4.0
+      },
+      {
+        "district": "Ahungalla",
+        "rainfall_mm": 4.6
+      },
+      {
+        "district": "Akkaraipattu",
+        "rainfall_mm": 3.6
+      },
+      {
+        "district": "Akkarayan",
+        "rainfall_mm": 0.1
+      },
+      {
+        "district": "Akuressa",
+        "rainfall_mm": 5.2
+      },
+      {
+        "district": "Alawwa",
+        "rainfall_mm": 7.0
+      },
+      {
+        "district": "Aluthgama",
+        "rainfall_mm": 5.7
+      },
+      {
+        "district": "Ambalangoda",
+        "rainfall_mm": 4.1
+      },
+      {
+        "district": "Ambalantota",
+        "rainfall_mm": 1.4
+      },
+      {
+        "district": "Ampara",
+        "rainfall_mm": 2.9
+      },
+      {
+        "district": "Anamaduwa",
+        "rainfall_mm": 4.7
+      },
+      {
+        "district": "Andigama",
+        "rainfall_mm": 6.0
+      },
+      {
+        "district": "Angoda",
+        "rainfall_mm": 6.9
+      },
+      {
+        "district": "Angunukolapelessa",
+        "rainfall_mm": 1.9
+      },
+      {
+        "district": "Anuradhapura",
+        "rainfall_mm": 1.2
+      },
+      {
+        "district": "Aralaganwila",
+        "rainfall_mm": 0.4
+      },
+      {
+        "district": "Aranayake",
+        "rainfall_mm": 6.6
+      },
+      {
+        "district": "Athurugiriya",
+        "rainfall_mm": 9.3
+      },
+      {
+        "district": "Avissawella",
+        "rainfall_mm": 9.3
+      },
+      {
+        "district": "Ayagama",
+        "rainfall_mm": 11.0
+      },
+      {
+        "district": "Badalkumbura",
+        "rainfall_mm": 1.9
+      },
+      {
+        "district": "Badulla",
+        "rainfall_mm": 3.2
+      },
+      {
+        "district": "Baduraliya",
+        "rainfall_mm": 5.7
+      },
+      {
+        "district": "Bakamuna",
+        "rainfall_mm": 0.7
+      },
+      {
+        "district": "Balapitiya",
+        "rainfall_mm": 4.6
+      },
+      {
+        "district": "Ballaketuwa",
+        "rainfall_mm": 0.7
+      },
+      {
+        "district": "Bamunaakotuwa",
+        "rainfall_mm": 6.0
+      },
+      {
+        "district": "Bandaragama",
+        "rainfall_mm": 12.0
+      },
+      {
+        "district": "Bandarawela",
+        "rainfall_mm": 0.7
+      },
+      {
+        "district": "Barigama",
+        "rainfall_mm": 3.1
+      },
+      {
+        "district": "Battaramulla",
+        "rainfall_mm": 6.9
+      },
+      {
+        "district": "Batticaloa",
+        "rainfall_mm": 1.7
+      },
+      {
+        "district": "Beliatta",
+        "rainfall_mm": 3.0
+      },
+      {
+        "district": "Bentota",
+        "rainfall_mm": 5.7
+      },
+      {
+        "district": "Beruwala",
+        "rainfall_mm": 5.6
+      },
+      {
+        "district": "Bibile",
+        "rainfall_mm": 2.9
+      },
+      {
+        "district": "Bingiriya",
+        "rainfall_mm": 4.5
+      },
+      {
+        "district": "Bogahakumbura",
+        "rainfall_mm": 1.0
+      },
+      {
+        "district": "Bogawantalawa",
+        "rainfall_mm": 3.3
+      },
+      {
+        "district": "Bokkawala",
+        "rainfall_mm": 3.9
+      },
+      {
+        "district": "Boralanda",
+        "rainfall_mm": 1.0
+      },
+      {
+        "district": "Boralesgamuwa",
+        "rainfall_mm": 6.4
+      },
+      {
+        "district": "Bowatta",
+        "rainfall_mm": 4.5
+      },
+      {
+        "district": "Bulathkohupitiya",
+        "rainfall_mm": 9.2
+      },
+      {
+        "district": "Bulathsinhala",
+        "rainfall_mm": 9.3
+      },
+      {
+        "district": "Bulnewa",
+        "rainfall_mm": 2.5
+      },
+      {
+        "district": "Chavakachcheri",
+        "rainfall_mm": 0.2
+      },
+      {
+        "district": "Chenkalady",
+        "rainfall_mm": 2.6
+      },
+      {
+        "district": "Chilaw",
+        "rainfall_mm": 6.6
+      },
+      {
+        "district": "Colombo",
+        "rainfall_mm": 6.9
+      },
+      {
+        "district": "Dambadeniya",
+        "rainfall_mm": 7.0
+      },
+      {
+        "district": "Dambulla",
+        "rainfall_mm": 3.4
+      },
+      {
+        "district": "Dankotuwa",
+        "rainfall_mm": 5.9
+      },
+      {
+        "district": "Daulagala",
+        "rainfall_mm": 3.5
+      },
+      {
+        "district": "Dehiattakandiya",
+        "rainfall_mm": 0.1
+      },
+      {
+        "district": "Dehiowita",
+        "rainfall_mm": 8.9
+      },
+      {
+        "district": "Dehiwala",
+        "rainfall_mm": 6.4
+      },
+      {
+        "district": "Deiyandara",
+        "rainfall_mm": 5.0
+      },
+      {
+        "district": "Dekatana",
+        "rainfall_mm": 7.9
+      },
+      {
+        "district": "Delgoda",
+        "rainfall_mm": 7.9
+      },
+      {
+        "district": "Delkanda",
+        "rainfall_mm": 6.4
+      },
+      {
+        "district": "Deltota",
+        "rainfall_mm": 1.1
+      },
+      {
+        "district": "Deniyaya",
+        "rainfall_mm": 9.7
+      },
+      {
+        "district": "Deraniyagala",
+        "rainfall_mm": 9.7
+      },
+      {
+        "district": "Dharga Town",
+        "rainfall_mm": 5.7
+      },
+      {
+        "district": "Dickoya",
+        "rainfall_mm": 8.3
+      },
+      {
+        "district": "Digana",
+        "rainfall_mm": 0.9
+      },
+      {
+        "district": "Dikwella",
+        "rainfall_mm": 2.2
+      },
+      {
+        "district": "Divulapitiya",
+        "rainfall_mm": 6.7
+      },
+      {
+        "district": "Diyabeduma",
+        "rainfall_mm": 0.3
+      },
+      {
+        "district": "Diyatalawa",
+        "rainfall_mm": 0.7
+      },
+      {
+        "district": "Dolosbage",
+        "rainfall_mm": 9.7
+      },
+      {
+        "district": "Dondra",
+        "rainfall_mm": 2.3
+      },
+      {
+        "district": "Dungalpitiya",
+        "rainfall_mm": 7.6
+      },
+      {
+        "district": "Eheliyagoda",
+        "rainfall_mm": 9.6
+      },
+      {
+        "district": "Ekala",
+        "rainfall_mm": 8.0
+      },
+      {
+        "district": "Ella",
+        "rainfall_mm": 0.7
+      },
+      {
+        "district": "Elpitiya",
+        "rainfall_mm": 6.6
+      },
+      {
+        "district": "Embilipitiya",
+        "rainfall_mm": 1.3
+      },
+      {
+        "district": "Eppawala",
+        "rainfall_mm": 1.7
+      },
+      {
+        "district": "Etampitiya",
+        "rainfall_mm": 0.7
+      },
+      {
+        "district": "Galagedara",
+        "rainfall_mm": 4.2
+      },
+      {
+        "district": "Galapitamada",
+        "rainfall_mm": 9.7
+      },
+      {
+        "district": "Galenbindunuwewa",
+        "rainfall_mm": 1.0
+      },
+      {
+        "district": "Galewela",
+        "rainfall_mm": 5.0
+      },
+      {
+        "district": "Galgamuwa",
+        "rainfall_mm": 2.5
+      },
+      {
+        "district": "Galle",
+        "rainfall_mm": 3.7
+      },
+      {
+        "district": "Galnewa",
+        "rainfall_mm": 2.5
+      },
+      {
+        "district": "Gampaha",
+        "rainfall_mm": 8.8
+      }
+    ],
+    "dry_districts": [
+      "Buttala",
+      "Chankanai",
+      "Chunnakam",
+      "Elephant Pass"
+    ],
+    "district_data": [
+      {
+        "district": "Bandaragama",
+        "rainfall_mm": 12.0,
+        "temp_max_c": 31.1,
+        "temp_min_c": 25.0
+      },
+      {
+        "district": "Ayagama",
+        "rainfall_mm": 11.0,
+        "temp_max_c": 29.4,
+        "temp_min_c": 23.8
+      },
+      {
+        "district": "Deniyaya",
+        "rainfall_mm": 9.7,
+        "temp_max_c": 27.3,
+        "temp_min_c": 23.0
+      },
+      {
+        "district": "Deraniyagala",
+        "rainfall_mm": 9.7,
+        "temp_max_c": 31.0,
+        "temp_min_c": 23.9
+      },
+      {
+        "district": "Dolosbage",
+        "rainfall_mm": 9.7,
+        "temp_max_c": 23.9,
+        "temp_min_c": 19.6
+      },
+      {
+        "district": "Galapitamada",
+        "rainfall_mm": 9.7,
+        "temp_max_c": 30.0,
+        "temp_min_c": 23.5
+      },
+      {
+        "district": "Eheliyagoda",
+        "rainfall_mm": 9.6,
+        "temp_max_c": 30.8,
+        "temp_min_c": 24.0
+      },
+      {
+        "district": "Athurugiriya",
+        "rainfall_mm": 9.3,
+        "temp_max_c": 31.0,
+        "temp_min_c": 25.0
+      },
+      {
+        "district": "Avissawella",
+        "rainfall_mm": 9.3,
+        "temp_max_c": 31.0,
+        "temp_min_c": 24.1
+      },
+      {
+        "district": "Bulathsinhala",
+        "rainfall_mm": 9.3,
+        "temp_max_c": 30.0,
+        "temp_min_c": 23.5
+      },
+      {
+        "district": "Bulathkohupitiya",
+        "rainfall_mm": 9.2,
+        "temp_max_c": 30.3,
+        "temp_min_c": 24.3
+      },
+      {
+        "district": "Dehiowita",
+        "rainfall_mm": 8.9,
+        "temp_max_c": 30.5,
+        "temp_min_c": 23.5
+      },
+      {
+        "district": "Gampaha",
+        "rainfall_mm": 8.8,
+        "temp_max_c": 31.1,
+        "temp_min_c": 25.2
+      },
+      {
+        "district": "Dickoya",
+        "rainfall_mm": 8.3,
+        "temp_max_c": 23.6,
+        "temp_min_c": 19.1
+      },
+      {
+        "district": "Agalawatta",
+        "rainfall_mm": 8.0,
+        "temp_max_c": 29.9,
+        "temp_min_c": 23.7
+      },
+      {
+        "district": "Ekala",
+        "rainfall_mm": 8.0,
+        "temp_max_c": 30.7,
+        "temp_min_c": 25.6
+      },
+      {
+        "district": "Dekatana",
+        "rainfall_mm": 7.9,
+        "temp_max_c": 30.9,
+        "temp_min_c": 24.8
+      },
+      {
+        "district": "Delgoda",
+        "rainfall_mm": 7.9,
+        "temp_max_c": 30.9,
+        "temp_min_c": 24.8
+      },
+      {
+        "district": "Dungalpitiya",
+        "rainfall_mm": 7.6,
+        "temp_max_c": 30.9,
+        "temp_min_c": 25.7
+      },
+      {
+        "district": "Alawwa",
+        "rainfall_mm": 7.0,
+        "temp_max_c": 30.4,
+        "temp_min_c": 24.2
+      },
+      {
+        "district": "Dambadeniya",
+        "rainfall_mm": 7.0,
+        "temp_max_c": 29.9,
+        "temp_min_c": 24.2
+      },
+      {
+        "district": "Angoda",
+        "rainfall_mm": 6.9,
+        "temp_max_c": 30.4,
+        "temp_min_c": 26.1
+      },
+      {
+        "district": "Battaramulla",
+        "rainfall_mm": 6.9,
+        "temp_max_c": 30.4,
+        "temp_min_c": 26.1
+      },
+      {
+        "district": "Colombo",
+        "rainfall_mm": 6.9,
+        "temp_max_c": 30.4,
+        "temp_min_c": 26.1
+      },
+      {
+        "district": "Divulapitiya",
+        "rainfall_mm": 6.7,
+        "temp_max_c": 30.8,
+        "temp_min_c": 24.7
+      },
+      {
+        "district": "Aranayake",
+        "rainfall_mm": 6.6,
+        "temp_max_c": 28.9,
+        "temp_min_c": 23.9
+      },
+      {
+        "district": "Chilaw",
+        "rainfall_mm": 6.6,
+        "temp_max_c": 30.8,
+        "temp_min_c": 26.0
+      },
+      {
+        "district": "Elpitiya",
+        "rainfall_mm": 6.6,
+        "temp_max_c": 30.3,
+        "temp_min_c": 25.9
+      },
+      {
+        "district": "Boralesgamuwa",
+        "rainfall_mm": 6.4,
+        "temp_max_c": 30.6,
+        "temp_min_c": 26.0
+      },
+      {
+        "district": "Dehiwala",
+        "rainfall_mm": 6.4,
+        "temp_max_c": 30.6,
+        "temp_min_c": 26.0
+      },
+      {
+        "district": "Delkanda",
+        "rainfall_mm": 6.4,
+        "temp_max_c": 30.6,
+        "temp_min_c": 26.0
+      },
+      {
+        "district": "Andigama",
+        "rainfall_mm": 6.0,
+        "temp_max_c": 30.5,
+        "temp_min_c": 25.4
+      },
+      {
+        "district": "Bamunaakotuwa",
+        "rainfall_mm": 6.0,
+        "temp_max_c": 30.1,
+        "temp_min_c": 24.6
+      },
+      {
+        "district": "Dankotuwa",
+        "rainfall_mm": 5.9,
+        "temp_max_c": 30.6,
+        "temp_min_c": 25.8
+      },
+      {
+        "district": "Aluthgama",
+        "rainfall_mm": 5.7,
+        "temp_max_c": 30.2,
+        "temp_min_c": 26.9
+      },
+      {
+        "district": "Baduraliya",
+        "rainfall_mm": 5.7,
+        "temp_max_c": 30.5,
+        "temp_min_c": 24.8
+      },
+      {
+        "district": "Bentota",
+        "rainfall_mm": 5.7,
+        "temp_max_c": 30.2,
+        "temp_min_c": 26.9
+      },
+      {
+        "district": "Dharga Town",
+        "rainfall_mm": 5.7,
+        "temp_max_c": 30.1,
+        "temp_min_c": 26.8
+      },
+      {
+        "district": "Beruwala",
+        "rainfall_mm": 5.6,
+        "temp_max_c": 30.0,
+        "temp_min_c": 26.1
+      },
+      {
+        "district": "Akuressa",
+        "rainfall_mm": 5.2,
+        "temp_max_c": 30.6,
+        "temp_min_c": 25.5
+      },
+      {
+        "district": "Deiyandara",
+        "rainfall_mm": 5.0,
+        "temp_max_c": 30.1,
+        "temp_min_c": 24.5
+      },
+      {
+        "district": "Galewela",
+        "rainfall_mm": 5.0,
+        "temp_max_c": 28.8,
+        "temp_min_c": 24.0
+      },
+      {
+        "district": "Anamaduwa",
+        "rainfall_mm": 4.7,
+        "temp_max_c": 30.6,
+        "temp_min_c": 25.5
+      },
+      {
+        "district": "Ahungalla",
+        "rainfall_mm": 4.6,
+        "temp_max_c": 30.2,
+        "temp_min_c": 26.9
+      },
+      {
+        "district": "Balapitiya",
+        "rainfall_mm": 4.6,
+        "temp_max_c": 30.2,
+        "temp_min_c": 26.9
+      },
+      {
+        "district": "Bingiriya",
+        "rainfall_mm": 4.5,
+        "temp_max_c": 30.8,
+        "temp_min_c": 24.9
+      },
+      {
+        "district": "Bowatta",
+        "rainfall_mm": 4.5,
+        "temp_max_c": 30.8,
+        "temp_min_c": 24.9
+      },
+      {
+        "district": "Galagedara",
+        "rainfall_mm": 4.2,
+        "temp_max_c": 28.8,
+        "temp_min_c": 23.5
+      },
+      {
+        "district": "Ambalangoda",
+        "rainfall_mm": 4.1,
+        "temp_max_c": 30.2,
+        "temp_min_c": 27.3
+      },
+      {
+        "district": "Ahangama",
+        "rainfall_mm": 4.0,
+        "temp_max_c": 30.4,
+        "temp_min_c": 26.8
+      },
+      {
+        "district": "Bokkawala",
+        "rainfall_mm": 3.9,
+        "temp_max_c": 27.5,
+        "temp_min_c": 22.3
+      },
+      {
+        "district": "Galle",
+        "rainfall_mm": 3.7,
+        "temp_max_c": 30.2,
+        "temp_min_c": 27.0
+      },
+      {
+        "district": "Akkaraipattu",
+        "rainfall_mm": 3.6,
+        "temp_max_c": 32.4,
+        "temp_min_c": 26.3
+      },
+      {
+        "district": "Daulagala",
+        "rainfall_mm": 3.5,
+        "temp_max_c": 27.8,
+        "temp_min_c": 22.3
+      },
+      {
+        "district": "Dambulla",
+        "rainfall_mm": 3.4,
+        "temp_max_c": 29.9,
+        "temp_min_c": 24.5
+      },
+      {
+        "district": "Agarapathana",
+        "rainfall_mm": 3.3,
+        "temp_max_c": 23.6,
+        "temp_min_c": 17.9
+      },
+      {
+        "district": "Bogawantalawa",
+        "rainfall_mm": 3.3,
+        "temp_max_c": 24.1,
+        "temp_min_c": 18.4
+      },
+      {
+        "district": "Badulla",
+        "rainfall_mm": 3.2,
+        "temp_max_c": 29.6,
+        "temp_min_c": 20.4
+      },
+      {
+        "district": "Barigama",
+        "rainfall_mm": 3.1,
+        "temp_max_c": 28.1,
+        "temp_min_c": 22.0
+      },
+      {
+        "district": "Beliatta",
+        "rainfall_mm": 3.0,
+        "temp_max_c": 31.4,
+        "temp_min_c": 25.5
+      },
+      {
+        "district": "Ampara",
+        "rainfall_mm": 2.9,
+        "temp_max_c": 32.8,
+        "temp_min_c": 25.5
+      },
+      {
+        "district": "Bibile",
+        "rainfall_mm": 2.9,
+        "temp_max_c": 33.0,
+        "temp_min_c": 25.0
+      },
+      {
+        "district": "Chenkalady",
+        "rainfall_mm": 2.6,
+        "temp_max_c": 34.8,
+        "temp_min_c": 26.1
+      },
+      {
+        "district": "Bulnewa",
+        "rainfall_mm": 2.5,
+        "temp_max_c": 30.5,
+        "temp_min_c": 25.1
+      },
+      {
+        "district": "Galgamuwa",
+        "rainfall_mm": 2.5,
+        "temp_max_c": 30.5,
+        "temp_min_c": 25.6
+      },
+      {
+        "district": "Galnewa",
+        "rainfall_mm": 2.5,
+        "temp_max_c": 30.5,
+        "temp_min_c": 25.1
+      },
+      {
+        "district": "Dondra",
+        "rainfall_mm": 2.3,
+        "temp_max_c": 30.9,
+        "temp_min_c": 26.5
+      },
+      {
+        "district": "Dikwella",
+        "rainfall_mm": 2.2,
+        "temp_max_c": 31.2,
+        "temp_min_c": 26.5
+      },
+      {
+        "district": "Angunukolapelessa",
+        "rainfall_mm": 1.9,
+        "temp_max_c": 31.7,
+        "temp_min_c": 25.9
+      },
+      {
+        "district": "Badalkumbura",
+        "rainfall_mm": 1.9,
+        "temp_max_c": 31.3,
+        "temp_min_c": 22.6
+      },
+      {
+        "district": "Batticaloa",
+        "rainfall_mm": 1.7,
+        "temp_max_c": 33.3,
+        "temp_min_c": 27.0
+      },
+      {
+        "district": "Eppawala",
+        "rainfall_mm": 1.7,
+        "temp_max_c": 30.9,
+        "temp_min_c": 25.9
+      },
+      {
+        "district": "Ambalantota",
+        "rainfall_mm": 1.4,
+        "temp_max_c": 31.8,
+        "temp_min_c": 26.5
+      },
+      {
+        "district": "Embilipitiya",
+        "rainfall_mm": 1.3,
+        "temp_max_c": 32.6,
+        "temp_min_c": 26.1
+      },
+      {
+        "district": "Anuradhapura",
+        "rainfall_mm": 1.2,
+        "temp_max_c": 31.1,
+        "temp_min_c": 26.1
+      },
+      {
+        "district": "Deltota",
+        "rainfall_mm": 1.1,
+        "temp_max_c": 26.6,
+        "temp_min_c": 20.8
+      },
+      {
+        "district": "Bogahakumbura",
+        "rainfall_mm": 1.0,
+        "temp_max_c": 26.5,
+        "temp_min_c": 18.6
+      },
+      {
+        "district": "Boralanda",
+        "rainfall_mm": 1.0,
+        "temp_max_c": 26.5,
+        "temp_min_c": 18.6
+      },
+      {
+        "district": "Galenbindunuwewa",
+        "rainfall_mm": 1.0,
+        "temp_max_c": 31.0,
+        "temp_min_c": 25.2
+      },
+      {
+        "district": "Digana",
+        "rainfall_mm": 0.9,
+        "temp_max_c": 29.4,
+        "temp_min_c": 23.0
+      },
+      {
+        "district": "Bakamuna",
+        "rainfall_mm": 0.7,
+        "temp_max_c": 31.0,
+        "temp_min_c": 25.5
+      },
+      {
+        "district": "Ballaketuwa",
+        "rainfall_mm": 0.7,
+        "temp_max_c": 27.9,
+        "temp_min_c": 18.2
+      },
+      {
+        "district": "Bandarawela",
+        "rainfall_mm": 0.7,
+        "temp_max_c": 27.3,
+        "temp_min_c": 18.1
+      },
+      {
+        "district": "Diyatalawa",
+        "rainfall_mm": 0.7,
+        "temp_max_c": 26.7,
+        "temp_min_c": 17.6
+      },
+      {
+        "district": "Ella",
+        "rainfall_mm": 0.7,
+        "temp_max_c": 28.6,
+        "temp_min_c": 18.9
+      },
+      {
+        "district": "Etampitiya",
+        "rainfall_mm": 0.7,
+        "temp_max_c": 27.7,
+        "temp_min_c": 18.1
+      },
+      {
+        "district": "Adhikarigama",
+        "rainfall_mm": 0.4,
+        "temp_max_c": 29.9,
+        "temp_min_c": 23.2
+      },
+      {
+        "district": "Aralaganwila",
+        "rainfall_mm": 0.4,
+        "temp_max_c": 33.7,
+        "temp_min_c": 26.6
+      },
+      {
+        "district": "Diyabeduma",
+        "rainfall_mm": 0.3,
+        "temp_max_c": 31.9,
+        "temp_min_c": 25.7
+      },
+      {
+        "district": "Chavakachcheri",
+        "rainfall_mm": 0.2,
+        "temp_max_c": 31.1,
+        "temp_min_c": 29.1
+      },
+      {
+        "district": "Akkarayan",
+        "rainfall_mm": 0.1,
+        "temp_max_c": 32.2,
+        "temp_min_c": 27.4
+      },
+      {
+        "district": "Dehiattakandiya",
+        "rainfall_mm": 0.1,
+        "temp_max_c": 33.4,
+        "temp_min_c": 26.5
+      },
+      {
+        "district": "Buttala",
+        "rainfall_mm": 0,
+        "temp_max_c": 32.0,
+        "temp_min_c": 24.5
+      },
+      {
+        "district": "Chankanai",
+        "rainfall_mm": 0,
+        "temp_max_c": 31.6,
+        "temp_min_c": 29.0
+      },
+      {
+        "district": "Chunnakam",
+        "rainfall_mm": 0,
+        "temp_max_c": 31.6,
+        "temp_min_c": 28.8
+      },
+      {
+        "district": "Elephant Pass",
+        "rainfall_mm": 0,
+        "temp_max_c": 32.9,
+        "temp_min_c": 28.3
+      }
+    ]
+  }
+}

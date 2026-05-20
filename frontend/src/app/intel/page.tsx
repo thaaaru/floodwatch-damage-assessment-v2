@@ -2,8 +2,17 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { api, IntelSummary, SOSReport, IntelCluster, IntelAction, NearbyFacilitiesResponse, FloodThreatResponse, IrrigationResponse, TrafficFlowResponse, TrafficIncident, AllFacilitiesResponse, FloodPatternsResponse, EnvironmentalDataResponse, YesterdayStats } from '@/lib/api';
+import { useState } from 'react';
+import {
+  IntelSummary, SOSReport, IntelCluster, IntelAction, NearbyFacilitiesResponse,
+  FloodThreatResponse, IrrigationResponse, TrafficFlowResponse, TrafficIncident,
+  AllFacilitiesResponse, FloodPatternsResponse, EnvironmentalDataResponse, YesterdayStats,
+} from '@/lib/api';
+
+// Historical snapshot, captured at build time. The /intel page is intentionally
+// static: no runtime API calls, no auto-refresh, no localStorage cache. To
+// refresh the snapshot, re-run scripts/snapshot-intel.sh and rebuild.
+import snapshot from './snapshot.json';
 
 // Safe number formatting helper to prevent toFixed errors on undefined/null values
 const fmt = (v: any, d: number = 0): string => {
@@ -11,296 +20,46 @@ const fmt = (v: any, d: number = 0): string => {
   return Number(v).toFixed(d);
 };
 
-// Cache key and TTL (24 hours in milliseconds)
-const INTEL_CACHE_KEY = 'intel_dashboard_cache';
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-interface CachedIntelData {
-  timestamp: number;
-  summary: IntelSummary | null;
-  priorities: SOSReport[];
-  clusters: IntelCluster[];
-  actions: IntelAction[];
-  floodThreat: FloodThreatResponse | null;
-  riverData: IrrigationResponse | null;
-  trafficFlow: TrafficFlowResponse | null;
-  trafficIncidents: TrafficIncident[];
-  allFacilities: AllFacilitiesResponse | null;
-}
-
 export default function IntelDashboard() {
-  const [summary, setSummary] = useState<IntelSummary | null>(null);
-  const [priorities, setPriorities] = useState<SOSReport[]>([]);
-  const [clusters, setClusters] = useState<IntelCluster[]>([]);
-  const [actions, setActions] = useState<IntelAction[]>([]);
-  const [floodThreat, setFloodThreat] = useState<FloodThreatResponse | null>(null);
-  const [riverData, setRiverData] = useState<IrrigationResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState<string>('');
+  // All data is pre-baked from snapshot.json — no fetches, no loading state.
+  const [summary] = useState<IntelSummary | null>(snapshot.summary as IntelSummary);
+  const [priorities] = useState<SOSReport[]>(snapshot.priorities as SOSReport[]);
+  const [clusters] = useState<IntelCluster[]>(snapshot.clusters as IntelCluster[]);
+  const [actions] = useState<IntelAction[]>(snapshot.actions as IntelAction[]);
+  const [floodThreat] = useState<FloodThreatResponse | null>(snapshot.floodThreat as FloodThreatResponse);
+  const [riverData] = useState<IrrigationResponse | null>(snapshot.irrigation as IrrigationResponse);
+  const [trafficFlow] = useState<TrafficFlowResponse | null>(snapshot.trafficFlow as TrafficFlowResponse);
+  const [trafficIncidents] = useState<TrafficIncident[]>(snapshot.trafficIncidents as TrafficIncident[]);
+  const [allFacilities] = useState<AllFacilitiesResponse | null>(snapshot.allFacilities as AllFacilitiesResponse);
+  const [floodPatterns] = useState<FloodPatternsResponse | null>(snapshot.floodPatterns as FloodPatternsResponse);
+  const [environmentalData] = useState<EnvironmentalDataResponse | null>(snapshot.environmental as EnvironmentalDataResponse);
+  const [yesterdayStats] = useState<YesterdayStats | null>(snapshot.yesterdayStats as YesterdayStats);
+
+  // Snapshot capture time used as the "last updated" label.
+  const [lastUpdated] = useState<string>(
+    new Date(snapshot.captured_at).toLocaleString()
+  );
+
+  // Always false: data is frozen, no loading spinners anywhere.
+  const loading = false;
+  const loadingPatterns = false;
+  const loadingEnvironmental = false;
+  const loadingYesterdayStats = false;
+
+  // Filter state is preserved as pure client-side UI; the backing data never changes.
   const [filterUrgency, setFilterUrgency] = useState<string>('');
   const [expandedReport, setExpandedReport] = useState<number | null>(null);
-  const [nearbyFacilities, setNearbyFacilities] = useState<NearbyFacilitiesResponse | null>(null);
-  const [loadingFacilities, setLoadingFacilities] = useState(false);
   const [activeTab, setActiveTab] = useState<'threat' | 'infrastructure'>('threat');
-  const [trafficFlow, setTrafficFlow] = useState<TrafficFlowResponse | null>(null);
-  const [trafficIncidents, setTrafficIncidents] = useState<TrafficIncident[]>([]);
-  const [allFacilities, setAllFacilities] = useState<AllFacilitiesResponse | null>(null);
-  const [floodPatterns, setFloodPatterns] = useState<FloodPatternsResponse | null>(null);
-  const [loadingPatterns, setLoadingPatterns] = useState(false);
-  const [environmentalData, setEnvironmentalData] = useState<EnvironmentalDataResponse | null>(null);
-  const [loadingEnvironmental, setLoadingEnvironmental] = useState(false);
-  const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
-  const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
 
-  // Load cached data if available and valid
-  const loadFromCache = useCallback((): boolean => {
-    try {
-      const cached = localStorage.getItem(INTEL_CACHE_KEY);
-      if (!cached) return false;
+  // Snapshot has no SOS reports (the live priorities feed was empty at capture
+  // time), so nearby-facility lookups are never triggered. Kept as static empty
+  // values so the existing JSX bindings stay valid.
+  const nearbyFacilities: NearbyFacilitiesResponse | null = null;
+  const loadingFacilities = false;
 
-      const cachedData: CachedIntelData = JSON.parse(cached);
-      const now = Date.now();
-      const age = now - cachedData.timestamp;
-
-      // Check if cache is still valid (less than 24 hours old)
-      if (age < CACHE_TTL_MS) {
-        setSummary(cachedData.summary);
-        setPriorities(cachedData.priorities);
-        setClusters(cachedData.clusters);
-        setActions(cachedData.actions);
-        setFloodThreat(cachedData.floodThreat);
-        setRiverData(cachedData.riverData);
-        setTrafficFlow(cachedData.trafficFlow);
-        setTrafficIncidents(cachedData.trafficIncidents);
-        setAllFacilities(cachedData.allFacilities);
-        setLastUpdated(new Date(cachedData.timestamp).toLocaleTimeString());
-        return true;
-      }
-    } catch (err) {
-      console.error('Failed to load cache:', err);
-    }
-    return false;
-  }, []);
-
-  // Save data to cache
-  const saveToCache = useCallback((data: Omit<CachedIntelData, 'timestamp'>) => {
-    try {
-      const cacheData: CachedIntelData = {
-        ...data,
-        timestamp: Date.now(),
-      };
-      localStorage.setItem(INTEL_CACHE_KEY, JSON.stringify(cacheData));
-    } catch (err) {
-      console.error('Failed to save cache:', err);
-    }
-  }, []);
-
-  const fetchData = useCallback(async (force = false) => {
-    // Try to load from cache first (unless forced refresh)
-    if (!force && loadFromCache()) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const [summaryData, prioritiesData, clustersData, actionsData, threatData, irrigationData, trafficFlowData, trafficIncidentsData, facilitiesData] = await Promise.all([
-        api.getIntelSummary(),
-        api.getIntelPriorities(100, undefined, filterUrgency || undefined),
-        api.getIntelClusters(),
-        api.getIntelActions(),
-        api.getFloodThreat(),
-        api.getIrrigationData(),
-        api.getTrafficFlow().catch(() => null),
-        api.getTrafficIncidents().catch(() => ({ incidents: [] })),
-        api.getAllFacilities().catch(() => null),
-      ]);
-
-      const fetchedData = {
-        summary: summaryData,
-        priorities: prioritiesData.reports,
-        clusters: clustersData.clusters,
-        actions: actionsData.actions,
-        floodThreat: threatData,
-        riverData: irrigationData,
-        trafficFlow: trafficFlowData,
-        trafficIncidents: trafficIncidentsData.incidents,
-        allFacilities: facilitiesData,
-      };
-
-      setSummary(fetchedData.summary);
-      setPriorities(fetchedData.priorities);
-      setClusters(fetchedData.clusters);
-      setActions(fetchedData.actions);
-      setFloodThreat(fetchedData.floodThreat);
-      setRiverData(fetchedData.riverData);
-      setTrafficFlow(fetchedData.trafficFlow);
-      setTrafficIncidents(fetchedData.trafficIncidents);
-      setAllFacilities(fetchedData.allFacilities);
-      setLastUpdated(new Date().toLocaleTimeString());
-
-      // Save to cache
-      saveToCache(fetchedData);
-    } catch (err) {
-      console.error('Failed to fetch intel data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [filterUrgency, loadFromCache, saveToCache]);
-
-  useEffect(() => {
-    fetchData();
-    // Auto-refresh every 30 seconds for frequent updates
-    const interval = setInterval(() => fetchData(true), 30000);
-    return () => clearInterval(interval);
-  }, [fetchData]);
-
-  // Fetch flood patterns (on-demand since it takes time)
-  const fetchFloodPatterns = useCallback(async () => {
-    if (floodPatterns || loadingPatterns) return; // Already loaded or loading
-
-    // Try to load from cache first
-    try {
-      const cached = localStorage.getItem('intel_flood_patterns_cache');
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        const age = Date.now() - timestamp;
-        if (age < CACHE_TTL_MS) {
-          setFloodPatterns(data);
-          return;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load flood patterns cache:', err);
-    }
-
-    setLoadingPatterns(true);
-    try {
-      const patterns = await api.getFloodPatterns('Colombo', 30);
-      setFloodPatterns(patterns);
-      // Save to cache
-      localStorage.setItem('intel_flood_patterns_cache', JSON.stringify({
-        data: patterns,
-        timestamp: Date.now()
-      }));
-    } catch (err) {
-      console.error('Failed to fetch flood patterns:', err);
-    } finally {
-      setLoadingPatterns(false);
-    }
-  }, [floodPatterns, loadingPatterns]);
-
-  // Load flood patterns when threat tab is active
-  useEffect(() => {
-    if (activeTab === 'threat' && !floodPatterns && !loadingPatterns) {
-      fetchFloodPatterns();
-    }
-  }, [activeTab, floodPatterns, loadingPatterns, fetchFloodPatterns]);
-
-  // Fetch environmental data (on-demand since it takes time)
-  const fetchEnvironmentalData = useCallback(async () => {
-    if (environmentalData || loadingEnvironmental) return; // Already loaded or loading
-
-    // Try to load from cache first
-    try {
-      const cached = localStorage.getItem('intel_environmental_cache');
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        const age = Date.now() - timestamp;
-        if (age < CACHE_TTL_MS) {
-          setEnvironmentalData(data);
-          return;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load environmental data cache:', err);
-    }
-
-    setLoadingEnvironmental(true);
-    try {
-      const data = await api.getEnvironmentalData(1994, 2024);
-      setEnvironmentalData(data);
-      // Save to cache
-      localStorage.setItem('intel_environmental_cache', JSON.stringify({
-        data: data,
-        timestamp: Date.now()
-      }));
-    } catch (err) {
-      console.error('Failed to fetch environmental data:', err);
-    } finally {
-      setLoadingEnvironmental(false);
-    }
-  }, [environmentalData, loadingEnvironmental]);
-
-  // Load environmental data when threat tab is active
-  useEffect(() => {
-    if (activeTab === 'threat' && !environmentalData && !loadingEnvironmental) {
-      fetchEnvironmentalData();
-    }
-  }, [activeTab, environmentalData, loadingEnvironmental, fetchEnvironmentalData]);
-
-  // Fetch yesterday's stats (on-demand)
-  const fetchYesterdayStats = useCallback(async () => {
-    if (yesterdayStats || loadingYesterdayStats) return;
-
-    // Try to load from cache first
-    try {
-      const cached = localStorage.getItem('intel_yesterday_stats_cache');
-      if (cached) {
-        const { data, timestamp } = JSON.parse(cached);
-        const age = Date.now() - timestamp;
-        if (age < CACHE_TTL_MS) {
-          setYesterdayStats(data);
-          return;
-        }
-      }
-    } catch (err) {
-      console.error('Failed to load yesterday stats cache:', err);
-    }
-
-    setLoadingYesterdayStats(true);
-    try {
-      const stats = await api.getYesterdayStats();
-      setYesterdayStats(stats);
-      // Save to cache
-      localStorage.setItem('intel_yesterday_stats_cache', JSON.stringify({
-        data: stats,
-        timestamp: Date.now()
-      }));
-    } catch (err) {
-      console.error('Failed to fetch yesterday stats:', err);
-    } finally {
-      setLoadingYesterdayStats(false);
-    }
-  }, [yesterdayStats, loadingYesterdayStats]);
-
-  // Load yesterday's stats when threat tab is active
-  useEffect(() => {
-    if (activeTab === 'threat' && !yesterdayStats && !loadingYesterdayStats) {
-      fetchYesterdayStats();
-    }
-  }, [activeTab, yesterdayStats, loadingYesterdayStats, fetchYesterdayStats]);
-
-  const handleExpandReport = async (report: SOSReport) => {
-    if (expandedReport === report.id) {
-      setExpandedReport(null);
-      setNearbyFacilities(null);
-      return;
-    }
-
-    setExpandedReport(report.id);
-    setNearbyFacilities(null);
-
-    if (report.latitude && report.longitude) {
-      setLoadingFacilities(true);
-      try {
-        const facilities = await api.getNearbyFacilities(report.latitude, report.longitude, 15, 3);
-        setNearbyFacilities(facilities);
-      } catch (err) {
-        console.error('Failed to fetch nearby facilities:', err);
-      } finally {
-        setLoadingFacilities(false);
-      }
-    }
+  const handleExpandReport = (report: SOSReport) => {
+    // Toggle expand/collapse only. No facility fetch — the snapshot is frozen.
+    setExpandedReport(expandedReport === report.id ? null : report.id);
   };
 
   const getFacilityIcon = (type: string) => {
