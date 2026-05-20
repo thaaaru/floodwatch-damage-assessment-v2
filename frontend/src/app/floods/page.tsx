@@ -40,6 +40,41 @@ function formatValue(value: number | null, unit: string | null): string {
   return `${value.toFixed(2)} ${short}`;
 }
 
+// Microsoft AI for Good damage-assessment tile sources for Cyclone Ditwah
+// (30 Nov 2025, Colombo metro area).
+//   Source: https://visualizers.aiforgood.ai/damage-assessment/srilanka_cyclone_ditwah_11_30_2025.html
+// These are publicly served XYZ tiles, no auth required. Coverage bbox is
+// roughly Colombo + Negombo + Gampaha at zooms 10-17 (basemap goes to 20).
+const AIG_TILE_BASE = 'https://opendata.aiforgood.ai/damage-assessment/tiles';
+const AIG_LAYERS = {
+  basemap: {
+    name: 'srilanka_planetscope_basemap_tiles',
+    minZoom: 10,
+    maxZoom: 20,
+    attribution: 'Imagery © Planet Labs / Microsoft AI for Good',
+  },
+  buildings: {
+    name: 'srilanka_planetscope_11_30_buildings_damage_rgba_tiles',
+    minZoom: 10,
+    maxZoom: 17,
+    attribution: 'Building damage predictions © Microsoft AI for Good',
+  },
+  flood: {
+    name: 'srilanka_planetscope_11_30_predictions_rgba_tiles',
+    minZoom: 10,
+    maxZoom: 17,
+    attribution: 'Flood extent predictions © Microsoft AI for Good',
+  },
+} as const;
+const AIG_BOUNDS = {
+  south: 6.848990517795159,
+  west: 79.84365530400484,
+  north: 7.026140203530698,
+  east: 80.17956144588624,
+};
+const AIG_VISUALIZER_URL =
+  'https://visualizers.aiforgood.ai/damage-assessment/srilanka_cyclone_ditwah_11_30_2025.html';
+
 export default function FloodHubPage() {
   const [data, setData] = useState<GoogleFloodsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,6 +88,13 @@ export default function FloodHubPage() {
   const [showBasins, setShowBasins] = useState(true);
   const [showRivers, setShowRivers] = useState(true);
 
+  // Microsoft AI for Good damage-assessment tile overlays (Cyclone Ditwah,
+  // 30 Nov 2025, Colombo metro area). Default OFF — they cover only a small
+  // bbox and shouldn't dominate the country-wide map by default.
+  const [showAigBasemap, setShowAigBasemap] = useState(false);
+  const [showAigBuildings, setShowAigBuildings] = useState(false);
+  const [showAigFlood, setShowAigFlood] = useState(false);
+
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const googleMapRef = useRef<any>(null);
@@ -63,6 +105,14 @@ export default function FloodHubPage() {
   const basinLayerRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const riverLayerRef = useRef<any>(null);
+  // Microsoft AI for Good ImageMapType overlays, created once on mount and
+  // toggled by setting an opacity of 1 / 0 in the layers list.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const aigBasemapLayerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const aigBuildingsLayerRef = useRef<any>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const aigFloodLayerRef = useRef<any>(null);
 
   // ------------------------------------------------------------------
   // Data fetch — cached server-side; safe to retry every few minutes.
@@ -169,6 +219,46 @@ export default function FloodHubPage() {
             zIndex: 2,
           };
         });
+
+        // --- Microsoft AI for Good damage-assessment tile overlays
+        // (Cyclone Ditwah, 30 Nov 2025). Created here but NOT pushed onto
+        // the map's overlayMapTypes yet; the toggle effects below add/remove
+        // them based on user input. ImageMapType is the right Google Maps
+        // primitive for XYZ tile sources.
+        const aigTileBounds = new window.google.maps.LatLngBounds(
+          new window.google.maps.LatLng(AIG_BOUNDS.south, AIG_BOUNDS.west),
+          new window.google.maps.LatLng(AIG_BOUNDS.north, AIG_BOUNDS.east),
+        );
+        const buildAigLayer = (cfg: typeof AIG_LAYERS[keyof typeof AIG_LAYERS]) =>
+          new window.google.maps.ImageMapType({
+            name: cfg.name,
+            tileSize: new window.google.maps.Size(256, 256),
+            minZoom: cfg.minZoom,
+            maxZoom: cfg.maxZoom,
+            opacity: 1,
+            getTileUrl: (
+              coord: { x: number; y: number },
+              zoom: number,
+            ): string | null => {
+              // Skip tiles outside the AIG coverage bbox to avoid 404 spam.
+              // Convert tile (z,x,y) corners to lat/lng and intersect with bounds.
+              const n = Math.pow(2, zoom);
+              const lon1 = (coord.x / n) * 360 - 180;
+              const lon2 = ((coord.x + 1) / n) * 360 - 180;
+              const latRad1 = Math.atan(Math.sinh(Math.PI * (1 - (2 * coord.y) / n)));
+              const latRad2 = Math.atan(Math.sinh(Math.PI * (1 - (2 * (coord.y + 1)) / n)));
+              const tileBounds = new window.google.maps.LatLngBounds(
+                new window.google.maps.LatLng((latRad2 * 180) / Math.PI, lon1),
+                new window.google.maps.LatLng((latRad1 * 180) / Math.PI, lon2),
+              );
+              if (!aigTileBounds.intersects(tileBounds)) return null;
+              return `${AIG_TILE_BASE}/${cfg.name}/${zoom}/${coord.x}/${coord.y}.png`;
+            },
+          });
+
+        aigBasemapLayerRef.current = buildAigLayer(AIG_LAYERS.basemap);
+        aigBuildingsLayerRef.current = buildAigLayer(AIG_LAYERS.buildings);
+        aigFloodLayerRef.current = buildAigLayer(AIG_LAYERS.flood);
       } catch (err) {
         // Map init failure must NOT bubble up to the React tree (would trigger
         // the global error boundary). Log and let the rest of the page render.
@@ -203,6 +293,38 @@ export default function FloodHubPage() {
       riverLayerRef.current.setMap(showRivers ? googleMapRef.current : null);
     }
   }, [showRivers]);
+
+  // AIG tile overlay toggles. ImageMapType layers are managed via the map's
+  // `overlayMapTypes` array — we push/remove by reference identity. A small
+  // helper keeps the three effects below DRY.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const toggleAigLayer = (
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    layerRef: { current: any },
+    show: boolean,
+  ) => {
+    const map = googleMapRef.current;
+    const layer = layerRef.current;
+    if (!map || !layer) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const overlays = map.overlayMapTypes as { getArray: () => any[]; insertAt: (i: number, x: any) => void; removeAt: (i: number) => void };
+    const arr = overlays.getArray();
+    const idx = arr.indexOf(layer);
+    if (show && idx === -1) overlays.insertAt(arr.length, layer);
+    else if (!show && idx !== -1) overlays.removeAt(idx);
+  };
+
+  useEffect(() => {
+    toggleAigLayer(aigBasemapLayerRef, showAigBasemap);
+  }, [showAigBasemap]);
+
+  useEffect(() => {
+    toggleAigLayer(aigBuildingsLayerRef, showAigBuildings);
+  }, [showAigBuildings]);
+
+  useEffect(() => {
+    toggleAigLayer(aigFloodLayerRef, showAigFlood);
+  }, [showAigFlood]);
 
   // ------------------------------------------------------------------
   // Render markers whenever data or filter changes.
@@ -373,6 +495,74 @@ export default function FloodHubPage() {
               </label>
               <span className="ml-auto text-slate-400 text-[10px]">HydroSHEDS v1.0</span>
             </div>
+
+            {/* Cyclone Ditwah damage-assessment layers (Microsoft AI for Good).
+                Grouped separately because they're event-specific and only
+                cover a small bbox; the "Zoom to" button is essential since
+                without it users would never know where the data lives. */}
+            <div className="px-4 py-2 bg-amber-50 border-t border-amber-200 text-xs text-amber-900 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-semibold">🛰️ Cyclone Ditwah (30 Nov 2025) — Colombo area:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const map = googleMapRef.current;
+                    if (!map || !window.google?.maps) return;
+                    const bounds = new window.google.maps.LatLngBounds(
+                      new window.google.maps.LatLng(AIG_BOUNDS.south, AIG_BOUNDS.west),
+                      new window.google.maps.LatLng(AIG_BOUNDS.north, AIG_BOUNDS.east),
+                    );
+                    map.fitBounds(bounds);
+                    // Turn the basemap on automatically so users see something
+                    // immediately when they zoom in.
+                    if (!showAigBasemap) setShowAigBasemap(true);
+                  }}
+                  className="px-2 py-0.5 rounded bg-amber-600 text-white hover:bg-amber-700 text-[11px] font-medium"
+                >
+                  Zoom to area
+                </button>
+                <a
+                  href={AIG_VISUALIZER_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto underline hover:text-amber-700 text-[11px]"
+                >
+                  Open full visualizer (swipe comparison) ↗
+                </a>
+              </div>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showAigBasemap}
+                    onChange={(e) => setShowAigBasemap(e.target.checked)}
+                    className="rounded"
+                  />
+                  Pre-event satellite
+                </label>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showAigBuildings}
+                    onChange={(e) => setShowAigBuildings(e.target.checked)}
+                    className="rounded"
+                  />
+                  Building damage
+                </label>
+                <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={showAigFlood}
+                    onChange={(e) => setShowAigFlood(e.target.checked)}
+                    className="rounded"
+                  />
+                  Flood extent
+                </label>
+                <span className="ml-auto text-amber-700/70 text-[10px]">
+                  Imagery © Planet Labs, predictions © Microsoft AI for Good. Zoom level 10+ required.
+                </span>
+              </div>
+            </div>
             {severityFilter && (
               <div className="px-4 py-2 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 flex items-center justify-between">
                 <span>
@@ -422,6 +612,18 @@ export default function FloodHubPage() {
               HydroSHEDS
             </a>{' '}
             (HydroBASINS L8, HydroRIVERS v1.0) — Lehner &amp; Grill (2013), free for non-commercial use.
+          </div>
+          <div>
+            Cyclone Ditwah damage imagery and predictions:{' '}
+            <a
+              href={AIG_VISUALIZER_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-slate-700"
+            >
+              Microsoft AI for Good
+            </a>{' '}
+            (30 Nov 2025), basemap imagery © Planet Labs.
           </div>
         </div>
       </div>
