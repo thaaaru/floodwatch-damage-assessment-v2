@@ -6,6 +6,7 @@ Provides endpoints for flood early warning data using OpenWeatherMap One Call AP
 """
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
+from datetime import datetime
 import logging
 
 from ..config import get_settings
@@ -212,3 +213,37 @@ async def get_hourly_forecast(
     except Exception as e:
         logger.error(f"Failed to fetch hourly forecast for {district}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/status")
+async def get_service_status():
+    """
+    Operational status of the OpenWeatherMap-backed early warning service.
+
+    Returns cache freshness and today's API call usage so we can monitor for
+    rate-limit pressure without scraping logs.
+    """
+    service = get_service()
+    # Trigger budget rollover check.
+    remaining = service._budget_remaining()
+    cache_age_min: Optional[float] = None
+    if service._all_districts_cache_time:
+        cache_age_min = round(
+            (datetime.utcnow() - service._all_districts_cache_time).total_seconds() / 60,
+            1,
+        )
+    return {
+        "cache": {
+            "all_districts_cached": bool(service._all_districts_cache),
+            "all_districts_age_minutes": cache_age_min,
+            "all_districts_ttl_minutes": service.ALL_DISTRICTS_CACHE_MINUTES,
+            "per_coord_entries": len(service._cache),
+            "per_coord_ttl_minutes": service.CACHE_DURATION_MINUTES,
+        },
+        "rate_limit": {
+            "calls_today": service._calls_today,
+            "daily_budget": service.DAILY_CALL_BUDGET,
+            "remaining": remaining,
+            "day_utc": service._calls_day.isoformat(),
+        },
+    }
