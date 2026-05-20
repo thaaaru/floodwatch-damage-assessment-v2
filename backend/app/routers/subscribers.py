@@ -86,7 +86,7 @@ async def _send_subscription_confirmation(phone: str, districts: list[str], lang
             f"{', '.join(districts)}\n\n"
             f"Reply *unsubscribe* to stop alerts.\n"
             f"Reply *status* to check your subscription.\n\n"
-            f"frontend-iklxt07wf-thaaarus-projects.vercel.app වෙත පිවිසෙන්න"
+            f"floodwatch.teklab.dev වෙත පිවිසෙන්න"
         )
     elif language == "ta":
         message = (
@@ -95,7 +95,7 @@ async def _send_subscription_confirmation(phone: str, districts: list[str], lang
             f"{', '.join(districts)}\n\n"
             f"Reply *unsubscribe* to stop alerts.\n"
             f"Reply *status* to check your subscription.\n\n"
-            f"frontend-iklxt07wf-thaaarus-projects.vercel.app ஐ பார்வையிடவும்"
+            f"floodwatch.teklab.dev ஐ பார்வையிடவும்"
         )
     else:
         message = (
@@ -104,7 +104,7 @@ async def _send_subscription_confirmation(phone: str, districts: list[str], lang
             f"{', '.join(districts)}\n\n"
             f"Reply *unsubscribe* to stop alerts.\n"
             f"Reply *status* to check your subscription.\n\n"
-            f"Visit frontend-iklxt07wf-thaaarus-projects.vercel.app for the full map"
+            f"Visit floodwatch.teklab.dev for the full map"
         )
 
     phone_clean = phone.replace("+", "").replace(" ", "")

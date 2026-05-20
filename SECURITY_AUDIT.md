@@ -36,7 +36,7 @@ const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAUQv4Yk
 1. **IMMEDIATE:** Revoke this API key in Google Cloud Console
 2. Create a new restricted API key with HTTP referrer restrictions
 3. Remove the hardcoded fallback and require environment variable
-4. Add the domain restrictions: `weather.hackandbuild.dev/*` and `*.vercel.app/*`
+4. Add the domain restrictions: `floodwatch.teklab.dev/*`
 
 **Fix:**
 ```typescript

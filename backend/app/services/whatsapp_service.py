@@ -147,7 +147,7 @@ class WhatsAppService:
                 f"⚠️ තත්ත්වය: {si_level}\n"
                 f"🌧️ වර්ෂාපතනය: {rainfall_mm:.1f}mm\n\n"
                 f"ආරක්ෂිතව සිටින්න. අවශ්‍ය නම් ආරක්ෂිත ස්ථානයකට යන්න.\n\n"
-                f"🔗 frontend-iklxt07wf-thaaarus-projects.vercel.app"
+                f"🔗 floodwatch.teklab.dev"
             )
         elif language == "ta":
             return (
@@ -156,7 +156,7 @@ class WhatsAppService:
                 f"⚠️ நிலை: {ta_level}\n"
                 f"🌧️ மழைப்பொழிவு: {rainfall_mm:.1f}mm\n\n"
                 f"பாதுகாப்பாக இருங்கள். தேவைப்பட்டால் உயரமான இடத்திற்கு செல்லுங்கள்.\n\n"
-                f"🔗 frontend-iklxt07wf-thaaarus-projects.vercel.app"
+                f"🔗 floodwatch.teklab.dev"
             )
         else:
             return (
@@ -165,7 +165,7 @@ class WhatsAppService:
                 f"⚠️ Level: {en_level}\n"
                 f"🌧️ Rainfall: {rainfall_mm:.1f}mm (24h)\n\n"
                 f"Stay safe. Move to higher ground if necessary.\n\n"
-                f"🔗 frontend-iklxt07wf-thaaarus-projects.vercel.app"
+                f"🔗 floodwatch.teklab.dev"
             )
 
     async def send_bulk_alerts(

@@ -227,7 +227,7 @@ def get_help_message() -> str:
         "- *unsubscribe* - Stop receiving alerts\n\n"
         "- *status* - Check your subscription\n\n"
         "- *help* - Show this message\n\n"
-        "Visit frontend-iklxt07wf-thaaarus-projects.vercel.app for the full map"
+        "Visit floodwatch.teklab.dev for the full map"
     )
 
 
@@ -288,7 +288,7 @@ async def api_subscribe(
             f"{', '.join(request.districts)}\n\n"
             f"Reply *unsubscribe* to stop alerts.\n"
             f"Reply *status* to check your subscription.\n\n"
-            f"Visit frontend-iklxt07wf-thaaarus-projects.vercel.app for the full map."
+            f"Visit floodwatch.teklab.dev for the full map."
         )
         result = await whatsapp_service.send_text_message(phone, confirmation_message)
         message_sent = result.get("success", False)

@@ -117,15 +117,16 @@ npm run dev
 
 ## Deployment
 
-### DigitalOcean (Backend)
+Production runs on a **GCP VM** with `docker-compose.prod.yml` (Caddy + frontend + backend + Postgres),
+serving `https://floodwatch.teklab.dev`.
 
-See `deploy/digitalocean/` for deployment scripts and instructions.
+```bash
+# On the VM
+git pull
+docker compose -f docker-compose.prod.yml up -d --build
+```
 
-### Vercel (Frontend)
-
-1. Connect your GitHub repository to Vercel
-2. Set environment variable: `NEXT_PUBLIC_API_URL=https://your-api-domain.com`
-3. Deploy
+Caddy config: `deploy/caddy/Caddyfile`. Legacy DigitalOcean/Vercel artifacts are in `deploy/_archive/`.
 
 ## Environment Variables
 

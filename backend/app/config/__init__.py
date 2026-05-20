@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     alert_check_interval_minutes: int = 15
     frontend_url: str = "https://floodwatch.teklab.dev"
     debug: bool = False
+    # Comma-separated list of additional CORS origins to whitelist (e.g. preview deploys, staging hosts)
+    extra_cors_origins: str = ""
 
     # Region Configuration
     current_region: str = "srilanka"

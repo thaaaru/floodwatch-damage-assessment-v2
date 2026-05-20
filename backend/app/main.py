@@ -63,6 +63,8 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS
+# Production frontend runs on GCP VM behind Caddy at floodwatch.teklab.dev.
+# Extra origins can be added via the EXTRA_CORS_ORIGINS env var (comma-separated).
 allowed_origins = [
     settings.frontend_url,
     "http://localhost:3000",
@@ -74,17 +76,19 @@ allowed_origins = [
     "http://127.0.0.1:5000",
     "http://127.0.0.1:8001",
     "https://floodwatch.teklab.dev",
-    "http://142.93.218.223",  # Frontend server
-    "http://142.93.218.223:80",
-    # Legacy Vercel domains (deprecated)
-    "https://floodwatch.vercel.app",
-    "https://floodwatch-lk.vercel.app",
 ]
+
+extra_origins = [
+    o.strip()
+    for o in (settings.extra_cors_origins or "").split(",")
+    if o.strip()
+]
+allowed_origins.extend(extra_origins)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.(vercel\.app|teklab\.dev)",
+    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.teklab\.dev",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
