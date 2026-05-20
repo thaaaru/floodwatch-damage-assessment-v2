@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 
 from .config import get_settings
 from .database import engine, Base
-from .routers import weather, alerts, subscribers, districts, intel, whatsapp, early_warning, flood_map, wind, rivers
+from .routers import weather, alerts, subscribers, districts, intel, whatsapp, early_warning, flood_map, wind, rivers, google_floods
 from .jobs.scheduler import start_scheduler, stop_scheduler
 from .schemas import HealthResponse
 
@@ -56,6 +56,14 @@ async def lifespan(app: FastAPI):
             await openweathermap_service.aclose()
     except Exception as e:
         logger.warning(f"Error closing OWM HTTP client: {e}")
+
+    # Close the shared Google Floods HTTP client (if it was ever initialized).
+    try:
+        from .services.google_floods import google_floods_service
+        if google_floods_service is not None:
+            await google_floods_service.aclose()
+    except Exception as e:
+        logger.warning(f"Error closing Google Floods HTTP client: {e}")
 
 
 # Create FastAPI app
@@ -114,6 +122,7 @@ app.include_router(early_warning.router)
 app.include_router(flood_map.router)
 app.include_router(wind.router)
 app.include_router(rivers.router)
+app.include_router(google_floods.router)
 
 
 @app.get("/api/health", response_model=HealthResponse)

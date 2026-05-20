@@ -506,6 +506,15 @@ class ApiClient {
   async getYesterdayStats(): Promise<YesterdayStats> {
     return this.fetch<YesterdayStats>('/api/weather/yesterday/stats');
   }
+
+  // Google Floods endpoints (powered by Google Flood Forecasting API)
+  async getGoogleFloodGauges(): Promise<GoogleFloodsResponse> {
+    return this.fetch<GoogleFloodsResponse>('/api/google-floods/gauges');
+  }
+
+  async getGoogleFloodForecast(gaugeId: string): Promise<GoogleFloodForecast> {
+    return this.fetch<GoogleFloodForecast>(`/api/google-floods/gauges/${encodeURIComponent(gaugeId)}/forecast`);
+  }
 }
 
 export interface CacheStatus {
@@ -1316,3 +1325,53 @@ export interface EarlyWarningHourlyForecastResponse {
 
 export const api = new ApiClient();
 export default api;
+
+// ------------------------------------------------------------------
+// Google Flood Hub types
+// ------------------------------------------------------------------
+
+export type FloodSeverity =
+  | 'EXTREME'
+  | 'SEVERE'
+  | 'WARNING'
+  | 'NO_KNOWN_FLOODING'
+  | 'UNKNOWN'
+  | string; // future-proof: API may add new values.
+
+export interface GoogleFloodGauge {
+  gauge_id: string;
+  severity: FloodSeverity;
+  river: string | null;
+  site_name: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  current_value: number | null;
+  current_value_unit: string | null;
+  thresholds: {
+    warning: number | null;
+    danger: number | null;
+    extreme: number | null;
+  };
+  issued_time: string | null;
+  source_url: string | null;
+  raw_status?: unknown;
+  raw_meta?: unknown;
+}
+
+export interface GoogleFloodsResponse {
+  fetched_at: string;
+  cache_ttl_minutes: number;
+  gauge_count: number;
+  severity_breakdown: Record<string, number>;
+  gauges: GoogleFloodGauge[];
+  source: string;
+  license_note: string;
+}
+
+// Forecast shape mirrors the upstream queryGaugeForecast response.
+// Stored loosely typed: the page just iterates whatever timeseries it returns.
+export interface GoogleFloodForecast {
+  gauge_id?: string;
+  forecastTimeSeries?: unknown;
+  [key: string]: unknown;
+}

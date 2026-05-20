@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     tomtom_api_key: str = ""
     here_api_key: str = ""
     openweathermap_api_key: str = ""
+    google_floods_api_key: str = ""
 
     # Application
     alert_check_interval_minutes: int = 15

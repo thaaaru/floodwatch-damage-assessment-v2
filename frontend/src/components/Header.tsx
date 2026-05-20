@@ -12,6 +12,7 @@ const navigation = [
   { name: 'News', href: '/news' },
   { name: 'Early Warning', href: '/early-warning', dynamic: true },
   { name: 'Rivers', href: '/rivers' },
+  { name: 'Flood Hub', href: '/floods' },
   { name: 'Intel', href: '/intel' },
   { name: 'External Links', href: '/external-links' },
   { name: 'Data Sources', href: '/data-sources' },
