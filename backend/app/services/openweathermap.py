@@ -33,6 +33,7 @@ class OpenWeatherMapService:
     ALL_DISTRICTS_CACHE_MINUTES = 180  # Cache the all-districts response for 3 hours
     DAILY_CALL_BUDGET = 900  # Leave 100 calls/day headroom under the 1000 free-tier cap
     MAX_429_RETRIES = 3
+    REFRESH_CONCURRENCY = 5  # Max parallel OWM requests during a bulk refresh
 
     # Sri Lanka district coordinates
     DISTRICTS = {
@@ -258,40 +259,49 @@ class OpenWeatherMapService:
                     return self._all_districts_cache
 
             logger.info(
-                "Fetching fresh early warning data for all districts (budget remaining: %d/%d)",
+                "Fetching fresh early warning data for all districts (budget remaining: %d/%d, concurrency=%d)",
                 self._budget_remaining(),
                 self.DAILY_CALL_BUDGET,
+                self.REFRESH_CONCURRENCY,
             )
-            results = []
 
-            for district, coords in self.DISTRICTS.items():
-                try:
-                    data = await self.get_one_call(coords["lat"], coords["lon"])
-                    overview = await self.get_weather_overview(coords["lat"], coords["lon"])
+            # Parallel fetch with a semaphore to cap concurrent OWM requests.
+            # This brings a cold refresh from ~75s (serial) down to ~15s while
+            # staying well under any per-second API limits and our daily budget
+            # (single-flight lock above guarantees only one refresh runs at a time).
+            sem = asyncio.Semaphore(self.REFRESH_CONCURRENCY)
 
-                    if not data:
-                        # Upstream failed and we have no stale cache for this district.
-                        results.append({
+            async def fetch_one(district: str, coords: dict) -> dict:
+                async with sem:
+                    try:
+                        data = await self.get_one_call(coords["lat"], coords["lon"])
+                        overview = await self.get_weather_overview(coords["lat"], coords["lon"])
+
+                        if not data:
+                            return {
+                                "district": district,
+                                "coordinates": coords,
+                                "error": "upstream unavailable",
+                                "alerts": [],
+                                "alert_count": 0,
+                                "risk_level": "unknown",
+                            }
+
+                        return self._process_early_warning(district, data, overview)
+                    except Exception as e:
+                        logger.error(f"Failed to process early warning for {district}: {e}")
+                        return {
                             "district": district,
                             "coordinates": coords,
-                            "error": "upstream unavailable",
+                            "error": str(e),
                             "alerts": [],
                             "alert_count": 0,
                             "risk_level": "unknown",
-                        })
-                        continue
+                        }
 
-                    results.append(self._process_early_warning(district, data, overview))
-                except Exception as e:
-                    logger.error(f"Failed to process early warning for {district}: {e}")
-                    results.append({
-                        "district": district,
-                        "coordinates": coords,
-                        "error": str(e),
-                        "alerts": [],
-                        "alert_count": 0,
-                        "risk_level": "unknown",
-                    })
+            results = await asyncio.gather(
+                *(fetch_one(d, c) for d, c in self.DISTRICTS.items())
+            )
 
             # Sort by risk level (high first)
             risk_order = {"extreme": 0, "high": 1, "medium": 2, "low": 3, "unknown": 4}
