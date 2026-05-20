@@ -104,61 +104,78 @@ export default function FloodHubPage() {
   // ------------------------------------------------------------------
   useEffect(() => {
     if (!mapRef.current) return;
+    let cancelled = false;
     const initMap = () => {
+      if (cancelled || !mapRef.current) return;
       if (!window.google?.maps) {
+        // Google Maps JS still loading; retry shortly.
         setTimeout(initMap, 100);
         return;
       }
-      googleMapRef.current = new window.google.maps.Map(mapRef.current!, {
-        center: { lat: 7.8731, lng: 80.7718 }, // Sri Lanka center
-        zoom: 8,
-        mapTypeId: 'terrain',
-        streetViewControl: false,
-        fullscreenControl: true,
-      });
+      // Guard against React strict-mode double-invocation: don't init twice.
+      if (googleMapRef.current) return;
 
-      // --- HydroBASINS overlay: filled polygons, one per drainage basin.
-      // Each basin gets a deterministic colour from its HYBAS_ID so the same
-      // basin always looks the same across reloads.
-      basinLayerRef.current = new window.google.maps.Data({ map: googleMapRef.current });
-      basinLayerRef.current.addGeoJson(lkBasins);
-      basinLayerRef.current.setStyle((feature: { getProperty: (k: string) => unknown }) => {
-        const id = Number(feature.getProperty('HYBAS_ID')) || 0;
-        // Cycle hues so adjacent basins are visually distinct.
-        const hue = (id * 137.508) % 360;
-        return {
-          fillColor: `hsl(${hue}, 50%, 55%)`,
-          fillOpacity: 0.18,
-          strokeColor: `hsl(${hue}, 55%, 35%)`,
-          strokeOpacity: 0.45,
-          strokeWeight: 1,
-          clickable: false,
-          zIndex: 1,
-        };
-      });
+      try {
+        googleMapRef.current = new window.google.maps.Map(mapRef.current!, {
+          center: { lat: 7.8731, lng: 80.7718 }, // Sri Lanka center
+          zoom: 8,
+          mapTypeId: 'terrain',
+          streetViewControl: false,
+          fullscreenControl: true,
+        });
 
-      // --- HydroRIVERS overlay: blue polylines, width scales with Strahler order.
-      riverLayerRef.current = new window.google.maps.Data({ map: googleMapRef.current });
-      riverLayerRef.current.addGeoJson(lkRivers);
-      riverLayerRef.current.setStyle((feature: { getProperty: (k: string) => unknown }) => {
-        const order = Number(feature.getProperty('ORD_STRA')) || 1;
-        // Order ranges 3-5 in our filtered file; map to 1.5-4px stroke.
-        const weight = Math.max(1, Math.min(4, (order - 2) * 1.25));
-        return {
-          strokeColor: '#1d4ed8',
-          strokeOpacity: 0.7,
-          strokeWeight: weight,
-          clickable: false,
-          zIndex: 2,
-        };
-      });
+        // --- HydroBASINS overlay: filled polygons, one per drainage basin.
+        // Each basin gets a deterministic colour from its HYBAS_ID so the same
+        // basin always looks the same across reloads.
+        basinLayerRef.current = new window.google.maps.Data({ map: googleMapRef.current });
+        basinLayerRef.current.addGeoJson(lkBasins);
+        basinLayerRef.current.setStyle((feature: { getProperty: (k: string) => unknown }) => {
+          const id = Number(feature.getProperty('HYBAS_ID')) || 0;
+          // Cycle hues so adjacent basins are visually distinct.
+          const hue = (id * 137.508) % 360;
+          return {
+            fillColor: `hsl(${hue}, 50%, 55%)`,
+            fillOpacity: 0.18,
+            strokeColor: `hsl(${hue}, 55%, 35%)`,
+            strokeOpacity: 0.45,
+            strokeWeight: 1,
+            clickable: false,
+            zIndex: 1,
+          };
+        });
+
+        // --- HydroRIVERS overlay: blue polylines, width scales with Strahler order.
+        riverLayerRef.current = new window.google.maps.Data({ map: googleMapRef.current });
+        riverLayerRef.current.addGeoJson(lkRivers);
+        riverLayerRef.current.setStyle((feature: { getProperty: (k: string) => unknown }) => {
+          const order = Number(feature.getProperty('ORD_STRA')) || 1;
+          // Order ranges 3-5 in our filtered file; map to 1.5-4px stroke.
+          const weight = Math.max(1, Math.min(4, (order - 2) * 1.25));
+          return {
+            strokeColor: '#1d4ed8',
+            strokeOpacity: 0.7,
+            strokeWeight: weight,
+            clickable: false,
+            zIndex: 2,
+          };
+        });
+      } catch (err) {
+        // Map init failure must NOT bubble up to the React tree (would trigger
+        // the global error boundary). Log and let the rest of the page render.
+        console.error('Failed to initialise flood map:', err);
+      }
     };
     initMap();
     return () => {
-      markersRef.current.forEach((m) => m.setMap?.(null));
-      markersRef.current = [];
-      basinLayerRef.current?.setMap?.(null);
-      riverLayerRef.current?.setMap?.(null);
+      cancelled = true;
+      try {
+        markersRef.current.forEach((m) => m.setMap?.(null));
+        markersRef.current = [];
+        basinLayerRef.current?.setMap?.(null);
+        riverLayerRef.current?.setMap?.(null);
+      } catch (err) {
+        console.error('Failed to tear down flood map layers:', err);
+      }
     };
   }, []);
 
