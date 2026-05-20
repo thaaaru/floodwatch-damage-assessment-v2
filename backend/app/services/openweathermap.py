@@ -33,7 +33,7 @@ class OpenWeatherMapService:
     ALL_DISTRICTS_CACHE_MINUTES = 180  # Cache the all-districts response for 3 hours
     DAILY_CALL_BUDGET = 900  # Leave 100 calls/day headroom under the 1000 free-tier cap
     MAX_429_RETRIES = 3
-    REFRESH_CONCURRENCY = 5  # Max parallel OWM requests during a bulk refresh
+    REFRESH_CONCURRENCY = 10  # Max parallel OWM requests during a bulk refresh
 
     # Sri Lanka district coordinates
     DISTRICTS = {
