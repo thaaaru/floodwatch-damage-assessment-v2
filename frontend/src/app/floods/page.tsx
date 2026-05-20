@@ -126,12 +126,12 @@ export default function FloodHubPage() {
         // Defensive: the shared fetch helper returns `{}` on 5xx (to keep
         // other pages from crashing), so a successful await doesn't guarantee
         // we got a real GoogleFloodsResponse. Treat anything without a
-        // `gauges` array as "not configured / upstream unavailable".
+        // `gauges` array as "not configured / upstream unavailable" and
+        // silently fall back to the static overlays — no user-visible banner.
         if (!res || !Array.isArray((res as Partial<GoogleFloodsResponse>).gauges)) {
           setData(null);
-          setError(
-            'Google Flood Hub data is not configured yet. An API key needs to be set on the backend.',
-          );
+          setError(null);
+          console.info('Google Flood Hub: live data unavailable, static overlays only.');
         } else {
           setData(res);
           setError(null);
@@ -140,11 +140,12 @@ export default function FloodHubPage() {
         if (cancelled) return;
         const msg = e instanceof Error ? e.message : String(e);
         setData(null);
-        setError(
-          msg.includes('503')
-            ? 'Google Flood Hub data is not configured yet. An API key needs to be set on the backend.'
-            : `Failed to load flood data: ${msg}`,
-        );
+        // Suppress the user-facing banner. 503s in particular are expected
+        // until the GOOGLE_FLOODS_API_KEY is configured server-side; even
+        // genuine errors don't help the user, since the rest of the page
+        // (HydroSHEDS basins / rivers, AIG damage overlays) still works.
+        setError(null);
+        console.warn('Google Flood Hub fetch failed:', msg);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -419,23 +420,10 @@ export default function FloodHubPage() {
           </div>
         )}
 
-        {error && !loading && (
-          <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
-            <p className="text-amber-900 text-sm font-medium">{error}</p>
-            <p className="text-amber-700 text-xs mt-1">
-              In the meantime, view the public map at{' '}
-              <a
-                className="underline"
-                href="https://sites.research.google/floods/l/7.873/80.7718/8"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                sites.research.google/floods
-              </a>
-              .
-            </p>
-          </div>
-        )}
+        {/* When the Google Flood Hub backend errors, we silently suppress the
+            banner — the page still has value from the HydroSHEDS overlays and
+            the Microsoft AI for Good damage layers below. The full error is
+            still logged to the browser console for operators. */}
 
         {/* ---------------------------------------------- */}
         {/* Severity summary cards (also act as filters)    */}
