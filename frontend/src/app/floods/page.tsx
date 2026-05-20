@@ -72,14 +72,24 @@ export default function FloodHubPage() {
     const load = async () => {
       try {
         const res = await api.getGoogleFloodGauges();
-        if (!cancelled) {
+        if (cancelled) return;
+        // Defensive: the shared fetch helper returns `{}` on 5xx (to keep
+        // other pages from crashing), so a successful await doesn't guarantee
+        // we got a real GoogleFloodsResponse. Treat anything without a
+        // `gauges` array as "not configured / upstream unavailable".
+        if (!res || !Array.isArray((res as Partial<GoogleFloodsResponse>).gauges)) {
+          setData(null);
+          setError(
+            'Google Flood Hub data is not configured yet. An API key needs to be set on the backend.',
+          );
+        } else {
           setData(res);
           setError(null);
         }
       } catch (e: unknown) {
         if (cancelled) return;
         const msg = e instanceof Error ? e.message : String(e);
-        // The most common reason is the API key not being configured yet.
+        setData(null);
         setError(
           msg.includes('503')
             ? 'Google Flood Hub data is not configured yet. An API key needs to be set on the backend.'
@@ -232,7 +242,10 @@ export default function FloodHubPage() {
   }, [data, severityFilter]);
 
   const selectedGauge =
-    data?.gauges.find((g) => g.gauge_id === selectedGaugeId) ?? null;
+    // Note: `data?.gauges.find(...)` is NOT safe — `?.` only short-circuits on
+    // the `data` access. If `data` is non-null but `gauges` is somehow missing
+    // (defensive: API could change shape), `.find` would throw. Use `?.` twice.
+    data?.gauges?.find((g) => g.gauge_id === selectedGaugeId) ?? null;
   const breakdown = data?.severity_breakdown ?? {};
 
   return (
