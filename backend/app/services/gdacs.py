@@ -41,6 +41,12 @@ class GDACSService:
                 response = await client.get(self.base_url, params=params)
                 response.raise_for_status()
 
+                # GDACS returns 204 No Content when there are no matching events.
+                # Avoid trying to parse an empty body in that case.
+                if response.status_code == 204 or not response.text.strip():
+                    logger.debug("GDACS returned no events for Sri Lanka in window")
+                    return []
+
                 # GDACS returns XML
                 alerts = self._parse_gdacs_response(response.text)
                 return self._filter_by_bounding_box(alerts)
