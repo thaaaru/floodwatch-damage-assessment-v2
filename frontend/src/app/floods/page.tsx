@@ -225,10 +225,6 @@ export default function FloodHubPage() {
         // the map's overlayMapTypes yet; the toggle effects below add/remove
         // them based on user input. ImageMapType is the right Google Maps
         // primitive for XYZ tile sources.
-        const aigTileBounds = new window.google.maps.LatLngBounds(
-          new window.google.maps.LatLng(AIG_BOUNDS.south, AIG_BOUNDS.west),
-          new window.google.maps.LatLng(AIG_BOUNDS.north, AIG_BOUNDS.east),
-        );
         const buildAigLayer = (cfg: typeof AIG_LAYERS[keyof typeof AIG_LAYERS]) =>
           new window.google.maps.ImageMapType({
             name: cfg.name,
@@ -236,22 +232,31 @@ export default function FloodHubPage() {
             minZoom: cfg.minZoom,
             maxZoom: cfg.maxZoom,
             opacity: 1,
+            // NOTE: Google Maps' ImageMapType.getTileUrl must return a string
+            // (or empty string to skip). Returning null causes "null" to be
+            // appended to the tile URL and crashes the load. We do an explicit
+            // bbox check to avoid hammering the upstream with 404s for tiles
+            // far outside the Colombo coverage area, returning '' to skip.
             getTileUrl: (
               coord: { x: number; y: number },
               zoom: number,
-            ): string | null => {
-              // Skip tiles outside the AIG coverage bbox to avoid 404 spam.
-              // Convert tile (z,x,y) corners to lat/lng and intersect with bounds.
+            ): string => {
               const n = Math.pow(2, zoom);
               const lon1 = (coord.x / n) * 360 - 180;
               const lon2 = ((coord.x + 1) / n) * 360 - 180;
               const latRad1 = Math.atan(Math.sinh(Math.PI * (1 - (2 * coord.y) / n)));
               const latRad2 = Math.atan(Math.sinh(Math.PI * (1 - (2 * (coord.y + 1)) / n)));
-              const tileBounds = new window.google.maps.LatLngBounds(
-                new window.google.maps.LatLng((latRad2 * 180) / Math.PI, lon1),
-                new window.google.maps.LatLng((latRad1 * 180) / Math.PI, lon2),
+              const tileSouth = Math.min(latRad1, latRad2) * 180 / Math.PI;
+              const tileNorth = Math.max(latRad1, latRad2) * 180 / Math.PI;
+              const tileWest = Math.min(lon1, lon2);
+              const tileEast = Math.max(lon1, lon2);
+              const intersects = !(
+                tileEast < AIG_BOUNDS.west ||
+                tileWest > AIG_BOUNDS.east ||
+                tileNorth < AIG_BOUNDS.south ||
+                tileSouth > AIG_BOUNDS.north
               );
-              if (!aigTileBounds.intersects(tileBounds)) return null;
+              if (!intersects) return '';
               return `${AIG_TILE_BASE}/${cfg.name}/${zoom}/${coord.x}/${coord.y}.png`;
             },
           });
