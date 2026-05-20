@@ -6,7 +6,7 @@ const nextConfig = {
     return [
       {
         source: '/api/proxy/:path*',
-        destination: 'https://api.hackandbuild.dev/api/:path*',
+        destination: 'https://api.teklab.dev/api/:path*',
       },
     ];
   },

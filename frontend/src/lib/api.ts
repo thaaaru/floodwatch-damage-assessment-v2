@@ -136,6 +136,18 @@ export interface SubscribeResponse {
 }
 
 class ApiClient {
+  private emptyEarlyWarningResponse(): EarlyWarningResponse {
+    return {
+      summary: {
+        total_districts: 0,
+        risk_distribution: { extreme: 0, high: 0, medium: 0, low: 0 },
+        total_government_alerts: 0,
+        districts_at_risk: 0,
+      },
+      districts: [],
+    };
+  }
+
   private getUrl(endpoint: string): string {
     if (USE_PROXY) {
       // Use the Next.js proxy to avoid CORS issues with remote backends
@@ -167,6 +179,21 @@ class ApiClient {
         if (response.status >= 500) {
           console.error(`Backend server error (${response.status}) for ${endpoint}. Backend may be temporarily unavailable.`);
           // Return empty array/object based on expected type to prevent UI crashes
+          if (endpoint === '/early-warning/') {
+            return this.emptyEarlyWarningResponse() as T;
+          }
+          if (endpoint === '/early-warning/alerts') {
+            return { total_alerts: 0, alerts: [] } as T;
+          }
+          if (endpoint === '/early-warning/high-risk') {
+            return { count: 0, districts: [] } as T;
+          }
+          if (endpoint.includes('/early-warning/forecast/daily')) {
+            return { days: 0, forecast: [] } as T;
+          }
+          if (endpoint.includes('/early-warning/forecast/hourly')) {
+            return { district: '', hours: 0, forecast: [] } as T;
+          }
           if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast') || endpoint.includes('/weather')) {
             return [] as T;
           }
@@ -176,9 +203,6 @@ class ApiClient {
           }
           if (endpoint.includes('/rivers')) {
             return { count: 0, summary: { normal: 0, alert: 0, rising: 0, falling: 0 }, stations: [] } as T;
-          }
-          if (endpoint.includes('/early-warning')) {
-            return { total_alerts: 0, alerts: [] } as T;
           }
           return {} as T;
         }
@@ -203,6 +227,9 @@ class ApiClient {
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         console.error(`Request timeout for ${endpoint}`);
         // Return empty result to prevent UI crashes
+        if (endpoint === '/early-warning/') {
+          return this.emptyEarlyWarningResponse() as T;
+        }
         if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
         }
@@ -218,6 +245,9 @@ class ApiClient {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         console.error(`Network error for ${endpoint}:`, error.message);
         // Return empty result based on endpoint type
+        if (endpoint === '/early-warning/') {
+          return this.emptyEarlyWarningResponse() as T;
+        }
         if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
         }

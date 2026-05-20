@@ -73,10 +73,10 @@ allowed_origins = [
     "http://127.0.0.1:3001",
     "http://127.0.0.1:5000",
     "http://127.0.0.1:8001",
-    "https://weather.hackandbuild.dev",
-    "http://142.93.218.223",  # Frontend server (weather.hackandbuild.dev)
+    "https://floodwatch.teklab.dev",
+    "http://142.93.218.223",  # Frontend server
     "http://142.93.218.223:80",
-    # Legacy Vercel domains (deprecated - use weather.hackandbuild.dev instead)
+    # Legacy Vercel domains (deprecated)
     "https://floodwatch.vercel.app",
     "https://floodwatch-lk.vercel.app",
 ]
@@ -84,7 +84,7 @@ allowed_origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.vercel\.app",
+    allow_origin_regex=r"https://[a-zA-Z0-9-]+\.(vercel\.app|teklab\.dev)",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

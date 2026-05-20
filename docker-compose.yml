@@ -7,8 +7,6 @@ services:
       POSTGRES_USER: floodwatch
       POSTGRES_PASSWORD: floodwatch_dev
       POSTGRES_DB: floodwatch
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql
@@ -21,13 +19,14 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8000:8000"
+      - "8001:8000"
     environment:
       DATABASE_URL: postgresql://floodwatch:floodwatch_dev@db:5432/floodwatch
       TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
       TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
       TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
-      FRONTEND_URL: http://localhost:3000
+      WEATHER_SOURCE: ${WEATHER_SOURCE:-open_meteo}
+      FRONTEND_URL: http://localhost:3100
       DEBUG: "true"
     depends_on:
       db:
@@ -39,15 +38,12 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "3100:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+      BACKEND_URL: http://backend:8000
     depends_on:
       - backend
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-      - /app/.next
 
 volumes:
   postgres_data:

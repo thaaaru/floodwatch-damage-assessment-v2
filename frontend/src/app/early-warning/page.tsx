@@ -56,6 +56,10 @@ function getCachedData(): CachedData | null {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
       const parsed: CachedData = JSON.parse(cached);
+      if (!parsed.data || !Array.isArray(parsed.data.districts)) {
+        localStorage.removeItem(CACHE_KEY);
+        return null;
+      }
       if (Date.now() - parsed.timestamp < CACHE_DURATION_MS) {
         return parsed;
       }
@@ -324,6 +328,22 @@ export default function EarlyWarningPage() {
   }
 
   if (!data) return null;
+
+  if (data.districts.length === 0) {
+    return (
+      <div className="h-[calc(100vh-64px)] bg-slate-50 flex items-center justify-center p-4">
+        <div className="card p-6 max-w-md text-center">
+          <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-6 h-6 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <p className="font-medium text-slate-900">Early warning data is unavailable.</p>
+          <p className="text-sm text-slate-500 mt-2">Configure OpenWeatherMap API access to load this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[calc(100vh-64px)] flex bg-slate-50">

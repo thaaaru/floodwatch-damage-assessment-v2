@@ -2,8 +2,7 @@
 
 """
 Weather data caching service.
-Now uses HERE Weather API as primary source (more generous rate limits).
-Falls back to Open-Meteo if HERE fails.
+Uses Open-Meteo by default, with HERE still available when explicitly configured.
 """
 import json
 import logging
@@ -14,6 +13,7 @@ import asyncio
 
 from .here_weather import here_weather_service, SRI_LANKA_LOCATIONS
 from .districts_service import get_all_districts
+from ..config import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +22,8 @@ CACHE_DIR = Path(__file__).parent.parent.parent / "cache"
 CACHE_FILE = CACHE_DIR / "weather_data.json"
 CACHE_DURATION_MINUTES = 60  # Refresh every 60 minutes to reduce API calls
 
-# Weather source: "here" or "open_meteo"
-WEATHER_SOURCE = "here"
+# Weather source: "open_meteo" or "here"
+WEATHER_SOURCE = get_settings().weather_source.lower()
 
 # FREEZE MODE: When True, always serve cached data and never refresh
 CACHE_FREEZE_MODE = False
@@ -188,7 +188,7 @@ class WeatherCache:
     async def refresh_cache(self, force: bool = False) -> bool:
         """
         Refresh weather data for all districts.
-        Uses HERE Weather API as primary source.
+        Uses the configured weather source.
         """
         async with self._lock:
             if not force and self.is_cache_valid():

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const BACKEND_URL = process.env.BACKEND_URL || 'https://api.teklab.dev';
+
 export async function GET(request: NextRequest) {
   const path = request.nextUrl.searchParams.get('path');
 
@@ -11,7 +13,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const apiUrl = `https://api.hackandbuild.dev${path}`;
+    const apiUrl = `${BACKEND_URL}${path}`;
     const url = new URL(apiUrl);
 
     // Preserve query parameters

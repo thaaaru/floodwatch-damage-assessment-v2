@@ -1,0 +1,31 @@
+www.floodwatch.teklab.dev {
+  redir https://floodwatch.teklab.dev{uri} 308
+}
+
+floodwatch.teklab.dev {
+  encode gzip zstd
+
+  handle /api/news* {
+    reverse_proxy frontend:3000
+  }
+
+  handle /api/proxy* {
+    reverse_proxy frontend:3000
+  }
+
+  handle /api/* {
+    reverse_proxy backend:8000
+  }
+
+  handle /docs* {
+    reverse_proxy backend:8000
+  }
+
+  handle /openapi.json {
+    reverse_proxy backend:8000
+  }
+
+  handle {
+    reverse_proxy frontend:3000
+  }
+}

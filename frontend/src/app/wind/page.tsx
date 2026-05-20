@@ -12,7 +12,7 @@ import {
   type WindVector,
 } from '@/utils/windToVector';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.hackandbuild.dev';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.teklab.dev';
 
 // Types
 interface WindData {
