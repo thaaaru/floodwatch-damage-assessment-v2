@@ -36,7 +36,15 @@ services:
         condition: service_healthy
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        # NEXT_PUBLIC_* must be passed as build args; Next.js inlines them
+        # into the bundle at `npm run build` time. Runtime `environment:`
+        # below is kept too so server components (e.g. the API proxy
+        # rewrite target) can also read them at runtime.
+        NEXT_PUBLIC_API_URL: https://floodwatch.teklab.dev
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
     environment:
       NEXT_PUBLIC_API_URL: https://floodwatch.teklab.dev
