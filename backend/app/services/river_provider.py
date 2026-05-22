@@ -211,6 +211,122 @@ class SriLankaNorthRiverProvider(RiverProvider):
             return False
 
 
+class SriLankaIrrigationRiverProvider(RiverProvider):
+    """
+    Provider for Sri Lanka Irrigation Department river gauging network.
+
+    Primary data source for Sri Lanka river levels. Wraps
+    ``irrigation_fetcher`` which queries the Department's ArcGIS REST
+    service and falls back to the public ``nuuuwan/lk_irrigation`` GitHub
+    mirror when ArcGIS is rate-limited or unavailable.
+
+    Compared to the Navy provider, this source is:
+      - Reachable from outside Sri Lanka (no geo-blocking)
+      - Has structured station metadata (alert/minor/major flood thresholds)
+      - Carries district mappings
+    """
+
+    def __init__(self):
+        self.base_url = "https://services3.arcgis.com/J7ZFXmR8rSmQ3FGf/arcgis/rest/services/gauges_2_view/FeatureServer/0/query"
+        self.region_id = "srilanka"
+        from .irrigation_fetcher import irrigation_fetcher as existing_fetcher
+        self.fetcher = existing_fetcher
+
+    async def fetch_stations(self, bounds: Optional[BoundingBox] = None) -> List[RiverStationData]:
+        """Fetch all Sri Lankan river stations from Irrigation Dept."""
+        try:
+            raw_data = await self.fetcher.fetch_water_levels()
+
+            stations: List[RiverStationData] = []
+            for item in raw_data:
+                lat = item.get("lat")
+                lon = item.get("lon")
+                if lat is None or lon is None:
+                    continue
+                if bounds and not bounds.contains_point(lat, lon):
+                    continue
+
+                last_updated_raw = item.get("last_updated")
+                try:
+                    last_updated = (
+                        datetime.fromisoformat(last_updated_raw)
+                        if isinstance(last_updated_raw, str)
+                        else (last_updated_raw or datetime.utcnow())
+                    )
+                except ValueError:
+                    last_updated = datetime.utcnow()
+
+                # Build a stable station_id from the station name (no river_code in Irrigation data).
+                slug = item["station"].lower().replace(" ", "_")
+                station = RiverStationData(
+                    station_id=f"srilanka_irr_{slug}",
+                    river_name=item.get("river", "Unknown"),
+                    river_code=None,
+                    station_name=item["station"],
+                    latitude=lat,
+                    longitude=lon,
+                    catchment_area_km2=None,
+                    water_level_m=item.get("water_level_m", 0.0),
+                    water_level_previous_m=None,
+                    rainfall_24h_mm=None,
+                    status=item.get("status", "normal"),
+                    last_updated=last_updated,
+                    region_id=self.region_id,
+                )
+                stations.append(station)
+
+            logger.info(
+                f"SriLankaIrrigationRiverProvider: Fetched {len(stations)} stations"
+            )
+            return stations
+
+        except Exception as e:
+            logger.error(
+                f"SriLankaIrrigationRiverProvider: Failed to fetch stations: {e}"
+            )
+            return []
+
+    async def fetch_station_reading(self, station_id: str) -> Optional[WaterReading]:
+        """Fetch current reading for a single station."""
+        try:
+            stations = await self.fetch_stations()
+            for station in stations:
+                if station.station_id == station_id:
+                    return WaterReading(
+                        station_id=station_id,
+                        water_level_m=station.water_level_m,
+                        rainfall_mm=None,
+                        status=station.status,
+                        timestamp=station.last_updated,
+                    )
+            return None
+        except Exception as e:
+            logger.error(
+                f"SriLankaIrrigationRiverProvider: Failed to fetch reading for {station_id}: {e}"
+            )
+            return None
+
+    async def fetch_readings_history(
+        self, station_id: str, hours: int = 24
+    ) -> List[WaterReading]:
+        """Irrigation source only exposes the latest reading; history lives in our DB."""
+        logger.info(
+            "SriLankaIrrigationRiverProvider: Historical data not exposed by source"
+        )
+        return []
+
+    async def test_connection(self) -> bool:
+        """Test that we can pull at least one station from the Irrigation feed."""
+        try:
+            stations = await self.fetch_stations()
+            return len(stations) > 0
+        except Exception as e:
+            logger.error(
+                f"SriLankaIrrigationRiverProvider: Connection test failed: {e}"
+            )
+            return False
+
+
 class IndiaWaterCommissionProvider(RiverProvider):
     """
     Provider for Indian water level data from Central Water Commission (CWC)
