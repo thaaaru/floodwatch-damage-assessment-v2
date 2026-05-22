@@ -72,6 +72,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Error closing Open-Meteo Flood HTTP client: {e}")
 
+    # Close the shared Met Department HTTP client (if it was ever initialized).
+    try:
+        from .services.met_department import met_department_service
+        await met_department_service.aclose()
+    except Exception as e:
+        logger.warning(f"Error closing Met Dept HTTP client: {e}")
+
 
 # Create FastAPI app
 app = FastAPI(

@@ -3,509 +3,258 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
-import { api, Alert, YesterdayStats } from '@/lib/api';
-import AlertList from '@/components/AlertList';
-import NewsFeed from '@/components/NewsFeed';
-import RiverNetworkStatus from '@/components/RiverNetworkStatus';
-import { MapLayer } from '@/components/Map';
+import { useCallback, useEffect, useState } from 'react';
+import { api, MetStation, MetStationsResponse } from '@/lib/api';
 
-const Map = dynamic(() => import('@/components/Map'), {
+const MetStationsMap = dynamic(() => import('@/components/MetStationsMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-full bg-slate-100 rounded-2xl flex items-center justify-center">
+    <div className="h-full w-full bg-slate-100 flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin"></div>
+        <div className="w-10 h-10 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
         <span className="text-sm text-slate-500">Loading map...</span>
       </div>
     </div>
-  )
+  ),
 });
 
-const layerOptions: { id: MapLayer; label: string; icon: string; description: string; group: string }[] = [
-  { id: 'danger', label: 'Flood Risk', icon: '⚠️', description: 'Danger level based on multiple factors', group: 'current' },
-  { id: 'rainfall', label: 'Rainfall', icon: '🌧️', description: 'Accumulated rainfall', group: 'current' },
-  { id: 'temperature', label: 'Temp', icon: '🌡️', description: 'Current temperature', group: 'current' },
-  { id: 'humidity', label: 'Humidity', icon: '💧', description: 'Relative humidity', group: 'current' },
-  { id: 'wind', label: 'Wind', icon: '💨', description: 'Wind speed', group: 'current' },
-  { id: 'pressure', label: 'Pressure', icon: '📊', description: 'Atmospheric pressure', group: 'current' },
-  { id: 'forecast1', label: '+1 Day', icon: '📅', description: 'Tomorrow forecast', group: 'forecast' },
-  { id: 'forecast2', label: '+2 Days', icon: '📅', description: 'Day 2 forecast', group: 'forecast' },
-  { id: 'forecast3', label: '+3 Days', icon: '📅', description: 'Day 3 forecast', group: 'forecast' },
-  { id: 'forecast4', label: '+4 Days', icon: '📅', description: 'Day 4 forecast', group: 'forecast' },
-  { id: 'forecast5', label: '+5 Days', icon: '📅', description: 'Day 5 forecast', group: 'forecast' },
-];
-
-export type DangerFilter = 'all' | 'low' | 'medium' | 'high';
-
-interface RainSummary {
-  districtsWithRain: number;
-  totalDistricts: number;
-  maxRainfall: number;
-  maxRainfallDistrict: string;
-  totalRainfall: number;
-}
-
-// Safe number formatting helper
-const fmt = (v: any, d: number = 0): string => {
-  if (v === null || v === undefined || isNaN(Number(v))) return '0';
+const fmt = (v: number | null | undefined, d: number = 1): string => {
+  if (v === null || v === undefined || isNaN(Number(v))) return '—';
   return Number(v).toFixed(d);
 };
 
-// Safe date formatting helper
-const formatDate = (dateStr: string | null | undefined, options: Intl.DateTimeFormatOptions): string => {
-  if (!dateStr) return 'Unknown date';
-  try {
-    const date = new Date(dateStr + 'T00:00:00');
-    if (isNaN(date.getTime())) return 'Unknown date';
-    return date.toLocaleDateString('en-LK', options);
-  } catch {
-    return 'Unknown date';
-  }
-};
-
 export default function Dashboard() {
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [selectedDistrict, setSelectedDistrict] = useState<string | null>('Nawalapitiya');
-  const [selectedHours, setSelectedHours] = useState<number>(24);
-  const [selectedLayer, setSelectedLayer] = useState<MapLayer>('rainfall');
+  const [data, setData] = useState<MetStationsResponse | null>(null);
+  const [selected, setSelected] = useState<MetStation | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dangerFilter, setDangerFilter] = useState<DangerFilter>('all');
-  const [rainSummary, setRainSummary] = useState<RainSummary | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
-  const [showMobilePanel, setShowMobilePanel] = useState(false);
-  const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
-  const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
-  // Layer is locked to 'rainfall' on the home dashboard (see explanation
-  // near the top-controls block). The setter is kept (and unused) only to
-  // preserve the original useState signature for an easy revert.
-  const [showRiverStations, setShowRiverStations] = useState(false); // Hidden by default: home map is rainfall-only.
+  const [error, setError] = useState<string | null>(null);
+  const [lastFetched, setLastFetched] = useState<Date | null>(null);
 
-  // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
-
-  useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        const data = await api.getActiveAlerts();
-        setAlerts(data);
-      } catch (err) {
-        console.error('Failed to fetch alerts:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAlerts();
-    // Auto-refresh every 30 seconds
-    const interval = setInterval(fetchAlerts, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Get user location for Windy map focus
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        () => {
-          // User denied or error - use default Sri Lanka center
-          setUserLocation(null);
-        },
-        { enableHighAccuracy: false, timeout: 5000, maximumAge: 600000 }
-      );
+  const fetchData = useCallback(async () => {
+    try {
+      setError(null);
+      const res = await api.getMetStations();
+      setData(res);
+      setLastFetched(new Date());
+    } catch (err) {
+      console.error('Failed to fetch Met Dept data:', err);
+      setError('Unable to load Met Dept data. Please try again in a moment.');
+    } finally {
+      setLoading(false);
     }
   }, []);
 
-  // Fetch rain summary
   useEffect(() => {
-    const fetchRainSummary = async () => {
-      try {
-        const weatherData = await api.getAllWeather(selectedHours);
-        if (!weatherData || !Array.isArray(weatherData) || weatherData.length === 0) return;
+    fetchData();
+    // The Met Dept publishes a new bulletin every 3 hours; our backend
+    // refreshes every 15 min. Poll every 5 min so we see new data
+    // within ~minutes of release without burning rate budget.
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
-        const rainfallKey = selectedHours === 24 ? 'rainfall_24h_mm' :
-                          selectedHours === 48 ? 'rainfall_48h_mm' : 'rainfall_72h_mm';
+  const stations = data?.stations ?? [];
+  const summary = data?.summary;
 
-        // Filter valid data entries
-        const validData = weatherData.filter((d: any) => d != null);
-        if (validData.length === 0) return;
+  // Categorise stations for the legend strip.
+  const counts = stations.reduce(
+    (acc, s) => {
+      const mm = s.rainfall_since_830am_mm ?? 0;
+      if (mm >= 100) acc.veryHeavy++;
+      else if (mm >= 50) acc.heavy++;
+      else if (mm >= 25) acc.moderate++;
+      else if (mm >= 5) acc.light++;
+      else if (mm > 0) acc.trace++;
+      else acc.dry++;
+      return acc;
+    },
+    { veryHeavy: 0, heavy: 0, moderate: 0, light: 0, trace: 0, dry: 0 },
+  );
 
-        const districtsWithRain = validData.filter((d: any) => (d[rainfallKey] || 0) > 0);
-        const maxDistrict = validData.reduce((max: any, d: any) =>
-          (d[rainfallKey] || 0) > (max[rainfallKey] || 0) ? d : max, validData[0]);
-        const totalRainfall = validData.reduce((sum: number, d: any) =>
-          sum + (d[rainfallKey] || 0), 0);
-
-        setRainSummary({
-          districtsWithRain: districtsWithRain.length,
-          totalDistricts: validData.length,
-          maxRainfall: Number(maxDistrict?.[rainfallKey]) || 0,
-          maxRainfallDistrict: maxDistrict?.district || 'Unknown',
-          totalRainfall: totalRainfall,
-        });
-      } catch (err) {
-        console.error('Failed to fetch rain summary:', err);
-      }
-    };
-    fetchRainSummary();
-    // No auto-refresh - data is cached on backend for 60 minutes
-  }, [selectedHours]);
-
-  // Fetch yesterday's stats
-  useEffect(() => {
-    const fetchYesterdayStats = async () => {
-      setLoadingYesterdayStats(true);
-      try {
-        const stats = await api.getYesterdayStats();
-        setYesterdayStats(stats);
-      } catch (err) {
-        console.error('Failed to fetch yesterday stats:', err);
-      } finally {
-        setLoadingYesterdayStats(false);
-      }
-    };
-    fetchYesterdayStats();
-    // Data is cached for the entire day on backend
-  }, []);
-
-  // (Rainfall-only home: layer / period / forecast controls removed.
-  // Helpers and computed lists below are intentionally not used; kept
-  // commented out for easy restoration.
-  //
-  // const currentLayers = layerOptions.filter(l => l.group === 'current');
-  // const forecastLayers = layerOptions.filter(l => l.group === 'forecast');
-  // const getForecastDate = (dayOffset: number) => { ... };
-  // const forecastLayersWithDates = forecastLayers.map(...);
-  // )
+  const reportTimeLocal = summary?.report_time_utc
+    ? new Date(summary.report_time_utc).toLocaleString('en-LK', {
+        timeZone: 'Asia/Colombo',
+        hour: '2-digit',
+        minute: '2-digit',
+        day: 'numeric',
+        month: 'short',
+      })
+    : null;
 
   return (
-    <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
-      {/* Desktop: Grid Layout | Mobile: Full Screen Map */}
-      <div className="flex-1 lg:grid lg:grid-cols-[1fr_400px] relative">
-        {/* Map Container */}
-        <div className="relative h-full">
-          {/* Map - Full Screen on mobile, left column on desktop */}
-            <div className="absolute inset-0 p-4">
-              <div className="h-full card overflow-hidden">
-                <Map
-                  onDistrictSelect={setSelectedDistrict}
-                  hours={selectedHours}
-                  layer={selectedLayer}
-                  dangerFilter={dangerFilter}
-                  userLocation={userLocation}
-                  showRivers={showRiverStations}
-                  onShowRiversChange={setShowRiverStations}
-                />
+    <div className="min-h-[calc(100vh-64px)] flex flex-col bg-slate-50">
+      {/* Header strip */}
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
+                <span>🌧️</span>
+                <span>Rainfall</span>
+              </h1>
+              <p className="text-[11px] sm:text-xs text-slate-600 mt-0.5">
+                Measured at {summary?.station_count ?? 0} official weather stations.{' '}
+                <a
+                  href="https://meteo.gov.lk"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-blue-600 hover:text-blue-700"
+                >
+                  Sri Lanka Department of Meteorology
+                </a>
+                {reportTimeLocal && (
+                  <span className="text-slate-500"> &middot; report {reportTimeLocal}</span>
+                )}
+              </p>
             </div>
-          </div>
-
-        {/* Rainfall-only home dashboard: all map controls intentionally hidden.
-            Layer is locked to `rainfall` (see useState default) so the map
-            always renders precipitation icons. Period 24h is fixed; if you
-            want to expose layer / period / station toggles again, see
-            git commit history around 2026-05-22. */}
-
-          {/* Windy Icon - Left Side */}
-          <a
-            href="/windy"
-            className="fixed bottom-6 left-6 z-[2000] w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-500 hover:shadow-lg hover:shadow-pink-500/30 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-purple-300/40"
-            title="Windy Weather Map"
-          >
-            <span className="text-2xl">🌀</span>
-          </a>
-
-          {/* Mobile Only: Floating Info Panel */}
-          <div className="lg:hidden">
-            {/* Floating Action Button - Mobile Only */}
-            <button
-              onClick={() => setShowMobilePanel(!showMobilePanel)}
-              className="fixed bottom-16 right-6 z-[2000] w-16 h-16 bg-brand-600 hover:bg-brand-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 ring-4 ring-white/30"
-            >
-              {showMobilePanel ? (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              ) : (
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              )}
-            </button>
-
-            {/* Mobile Floating Panel */}
-            {showMobilePanel && (
-              <>
-                {/* Backdrop */}
-                <div
-                  className="fixed inset-0 bg-black/50 z-[1500] animate-in fade-in duration-200"
-                  onClick={() => setShowMobilePanel(false)}
-                />
-
-                {/* Panel Content - Bottom on mobile */}
-                <div className="fixed inset-x-0 bottom-0 z-[1600] glass rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom duration-300">
-                {/* Handle */}
-                <div className="flex items-center justify-center pt-3 pb-2 lg:hidden">
-                  <div className="w-12 h-1.5 bg-slate-300 rounded-full" />
-                </div>
-
-                {/* Panel Header */}
-                <div className="px-4 pb-3 border-b border-slate-200">
-                  <h2 className="text-lg font-bold text-slate-900">Dashboard Info</h2>
-                  <p className="text-xs text-slate-600 mt-1 font-medium">Real-time flood monitoring data</p>
-                </div>
-
-                {/* Scrollable Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                  {/* River Network Status - Mobile */}
-                  <RiverNetworkStatus />
-
-                  {/* Alerts */}
-                  {alerts.length > 0 && (
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
-                      <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-red-50">
-                        <div className="flex items-center gap-2">
-                          <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                          </svg>
-                          <h2 className="text-sm font-bold text-slate-900">Active Alerts</h2>
-                        </div>
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 font-bold">
-                          {alerts.length}
-                        </span>
-                      </div>
-                      <div className="p-3 max-h-[250px] overflow-y-auto">
-                        <AlertList
-                          alerts={selectedDistrict ? alerts.filter(a => a.district === selectedDistrict) : alerts}
-                          compact
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* No Alerts */}
-                  {alerts.length === 0 && !loading && (
-                    <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span className="font-semibold text-slate-900">No active alerts</span>
-                    </div>
-                  )}
-
-                  {/* News Feed */}
-                  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
-                    <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-blue-50">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                      </svg>
-                      <h2 className="text-sm font-bold text-slate-900">News & Updates</h2>
-                    </div>
-                    <div className="p-3 max-h-[300px] overflow-y-auto">
-                      <NewsFeed maxItems={5} compact />
-                    </div>
-                  </div>
-
-                  {/* Yesterday's Weather Summary */}
-                  <div className="bg-white rounded-xl border border-slate-200 p-4">
-                    <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
-                      <span>📅</span> Yesterday&apos;s Weather Summary
-                      {loadingYesterdayStats && <span className="text-xs text-slate-400 font-normal">(Loading...)</span>}
-                    </h2>
-
-                    {yesterdayStats ? (
-                      <div className="space-y-3">
-                        {/* Summary Stats */}
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
-                          <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
-                          <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
-                        </div>
-
-                        {/* Max rainfall district */}
-                        {yesterdayStats.max_rainfall_district && yesterdayStats.max_rainfall_mm > 0 && (
-                          <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-2">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="text-[10px] text-slate-600 font-medium">Highest Rainfall</div>
-                                <div className="text-xs font-bold text-slate-900">{yesterdayStats.max_rainfall_district}</div>
-                              </div>
-                              <div className="text-right">
-                                <div className="text-xl font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
-                                <div className="text-[10px] text-orange-700 font-medium">mm</div>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Footer with date */}
-                        <div className="text-[10px] text-slate-500 text-center">
-                          Data for {formatDate(yesterdayStats.date, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </div>
-                      </div>
-                    ) : loadingYesterdayStats ? (
-                      <div className="text-center py-6">
-                        <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-                      </div>
-                    ) : (
-                      <div className="text-center text-slate-500 py-6 text-xs">
-                        Unable to load yesterday&apos;s stats
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Windy Link */}
-                  <a
-                    href="/windy"
-                    className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">🌀</span>
-                      <div>
-                        <div className="text-sm font-bold text-slate-900">Windy Weather Map</div>
-                        <div className="text-xs text-slate-600 font-medium">Real-time wind & rain visualization</div>
-                      </div>
-                    </div>
-                    <svg className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </a>
-                </div>
-              </div>
-            </>
-          )}
-          </div>
-        </div>
-
-        {/* Desktop Only: Fixed Sidebar */}
-        <div className="hidden lg:flex flex-col h-full glass border-l border-slate-200">
-          {/* Panel Header */}
-          <div className="px-4 py-4 border-b border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900">Dashboard Info</h2>
-            <p className="text-xs text-slate-600 mt-1 font-medium">Real-time flood monitoring data</p>
-          </div>
-
-          {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {/* River Network Status */}
-            <RiverNetworkStatus />
-
-            {/* Alerts */}
-            {alerts.length > 0 && (
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
-                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-red-50">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    <h2 className="text-sm font-bold text-slate-900">Active Alerts</h2>
-                  </div>
-                  <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800 font-bold">
-                    {alerts.length}
-                  </span>
-                </div>
-                <div className="p-3 max-h-[250px] overflow-y-auto">
-                  <AlertList
-                    alerts={selectedDistrict ? alerts.filter(a => a.district === selectedDistrict) : alerts}
-                    compact
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* No Alerts */}
-            {alerts.length === 0 && !loading && (
-              <div className="bg-white rounded-xl border border-slate-200 px-4 py-3 flex items-center gap-2 text-sm">
-                <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <div className="font-bold text-slate-900">No Active Alerts</div>
-                  <div className="text-xs text-slate-600 font-medium">All areas currently safe</div>
-                </div>
-              </div>
-            )}
-
-            {/* News */}
-            <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
-              <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2 bg-blue-50">
-                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
-                <h2 className="text-sm font-bold text-slate-900">News & Updates</h2>
-              </div>
-              <div className="p-3 max-h-[300px] overflow-y-auto">
-                <NewsFeed maxItems={5} compact />
-              </div>
+            <div className="flex flex-wrap gap-1.5 text-[11px]">
+              <Chip n={counts.veryHeavy} label="≥100mm" color="bg-red-50 text-red-700 border-red-300" dot="bg-red-600" />
+              <Chip n={counts.heavy} label="50-99mm" color="bg-orange-50 text-orange-700 border-orange-300" dot="bg-orange-500" />
+              <Chip n={counts.moderate} label="25-49mm" color="bg-yellow-50 text-yellow-700 border-yellow-300" dot="bg-yellow-500" />
+              <Chip n={counts.light} label="5-24mm" color="bg-blue-50 text-blue-700 border-blue-200" dot="bg-blue-500" />
+              <Chip n={counts.trace + counts.dry} label="0-5mm" color="bg-slate-50 text-slate-600 border-slate-200" dot="bg-slate-300" />
             </div>
-
-            {/* Yesterday's Weather Summary */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <h2 className="text-sm font-bold mb-3 flex items-center gap-2">
-                <span>📅</span> Yesterday&apos;s Weather Summary
-                {loadingYesterdayStats && <span className="text-xs text-slate-400 font-normal">(Loading...)</span>}
-              </h2>
-
-              {yesterdayStats ? (
-                <div className="space-y-3">
-                  {/* Summary Stats */}
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-center">
-                    <div className="text-lg font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
-                    <div className="text-[10px] text-orange-700 font-medium">Max Rainfall (mm)</div>
-                  </div>
-
-                  {/* Max rainfall district */}
-                  {yesterdayStats.max_rainfall_district && yesterdayStats.max_rainfall_mm > 0 && (
-                    <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-2">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-[10px] text-slate-600 font-medium">Highest Rainfall</div>
-                          <div className="text-xs font-bold text-slate-900">{yesterdayStats.max_rainfall_district}</div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-xl font-bold text-orange-600">{fmt(yesterdayStats.max_rainfall_mm)}</div>
-                          <div className="text-[10px] text-orange-700 font-medium">mm</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Footer with date */}
-                  <div className="text-[10px] text-slate-500 text-center">
-                    Data for {formatDate(yesterdayStats.date, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                  </div>
-                </div>
-              ) : loadingYesterdayStats ? (
-                <div className="text-center py-6">
-                  <div className="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
-                </div>
-              ) : (
-                <div className="text-center text-slate-500 py-6 text-xs">
-                  Unable to load yesterday&apos;s stats
-                </div>
-              )}
-            </div>
-
-            {/* Windy Link */}
-            <a
-              href="/windy"
-              className="bg-white rounded-xl border border-slate-200 p-4 flex items-center justify-between group hover:bg-slate-50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">🌀</span>
-                <div>
-                  <div className="text-sm font-bold text-slate-900">Windy Weather Map</div>
-                  <div className="text-xs text-slate-600 font-medium">Real-time wind & rain visualization</div>
-                </div>
-              </div>
-              <svg className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </a>
           </div>
         </div>
       </div>
+
+      {/* Map area */}
+      <div className="relative flex-1">
+        <div className="h-[calc(100vh-200px)] min-h-[480px] sm:min-h-[600px]">
+          {loading && stations.length === 0 ? (
+            <div className="h-full w-full bg-slate-100 flex items-center justify-center">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-10 h-10 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
+                <span className="text-sm text-slate-500">Loading measured rainfall...</span>
+              </div>
+            </div>
+          ) : stations.length === 0 ? (
+            <div className="h-full w-full bg-slate-100 flex items-center justify-center px-4">
+              <div className="text-center max-w-md">
+                <div className="text-2xl mb-2">📡</div>
+                <div className="font-semibold text-slate-700">No Met Department data available right now</div>
+                <div className="text-sm text-slate-500 mt-1">
+                  We only publish measured ground-gauge data. The upstream bulletin will refresh shortly.
+                </div>
+                {error && (
+                  <div className="mt-3 text-xs text-yellow-700 bg-yellow-50 border border-yellow-300 rounded p-2">
+                    {error}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <MetStationsMap
+              stations={stations}
+              selectedWmoId={selected?.wmo_id ?? null}
+              onStationSelect={setSelected}
+            />
+          )}
+        </div>
+
+        {/* Floating details card for the selected station */}
+        {selected && (
+          <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:bottom-3 sm:max-w-sm z-10">
+            <div className="bg-white rounded-xl shadow-2xl border border-slate-200 p-3 sm:p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-900 truncate">{selected.name}</div>
+                  <div className="text-[11px] text-slate-500 truncate">
+                    {selected.district} &middot; WMO {selected.wmo_id}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="text-slate-400 hover:text-slate-700 transition-colors flex-shrink-0"
+                  aria-label="Close"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                <Stat label="Since 08:30" value={`${fmt(selected.rainfall_since_830am_mm)} mm`} highlight />
+                <Stat label="Last 3h" value={`${fmt(selected.rainfall_3h_mm)} mm`} />
+                <Stat
+                  label="Temperature"
+                  value={selected.temperature_c !== null ? `${fmt(selected.temperature_c)}°C` : '—'}
+                />
+                <Stat
+                  label="Humidity"
+                  value={
+                    selected.relative_humidity_pct !== null
+                      ? `${selected.relative_humidity_pct}%`
+                      : '—'
+                  }
+                />
+              </div>
+              {selected.weather_type && (
+                <div className="mt-3 text-[11px] text-slate-600">
+                  Conditions: <span className="font-medium text-slate-800">{selected.weather_type}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Footer attribution */}
+      <div className="bg-white border-t border-slate-200">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-2 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-2">
+          <span>
+            Source: Sri Lanka Department of Meteorology - measured rainfall from 24 WMO stations.
+            We publish only directly-measured data; no models or forecasts on this page.
+          </span>
+          {lastFetched && (
+            <span>Fetched {lastFetched.toLocaleTimeString()}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- small UI primitives -----------------------------------------------
+
+function Chip({
+  n,
+  label,
+  color,
+  dot,
+}: {
+  n: number;
+  label: string;
+  color: string;
+  dot: string;
+}) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border ${color}`}>
+      <span className={`w-2 h-2 rounded-full ${dot}`} />
+      <span className="font-semibold">{n}</span>
+      <span className="hidden sm:inline">{label}</span>
+    </span>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  highlight = false,
+}: {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-lg p-2 border ${
+        highlight ? 'bg-slate-50 border-slate-300' : 'bg-white border-slate-200'
+      }`}
+    >
+      <div className="text-[10px] text-slate-500">{label}</div>
+      <div className="font-mono font-semibold text-slate-900">{value}</div>
     </div>
   );
 }

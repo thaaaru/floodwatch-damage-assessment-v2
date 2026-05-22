@@ -15,6 +15,7 @@ from ..schemas import WeatherResponse, WeatherSummary
 from ..services.districts_service import get_district_by_name, get_all_districts
 from ..services.open_meteo import OpenMeteoService
 from ..services.weather_cache import weather_cache
+from ..services.met_department import met_department_service
 from ..config import get_settings
 
 router = APIRouter(prefix="/api/weather", tags=["weather"])
@@ -90,6 +91,32 @@ async def get_all_weather(
 
     # Return fresh cached data
     return cached_data
+
+
+
+
+@router.get("/met-stations")
+async def get_met_stations():
+    """
+    Sri Lanka Department of Meteorology - measured rainfall from the
+    official 24 WMO-compliant weather stations (3-hourly bulletin).
+
+    This is the *only* source we publish for the home-page rain icons:
+    physical bucket measurements, no models, no interpolation. Updated
+    every 3 hours by the Met Dept; we refresh from their server every
+    15 minutes.
+
+    Returns a flat list with rainfall, temperature, humidity, and a
+    "report_time_utc" so the UI can display freshness.
+    """
+    stations = await met_department_service.get_stations()
+    summary = await met_department_service.get_summary()
+    return {
+        "source": "Sri Lanka Department of Meteorology (https://meteo.gov.lk)",
+        "source_type": "measured",
+        "summary": summary,
+        "stations": [s.to_dict() for s in stations],
+    }
 
 
 @router.get("/cache-status")

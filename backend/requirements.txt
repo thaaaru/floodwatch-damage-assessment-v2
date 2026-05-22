@@ -30,6 +30,9 @@ slowapi==0.1.9
 # Utilities
 python-dateutil==2.8.2
 matplotlib==3.8.2
+# Used to parse the Sri Lanka Department of Meteorology 3-hourly Excel
+# bulletin (the authoritative measured-rainfall source).
+openpyxl==3.1.5
 
 # Satellite imagery processing
 pystac-client==0.8.3

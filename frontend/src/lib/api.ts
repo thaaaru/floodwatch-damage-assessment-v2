@@ -271,6 +271,15 @@ class ApiClient {
     return this.fetch<WeatherSummary[]>(`/api/weather/all?hours=${hours}`);
   }
 
+  /**
+   * Sri Lanka Department of Meteorology - measured rainfall from 24
+   * official WMO weather stations (3-hourly bulletin). Authoritative
+   * ground-truth data; no modeling, no interpolation.
+   */
+  async getMetStations(): Promise<MetStationsResponse> {
+    return this.fetch<MetStationsResponse>('/api/weather/met-stations');
+  }
+
   async getDistrictWeather(name: string): Promise<WeatherDetail> {
     return this.fetch<WeatherDetail>(`/api/weather/${encodeURIComponent(name)}`);
   }
@@ -849,7 +858,35 @@ export interface TrafficResponse {
   incidents: TrafficIncident[];
 }
 
-// Irrigation/River Water Level types
+// Sri Lanka Department of Meteorology - measured ground-gauge readings.
+// 24 WMO-compliant stations, refreshed every ~3h upstream.
+export interface MetStation {
+  wmo_id: number;
+  name: string;
+  district: string;
+  latitude: number;
+  longitude: number;
+  report_time_utc: string;          // ISO-8601
+  rainfall_3h_mm: number;           // 3-hour total
+  rainfall_since_830am_mm: number;  // daily accumulation from 08:30 local
+  temperature_c: number | null;
+  relative_humidity_pct: number | null;
+  weather_type: string;             // 'rain', 'showers', 'fairday', etc.
+}
+
+export interface MetStationsResponse {
+  source: string;
+  source_type: 'measured';
+  summary: {
+    station_count: number;
+    report_time_utc: string | null;
+    rainfall_total_mm: number;
+    wettest_station: { name: string; district: string; rainfall_since_830am_mm: number } | null;
+    stations_with_rain: number;
+  };
+  stations: MetStation[];
+}
+
 export interface IrrigationStation {
   station: string;
   river: string;
