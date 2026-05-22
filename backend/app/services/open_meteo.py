@@ -1,8 +1,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 import httpx
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import logging
+try:  # Python 3.9+ stdlib; available in our 3.11 runtime.
+    from zoneinfo import ZoneInfo
+    COLOMBO_TZ = ZoneInfo("Asia/Colombo")
+except ImportError:  # pragma: no cover
+    COLOMBO_TZ = timezone(timedelta(hours=5, minutes=30))
 from ..config import get_settings
 
 logger = logging.getLogger(__name__)
@@ -81,8 +86,14 @@ class OpenMeteoService:
         wind_gusts = hourly.get("wind_gusts_10m", [])
         times = hourly.get("time", [])
 
-        # Find current hour index
-        now = datetime.now()
+        # Find current hour index. Open-Meteo's `time` array is in
+        # Asia/Colombo (we pass `timezone=Asia/Colombo` in the query), so we
+        # MUST compare against Sri Lanka local time, not the container's UTC
+        # clock. The old code used `datetime.now()` which inside our docker
+        # container is UTC; that lagged by 5.5h and meant rainfall_24h was
+        # really "rainfall ending 5-6 hours ago", silently understating
+        # current accumulation by 3-4x during heavy monsoon rain.
+        now = datetime.now(COLOMBO_TZ).replace(tzinfo=None)
         current_idx = 0
         for i, t in enumerate(times):
             try:
