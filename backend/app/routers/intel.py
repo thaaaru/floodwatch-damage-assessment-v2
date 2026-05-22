@@ -4,6 +4,8 @@
 Intelligence API Router
 Provides automated actionable intelligence for damage control
 """
+import logging
+
 from fastapi import APIRouter, Query, BackgroundTasks
 from typing import Optional
 
@@ -28,6 +30,8 @@ from ..services.weather_cache import weather_cache
 from ..services.flood_patterns import flood_analyzer, DISTRICT_COORDS
 from ..services.environmental_data import environmental_service
 from ..services.flood_threat_cache import flood_threat_cache
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/intel", tags=["intelligence"])
 
