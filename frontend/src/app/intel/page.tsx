@@ -13,6 +13,7 @@ import {
 // static: no runtime API calls, no auto-refresh, no localStorage cache. To
 // refresh the snapshot, re-run scripts/snapshot-intel.sh and rebuild.
 import snapshot from './snapshot.json';
+import HoverBarChart from '@/components/HoverBarChart';
 
 // Safe number formatting helper to prevent toFixed errors on undefined/null values
 const fmt = (v: any, d: number = 0): string => {
@@ -451,23 +452,18 @@ export default function IntelDashboard() {
                       {floodPatterns.climate_change.moving_average_5yr.length > 0 && (
                         <div className="bg-gray-800/80 rounded-lg p-3">
                           <div className="text-sm font-semibold text-gray-300 mb-3">5-Year Moving Average Trend</div>
-                          <div className="flex items-end gap-px h-24">
-                            {floodPatterns.climate_change.moving_average_5yr.map((ma, idx) => {
-                              const maxAvg = Math.max(...floodPatterns.climate_change!.moving_average_5yr.map(m => m.avg_rainfall_mm));
-                              const minAvg = Math.min(...floodPatterns.climate_change!.moving_average_5yr.map(m => m.avg_rainfall_mm));
-                              const range = maxAvg - minAvg || 1;
-                              const heightPct = ((ma.avg_rainfall_mm - minAvg) / range) * 80 + 20;
-                              const isRecent = idx >= floodPatterns.climate_change!.moving_average_5yr.length - 10;
-                              return (
-                                <div
-                                  key={ma.year}
-                                  className={`flex-1 ${isRecent ? 'bg-purple-500' : 'bg-blue-600'} rounded-t min-w-[3px] transition-all hover:opacity-80`}
-                                  style={{ height: `${heightPct}%` }}
-                                  title={`${ma.year}: ${fmt(ma.avg_rainfall_mm)}mm (5yr avg)`}
-                                />
-                              );
-                            })}
-                          </div>
+                          <HoverBarChart
+                            data={floodPatterns.climate_change.moving_average_5yr.map((ma, idx, arr) => ({
+                              key: ma.year,
+                              value: ma.avg_rainfall_mm,
+                              unit: 'mm (5yr avg)',
+                              // Highlight the most recent decade in purple, older in blue.
+                              color: idx >= arr.length - 10 ? '#a855f7' : '#2563eb',
+                            }))}
+                            heightClass="h-24"
+                            precision={0}
+                            minBarPercent={5}
+                          />
                           <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>{floodPatterns.climate_change.moving_average_5yr[0]?.year}</span>
                             <span className="text-purple-400">Recent trend highlighted</span>
@@ -816,20 +812,15 @@ export default function IntelDashboard() {
                             {fmt(floodPatterns.yearly_trends[floodPatterns.yearly_trends.length - 1]?.total_rainfall_mm)}mm
                           </span>
                         </div>
-                        <div className="flex items-end gap-px h-12">
-                          {floodPatterns.yearly_trends.map((y) => {
-                            const max = Math.max(...floodPatterns.yearly_trends.map(t => t.total_rainfall_mm));
-                            const heightPct = (y.total_rainfall_mm / max) * 100;
-                            return (
-                              <div
-                                key={y.year}
-                                className="flex-1 bg-blue-500 rounded-t min-w-[2px]"
-                                style={{ height: `${heightPct}%` }}
-                                title={`${y.year}: ${fmt(y.total_rainfall_mm)}mm`}
-                              />
-                            );
-                          })}
-                        </div>
+                        <HoverBarChart
+                          data={floodPatterns.yearly_trends.map((y) => ({
+                            key: y.year,
+                            value: y.total_rainfall_mm,
+                            unit: 'mm',
+                          }))}
+                          color="#3b82f6"
+                          heightClass="h-12"
+                        />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>{floodPatterns.yearly_trends[0]?.year}</span>
                           <span>{floodPatterns.yearly_trends[floodPatterns.yearly_trends.length - 1]?.year}</span>
@@ -843,20 +834,16 @@ export default function IntelDashboard() {
                             {floodPatterns.yearly_trends[floodPatterns.yearly_trends.length - 1]?.extreme_days || 0}
                           </span>
                         </div>
-                        <div className="flex items-end gap-px h-12">
-                          {floodPatterns.yearly_trends.map((y) => {
-                            const max = Math.max(...floodPatterns.yearly_trends.map(t => t.extreme_days), 1);
-                            const heightPct = (y.extreme_days / max) * 100;
-                            return (
-                              <div
-                                key={y.year}
-                                className="flex-1 bg-red-500 rounded-t min-w-[2px]"
-                                style={{ height: `${Math.max(heightPct, 2)}%` }}
-                                title={`${y.year}: ${y.extreme_days} extreme days`}
-                              />
-                            );
-                          })}
-                        </div>
+                        <HoverBarChart
+                          data={floodPatterns.yearly_trends.map((y) => ({
+                            key: y.year,
+                            value: y.extreme_days,
+                            unit: 'extreme days',
+                          }))}
+                          color="#ef4444"
+                          heightClass="h-12"
+                          minBarPercent={2}
+                        />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>{floodPatterns.yearly_trends[0]?.year}</span>
                           <span>{floodPatterns.yearly_trends[floodPatterns.yearly_trends.length - 1]?.year}</span>
@@ -870,20 +857,15 @@ export default function IntelDashboard() {
                             {fmt(floodPatterns.yearly_trends[floodPatterns.yearly_trends.length - 1]?.max_daily_mm)}mm
                           </span>
                         </div>
-                        <div className="flex items-end gap-px h-12">
-                          {floodPatterns.yearly_trends.map((y) => {
-                            const max = Math.max(...floodPatterns.yearly_trends.map(t => t.max_daily_mm));
-                            const heightPct = (y.max_daily_mm / max) * 100;
-                            return (
-                              <div
-                                key={y.year}
-                                className="flex-1 bg-orange-500 rounded-t min-w-[2px]"
-                                style={{ height: `${heightPct}%` }}
-                                title={`${y.year}: ${fmt(y.max_daily_mm)}mm max`}
-                              />
-                            );
-                          })}
-                        </div>
+                        <HoverBarChart
+                          data={floodPatterns.yearly_trends.map((y) => ({
+                            key: y.year,
+                            value: y.max_daily_mm,
+                            unit: 'mm max',
+                          }))}
+                          color="#f97316"
+                          heightClass="h-12"
+                        />
                         <div className="flex justify-between text-xs text-gray-500 mt-1">
                           <span>{floodPatterns.yearly_trends[0]?.year}</span>
                           <span>{floodPatterns.yearly_trends[floodPatterns.yearly_trends.length - 1]?.year}</span>
