@@ -263,19 +263,19 @@ export default function IntelDashboard() {
                 <div className="space-y-6">
                   {/* Summary Stats with Gauge Charts */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="glass border border-blue-400/30 rounded-xl p-3 text-center shadow-md">
+                    <div className="bg-slate-800/80 backdrop-blur-md border border-blue-400/30 rounded-xl p-3 text-center shadow-md">
                       <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-blue-300 bg-clip-text text-transparent">{fmt(floodPatterns.summary.avg_annual_rainfall_mm)}</div>
                       <div className="text-xs text-blue-300">Avg Annual Rainfall (mm)</div>
                     </div>
-                    <div className="glass border border-orange-400/30 rounded-xl p-3 text-center shadow-md">
+                    <div className="bg-slate-800/80 backdrop-blur-md border border-orange-400/30 rounded-xl p-3 text-center shadow-md">
                       <div className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-300 bg-clip-text text-transparent">{fmt(floodPatterns.summary.max_daily_rainfall_mm)}</div>
                       <div className="text-xs text-orange-300">Max Daily Rainfall (mm)</div>
                     </div>
-                    <div className="glass border border-cyan-400/30 rounded-xl p-3 text-center shadow-md">
+                    <div className="bg-slate-800/80 backdrop-blur-md border border-cyan-400/30 rounded-xl p-3 text-center shadow-md">
                       <div className="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-cyan-300 bg-clip-text text-transparent">{floodPatterns.summary.heavy_rain_days}</div>
                       <div className="text-xs text-cyan-300">Heavy Rain Days (&gt;50mm)</div>
                     </div>
-                    <div className="glass border border-red-400/30 rounded-xl p-3 text-center shadow-md">
+                    <div className="bg-slate-800/80 backdrop-blur-md border border-red-400/30 rounded-xl p-3 text-center shadow-md">
                       <div className="text-2xl font-bold bg-gradient-to-r from-red-400 to-red-300 bg-clip-text text-transparent">{floodPatterns.summary.extreme_rain_days}</div>
                       <div className="text-xs text-red-300">Extreme Days (&gt;100mm)</div>
                     </div>

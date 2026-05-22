@@ -222,13 +222,24 @@
   transition: transform 0.2s ease-out;
 }
 
-/* Glass morphism utilities */
+/* Glass morphism utilities.
+ *
+ * The whole site now runs on a slate-900 dark canvas (see app/layout.tsx).
+ * `.glass` therefore uses a translucent *dark* slate surface so panels read
+ * cleanly on the dark page; this is identical to `.glass-dark` and the two
+ * names are now aliases. The original light-on-light `.glass` (bg-white/80)
+ * is preserved as `.glass-light` for the rare case where a panel sits over
+ * a colored background (e.g. map overlays) and needs to invert. */
 .glass {
-  @apply bg-white/80 backdrop-blur-md border border-white/20;
+  @apply bg-slate-900/80 backdrop-blur-md border border-slate-700/20;
 }
 
 .glass-dark {
   @apply bg-slate-900/80 backdrop-blur-md border border-slate-700/20;
+}
+
+.glass-light {
+  @apply bg-white/80 backdrop-blur-md border border-white/20;
 }
 
 /* Gradient backgrounds */
