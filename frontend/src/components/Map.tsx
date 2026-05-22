@@ -965,7 +965,9 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       // Always use rainfall markers, with dark blue border to match the blue gradient
       const borderColor = '#0c4a6e'; // sky-900
       // Always show rainfall markers with animation based on alert level
-      const showLabel = currentZoom >= 9;
+      // Always show the rainfall label, regardless of zoom level. The previous
+      // gate at zoom >= 9 hid the "XXmm" pill on the default country-wide view.
+      const showLabel = true;
 
       // Home dashboard is rainfall-only: always render the rain droplet icon,
       // regardless of temperature or alert level. The previous branch that
@@ -1169,7 +1171,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       <Marker
         key={`river-${station.river_code}-${station.station}`}
         position={[station.lat, station.lon]}
-        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status), station.water_level_m, currentZoom >= 9)}
+        icon={createRiverStationIcon(getRiverStatusColorGradient(station.status), station.water_level_m, true)}
         eventHandlers={{
           click: () => {
             focusOnPosition(station.lat, station.lon);
@@ -1355,7 +1357,7 @@ function WeatherMap(props: MapProps = {} as MapProps) {
         <Marker
           key={`flood-gauge-${station.station}`}
           position={[station.lat, station.lon]}
-          icon={createFloodGaugeIcon(station.status, station.pct_to_alert, currentZoom >= 9)}
+          icon={createFloodGaugeIcon(station.status, station.pct_to_alert, true)}
           zIndexOffset={zIndex}
           eventHandlers={{
             click: () => {
