@@ -65,6 +65,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Error closing Google Floods HTTP client: {e}")
 
+    # Close the shared Open-Meteo Flood HTTP client (if it was ever initialized).
+    try:
+        from .services.open_meteo_flood import open_meteo_flood_service
+        await open_meteo_flood_service.aclose()
+    except Exception as e:
+        logger.warning(f"Error closing Open-Meteo Flood HTTP client: {e}")
+
 
 # Create FastAPI app
 app = FastAPI(

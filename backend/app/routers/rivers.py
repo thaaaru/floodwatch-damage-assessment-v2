@@ -13,6 +13,7 @@ from ..models import River, Station, WaterReading
 from ..schemas import RiverWithStations
 from ..services.river_service import get_river_data_service
 from ..services.river_provider import BoundingBox
+from ..services.open_meteo_flood import open_meteo_flood_service
 
 router = APIRouter(prefix="/api", tags=["rivers"])
 
@@ -187,4 +188,91 @@ async def get_region_provider_status(region_id: str):
         "region": region_id,
         "provider_status": status,
         "timestamp": __import__("datetime").datetime.utcnow().isoformat(),
+    }
+
+
+@router.get("/rivers/discharge-forecast")
+async def get_discharge_forecast(
+    lat: float = Query(..., ge=-90.0, le=90.0, description="Latitude"),
+    lon: float = Query(..., ge=-180.0, le=180.0, description="Longitude"),
+    past_days: int = Query(2, ge=0, le=92, description="Days of history"),
+    forecast_days: int = Query(7, ge=1, le=30, description="Days of forecast"),
+):
+    """
+    Get modeled river discharge forecast (m^3/s) for a coordinate.
+
+    Backed by Open-Meteo Flood API (GloFAS model). Useful as a forecast
+    overlay when an in-situ gauge is not available, or to project trends
+    when one is.
+
+    Returns daily values for past_days + forecast_days, including current,
+    mean, max, and min discharge.
+    """
+    forecast = await open_meteo_flood_service.get_forecast(
+        latitude=lat,
+        longitude=lon,
+        past_days=past_days,
+        forecast_days=forecast_days,
+    )
+    if forecast is None:
+        return {
+            "status": "error",
+            "message": "Open-Meteo Flood API did not return a forecast for the given coordinates.",
+        }
+
+    return {
+        "status": "success",
+        "source": "open-meteo-flood (GloFAS)",
+        "forecast": forecast.to_dict(),
+        "summary": {
+            "latest_discharge_m3s": forecast.latest_discharge,
+            "peak_forecast_discharge_m3s": forecast.peak_forecast_discharge,
+        },
+    }
+
+
+@router.get("/rivers/discharge-forecast/stations")
+async def get_discharge_forecast_for_stations(
+    region: str = Query("srilanka", description="Region ID"),
+    past_days: int = Query(2, ge=0, le=92),
+    forecast_days: int = Query(7, ge=1, le=30),
+):
+    """
+    Get discharge forecasts for every known station in a region.
+
+    Joins our gauge metadata (Irrigation Dept) with modeled river discharge
+    forecasts so the UI can render both observed and forecast curves.
+    """
+    service = get_river_data_service()
+    stations = await service.fetch_stations_by_region(region)
+    if not stations:
+        return {"status": "error", "message": f"No stations found for region '{region}'", "stations": []}
+
+    coordinates = [(s.latitude, s.longitude) for s in stations]
+    forecasts = await open_meteo_flood_service.get_forecasts_bulk(
+        coordinates,
+        past_days=past_days,
+        forecast_days=forecast_days,
+    )
+
+    results = []
+    for station in stations:
+        forecast = forecasts.get((station.latitude, station.longitude))
+        results.append({
+            "station_id": station.station_id,
+            "station_name": station.station_name,
+            "river_name": station.river_name,
+            "latitude": station.latitude,
+            "longitude": station.longitude,
+            "observed_water_level_m": station.water_level_m,
+            "observed_status": station.status,
+            "forecast": forecast.to_dict() if forecast else None,
+        })
+
+    return {
+        "status": "success",
+        "region": region,
+        "source": "open-meteo-flood (GloFAS) + irrigation gauges",
+        "station_count": len(results),
+        "stations": results,
     }

@@ -21,7 +21,14 @@ logger = logging.getLogger(__name__)
 ARCGIS_URL = "https://services3.arcgis.com/J7ZFXmR8rSmQ3FGf/arcgis/rest/services/gauges_2_view/FeatureServer/0/query"
 
 # GitHub raw data (fallback, updated hourly)
-GITHUB_LATEST_URL = "https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/latest-100.json"
+#
+# NOTE (2026-05-22): The upstream repo restructured. The historical
+# `data/latest-100.json` file now 404s. We switched to `data/all.json`
+# which carries the same flat schema (list of
+# {station_name, time_ut, water_level_m}) but contains the full history,
+# so we must select only the most recent reading per station ourselves.
+GITHUB_LATEST_URL = "https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/all.json"
+GITHUB_ALERT_URL = "https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/alert_data.json"
 GITHUB_STATIONS_URL = "https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/static/stations.json"
 
 # Station metadata with flood thresholds and coordinates
@@ -433,7 +440,12 @@ class IrrigationFetcher:
     async def fetch_water_levels(self) -> list[dict]:
         """
         Fetch river water levels from ArcGIS API.
-        Falls back to GitHub data if ArcGIS fails.
+        Falls back to GitHub mirrors if ArcGIS fails.
+
+        Fallback order:
+          1. ArcGIS REST (live, ~hourly upstream refresh)
+          2. GitHub `alert_data.json` (small, station -> date -> time -> level)
+          3. GitHub `all.json` (~15 MB; full history, last-resort)
         """
         try:
             # Try ArcGIS API first (real-time)
@@ -444,18 +456,29 @@ class IrrigationFetcher:
                 logger.info(f"Fetched {len(data)} stations from ArcGIS")
                 return data
         except Exception as e:
-            logger.warning(f"ArcGIS fetch failed: {e}, trying GitHub fallback")
+            logger.warning(f"ArcGIS fetch failed: {e}, trying GitHub alert_data fallback")
 
         try:
-            # Fallback to GitHub (hourly updates)
+            # Compact, pre-grouped mirror (preferred fallback)
+            data = await self._fetch_from_github_alert()
+            if data:
+                self._cache = data
+                self._last_fetch = datetime.utcnow()
+                logger.info(f"Fetched {len(data)} stations from GitHub alert_data")
+                return data
+        except Exception as e:
+            logger.warning(f"GitHub alert_data fallback failed: {e}, trying all.json")
+
+        try:
+            # Fallback to GitHub all.json (large; full history)
             data = await self._fetch_from_github()
             if data:
                 self._cache = data
                 self._last_fetch = datetime.utcnow()
-                logger.info(f"Fetched {len(data)} stations from GitHub")
+                logger.info(f"Fetched {len(data)} stations from GitHub all.json")
                 return data
         except Exception as e:
-            logger.error(f"GitHub fallback also failed: {e}")
+            logger.error(f"GitHub all.json fallback also failed: {e}")
 
         return self._cache  # Return cached data on error
 
@@ -496,6 +519,57 @@ class IrrigationFetcher:
             result = self._build_station_data(station_name, attrs)
             if result:
                 results.append(result)
+
+        return results
+
+    async def _fetch_from_github_alert(self) -> list[dict]:
+        """Fetch from GitHub `alert_data.json` (compact, pre-grouped).
+
+        Schema:
+            {
+              "event_data": {
+                 "Horowpothana": {
+                    "20260522": {"102708": 1.27, "090954": 1.27, ...},
+                    "20260521": {...},
+                    ...
+                 },
+                 ...
+              }
+            }
+        """
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.get(GITHUB_ALERT_URL)
+            response.raise_for_status()
+            payload = response.json()
+
+        event_data = payload.get("event_data", {}) or {}
+        results: list[dict] = []
+        for station_name, by_date in event_data.items():
+            if not isinstance(by_date, dict) or not by_date:
+                continue
+            # Pick most recent date (YYYYMMDD) then most recent time (HHMMSS).
+            latest_date = max(by_date.keys())
+            times = by_date.get(latest_date) or {}
+            if not isinstance(times, dict) or not times:
+                continue
+            latest_time = max(times.keys())
+            water_level = times.get(latest_time)
+            if water_level is None:
+                continue
+
+            # Convert YYYYMMDD + HHMMSS -> POSIX timestamp (UTC).
+            try:
+                ts = datetime.strptime(
+                    f"{latest_date}{latest_time.zfill(6)}", "%Y%m%d%H%M%S"
+                )
+                time_ut = int(ts.timestamp())
+            except ValueError:
+                time_ut = int(datetime.utcnow().timestamp())
+
+            reading = {"water_level_m": water_level, "time_ut": time_ut}
+            built = self._build_station_data_github(station_name, reading)
+            if built:
+                results.append(built)
 
         return results
 
