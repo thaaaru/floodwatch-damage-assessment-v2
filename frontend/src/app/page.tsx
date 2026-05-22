@@ -74,10 +74,12 @@ export default function Dashboard() {
   const [rainSummary, setRainSummary] = useState<RainSummary | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
-  const [showForecastExpanded, setShowForecastExpanded] = useState(false);
   const [yesterdayStats, setYesterdayStats] = useState<YesterdayStats | null>(null);
   const [loadingYesterdayStats, setLoadingYesterdayStats] = useState(false);
-  const [showRiverStations, setShowRiverStations] = useState(true); // Show 40 river water level stations by default
+  // Layer is locked to 'rainfall' on the home dashboard (see explanation
+  // near the top-controls block). The setter is kept (and unused) only to
+  // preserve the original useState signature for an easy revert.
+  const [showRiverStations, setShowRiverStations] = useState(false); // Hidden by default: home map is rainfall-only.
 
   // Note: Info panel is always visible on desktop as a sidebar, toggle only works on mobile
 
@@ -169,22 +171,15 @@ export default function Dashboard() {
     // Data is cached for the entire day on backend
   }, []);
 
-  const currentLayers = layerOptions.filter(l => l.group === 'current');
-  const forecastLayers = layerOptions.filter(l => l.group === 'forecast');
-
-  // Get forecast dates
-  const getForecastDate = (dayOffset: number) => {
-    const date = new Date();
-    date.setDate(date.getDate() + dayOffset);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  // Update forecast labels with actual dates
-  const forecastLayersWithDates = forecastLayers.map((layer, idx) => ({
-    ...layer,
-    label: getForecastDate(idx + 1),
-    shortLabel: `D+${idx + 1}`
-  }));
+  // (Rainfall-only home: layer / period / forecast controls removed.
+  // Helpers and computed lists below are intentionally not used; kept
+  // commented out for easy restoration.
+  //
+  // const currentLayers = layerOptions.filter(l => l.group === 'current');
+  // const forecastLayers = layerOptions.filter(l => l.group === 'forecast');
+  // const getForecastDate = (dayOffset: number) => { ... };
+  // const forecastLayersWithDates = forecastLayers.map(...);
+  // )
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col bg-slate-50">
@@ -207,156 +202,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-        {/* Top Controls Overlay */}
-        <div className="absolute top-6 left-6 right-6 z-[1000] flex flex-col gap-3">
-          {/* Layer Selection */}
-          <div className="glass rounded-xl shadow-lg p-3">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Current Layers */}
-              <div className="flex items-center gap-2">
-                <div className="flex flex-wrap gap-1">
-                  {currentLayers.filter(l => l.id !== 'danger').map((layer) => (
-                    <button
-                      key={layer.id}
-                      onClick={() => setSelectedLayer(layer.id)}
-                      title={layer.description}
-                      className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                        selectedLayer === layer.id
-                          ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                          : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                      }`}
-                    >
-                      <span className="text-base">{layer.icon}</span>
-                      <span className="hidden sm:inline">{layer.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="h-6 w-px bg-slate-200 hidden sm:block" />
-
-              {/* Time Period */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-900 hidden sm:inline">Period</span>
-                <div className="flex rounded-lg overflow-hidden border border-slate-300">
-                  {[24, 48, 72].map((hours) => (
-                    <button
-                      key={hours}
-                      onClick={() => setSelectedHours(hours)}
-                      className={`px-2.5 py-1.5 text-xs font-bold transition-all ${
-                        selectedHours === hours
-                          ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white'
-                          : 'bg-white text-slate-900 hover:bg-slate-100'
-                      }`}
-                    >
-                      {hours}h
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="h-6 w-px bg-slate-200 hidden md:block" />
-
-              {/* Flood Risk - Show only All Levels button */}
-              <div className="flex items-center gap-1 flex-wrap">
-                <button
-                  onClick={() => { setSelectedLayer('danger'); setDangerFilter('all'); }}
-                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                    selectedLayer === 'danger' && dangerFilter === 'all'
-                      ? 'bg-gradient-to-r from-emerald-500 via-amber-500 to-red-500 text-white'
-                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                  }`}
-                >
-                  <span className="md:hidden">⚠️ All</span>
-                  <span className="hidden md:inline">⚠️ All Levels</span>
-                </button>
-              </div>
-
-              {/* Divider */}
-              <div className="h-6 w-px bg-slate-200 hidden md:block" />
-
-              {/* River Stations Toggle */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowRiverStations(!showRiverStations)}
-                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                    showRiverStations
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                  }`}
-                  title="Toggle river stations with water level icons"
-                >
-                  <span className="text-base">🌊</span>
-                  <span className="hidden sm:inline">Stations</span>
-                </button>
-              </div>
-
-              {/* Divider */}
-              <div className="h-6 w-px bg-slate-200 hidden md:block" />
-
-              {/* Forecast - Dropdown Menu */}
-              <div className="relative flex items-center gap-2">
-                <button
-                  onClick={() => setShowForecastExpanded(!showForecastExpanded)}
-                  className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                    selectedLayer.startsWith('forecast')
-                      ? 'bg-violet-600 text-white shadow-sm'
-                      : 'bg-white/80 text-slate-900 hover:bg-white border border-slate-300'
-                  }`}
-                  title="Toggle forecast days"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>Forecast</span>
-                  <svg className={`w-3 h-3 transition-transform ${showForecastExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-
-                {/* Forecast Floating Dropdown */}
-                {showForecastExpanded && (
-                  <>
-                    {/* Backdrop to close menu */}
-                    <div
-                      className="fixed inset-0 z-[9998]"
-                      onClick={() => setShowForecastExpanded(false)}
-                    />
-
-                    {/* Dropdown Menu - Drops down vertically */}
-                    <div className="absolute top-full left-0 right-0 sm:left-0 sm:right-auto mt-2 z-[9999] glass rounded-xl shadow-2xl p-3 w-full sm:min-w-[280px] sm:w-auto max-w-[320px]">
-                      <div className="text-[10px] font-bold text-slate-600 uppercase tracking-wide mb-2">Select Forecast Day</div>
-                      <div className="flex flex-col gap-2">
-                        {forecastLayersWithDates.map((layer) => (
-                          <button
-                            key={layer.id}
-                            onClick={() => {
-                              setSelectedLayer(layer.id);
-                              setShowForecastExpanded(false);
-                            }}
-                            title={layer.description}
-                            className={`px-4 py-2.5 text-sm font-bold rounded-lg transition-all text-left flex items-center gap-2 ${
-                              selectedLayer === layer.id
-                                ? 'bg-violet-600 text-white shadow-sm'
-                                : 'bg-white text-slate-900 hover:bg-violet-50 border border-slate-200'
-                            }`}
-                          >
-                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span>{layer.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Rainfall-only home dashboard: all map controls intentionally hidden.
+            Layer is locked to `rainfall` (see useState default) so the map
+            always renders precipitation icons. Period 24h is fixed; if you
+            want to expose layer / period / station toggles again, see
+            git commit history around 2026-05-22. */}
 
           {/* Windy Icon - Left Side */}
           <a
