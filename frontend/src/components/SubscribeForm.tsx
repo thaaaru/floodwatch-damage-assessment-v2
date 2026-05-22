@@ -74,24 +74,24 @@ export default function SubscribeForm() {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+        <label className="block text-sm font-medium text-slate-200 mb-2">Phone Number</label>
         <input
           type="tel"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           placeholder="+94771234567"
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           required
         />
         <p className="text-xs text-gray-500 mt-1">Sri Lankan format: +94XXXXXXXXX</p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
+        <label className="block text-sm font-medium text-slate-200 mb-2">Language</label>
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="w-full px-4 py-2 border border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="en">English</option>
           <option value="si">Sinhala</option>
@@ -101,7 +101,7 @@ export default function SubscribeForm() {
 
       <div>
         <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-sm font-medium text-slate-200">
             Districts to Monitor ({selectedDistricts.length} selected)
           </label>
           <div className="flex gap-2">
@@ -115,7 +115,7 @@ export default function SubscribeForm() {
             <button
               type="button"
               onClick={handleClearAll}
-              className="text-xs px-2 py-1 text-gray-600 hover:bg-gray-50 rounded border border-gray-300"
+              className="text-xs px-2 py-1 text-slate-300 hover:bg-slate-900 rounded border border-slate-600"
             >
               Clear
             </button>
@@ -123,7 +123,7 @@ export default function SubscribeForm() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-60 overflow-y-auto border rounded-lg p-3">
           {districts.map((district) => (
-            <label key={district.name} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1 rounded">
+            <label key={district.name} className="flex items-center space-x-2 cursor-pointer hover:bg-slate-900 p-1 rounded">
               <input
                 type="checkbox"
                 checked={selectedDistricts.includes(district.name)}

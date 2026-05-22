@@ -29,7 +29,7 @@ export function FloatingButton({
 
   const variantClasses = {
     primary: 'bg-brand-600 text-white hover:bg-brand-700 shadow-lg',
-    secondary: 'bg-white text-slate-700 hover:bg-slate-50 shadow-md border border-slate-200',
+    secondary: 'bg-slate-800 text-slate-200 hover:bg-slate-900 shadow-md border border-slate-700',
     danger: 'bg-red-600 text-white hover:bg-red-700 shadow-lg',
   };
 

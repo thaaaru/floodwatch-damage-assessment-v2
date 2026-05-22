@@ -11,7 +11,7 @@ import FloatingControls, { PrimaryCTA } from '@/components/mobile/FloatingContro
 // Lazy load map to reduce initial bundle
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), {
   ssr: false,
-  loading: () => <div className="w-full h-full bg-slate-100 animate-pulse" />
+  loading: () => <div className="w-full h-full bg-slate-900 animate-pulse" />
 });
 
 const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
@@ -148,15 +148,15 @@ export default function ReliefMapDemo() {
   // Get status badge
   const getStatusBadge = (status: string) => {
     const styles = {
-      open: 'bg-red-100 text-red-700 border-red-300',
-      in_progress: 'bg-yellow-100 text-yellow-700 border-yellow-300',
-      fulfilled: 'bg-green-100 text-green-700 border-green-300',
+      open: 'bg-red-100 text-red-300 border-red-700/50',
+      in_progress: 'bg-yellow-100 text-yellow-300 border-yellow-700/50',
+      fulfilled: 'bg-green-100 text-green-300 border-green-700/50',
     };
     return styles[status as keyof typeof styles] || styles.open;
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
+    <div className="h-screen flex flex-col overflow-hidden bg-slate-900">
       {/* Mobile Header */}
       <MobileHeader
         title="Flood Relief Map"
@@ -206,7 +206,7 @@ export default function ReliefMapDemo() {
                     <span className="text-2xl">{getTypeIcon(request.type)}</span>
                     <div className="flex-1">
                       <h3 className="font-bold text-sm">{request.location}</h3>
-                      <p className="text-xs text-gray-600">{request.district}</p>
+                      <p className="text-xs text-slate-300">{request.district}</p>
                     </div>
                   </div>
                   <p className="text-xs mb-2">{request.description}</p>
@@ -242,7 +242,7 @@ export default function ReliefMapDemo() {
           <div className="flex items-center justify-between w-full">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              <span className="font-bold text-sm text-slate-900">
+              <span className="font-bold text-sm text-white">
                 {urgencyCounts.critical || 0} Critical · {filteredRequests.length} Total Requests
               </span>
             </div>
@@ -255,7 +255,7 @@ export default function ReliefMapDemo() {
         {/* Sheet Content */}
         {sheetState === 'collapsed' && (
           <div className="p-4">
-            <p className="text-sm text-slate-600">Swipe up to view requests</p>
+            <p className="text-sm text-slate-300">Swipe up to view requests</p>
           </div>
         )}
 
@@ -273,7 +273,7 @@ export default function ReliefMapDemo() {
                     className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                       filterType.includes(type)
                         ? 'bg-brand-600 text-white'
-                        : 'bg-slate-100 text-slate-700'
+                        : 'bg-slate-900 text-slate-200'
                     }`}
                   >
                     {getTypeIcon(type)} {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -288,7 +288,7 @@ export default function ReliefMapDemo() {
                 <div
                   key={request.id}
                   onClick={() => handleMarkerClick(request)}
-                  className="bg-white rounded-lg p-4 border border-slate-200 active:bg-slate-50 transition-colors cursor-pointer"
+                  className="bg-slate-800 rounded-lg p-4 border border-slate-700 active:bg-slate-900 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start gap-3 mb-2">
                     <span className="text-2xl flex-shrink-0">{getTypeIcon(request.type)}</span>
@@ -299,8 +299,8 @@ export default function ReliefMapDemo() {
                           {request.status.replace('_', ' ').toUpperCase()}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-600 line-clamp-2">{request.description}</p>
-                      <p className="text-xs text-slate-500 mt-1">{request.timestamp}</p>
+                      <p className="text-xs text-slate-300 line-clamp-2">{request.description}</p>
+                      <p className="text-xs text-slate-400 mt-1">{request.timestamp}</p>
                     </div>
                   </div>
                 </div>
@@ -314,7 +314,7 @@ export default function ReliefMapDemo() {
             {/* Back Button */}
             <button
               onClick={() => setSheetState('half')}
-              className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-4"
+              className="flex items-center gap-2 text-sm font-medium text-slate-200 mb-4"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -323,12 +323,12 @@ export default function ReliefMapDemo() {
             </button>
 
             {/* Request Details */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700">
               <div className="flex items-start gap-4 mb-4">
                 <span className="text-4xl">{getTypeIcon(selectedRequest.type)}</span>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-slate-900 mb-1">{selectedRequest.location}</h2>
-                  <p className="text-sm text-slate-600">{selectedRequest.district} District</p>
+                  <h2 className="text-xl font-bold text-white mb-1">{selectedRequest.location}</h2>
+                  <p className="text-sm text-slate-300">{selectedRequest.district} District</p>
                 </div>
               </div>
 
@@ -338,9 +338,9 @@ export default function ReliefMapDemo() {
                   {selectedRequest.status.replace('_', ' ').toUpperCase()}
                 </span>
                 <span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                  selectedRequest.urgency === 'critical' ? 'bg-red-100 text-red-700' :
-                  selectedRequest.urgency === 'high' ? 'bg-orange-100 text-orange-700' :
-                  'bg-yellow-100 text-yellow-700'
+                  selectedRequest.urgency === 'critical' ? 'bg-red-100 text-red-300' :
+                  selectedRequest.urgency === 'high' ? 'bg-orange-100 text-orange-300' :
+                  'bg-yellow-100 text-yellow-300'
                 }`}>
                   {selectedRequest.urgency.toUpperCase()}
                 </span>
@@ -348,20 +348,20 @@ export default function ReliefMapDemo() {
 
               {/* Description */}
               <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-700 mb-2">Description</h3>
-                <p className="text-sm text-slate-600">{selectedRequest.description}</p>
+                <h3 className="text-sm font-bold text-slate-200 mb-2">Description</h3>
+                <p className="text-sm text-slate-300">{selectedRequest.description}</p>
               </div>
 
               {/* Contact */}
               <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-700 mb-2">Contact</h3>
+                <h3 className="text-sm font-bold text-slate-200 mb-2">Contact</h3>
                 <a href={`tel:${selectedRequest.contact}`} className="text-sm text-brand-600 font-medium">
                   {selectedRequest.contact}
                 </a>
               </div>
 
               {/* Timestamp */}
-              <p className="text-xs text-slate-500">Reported {selectedRequest.timestamp}</p>
+              <p className="text-xs text-slate-400">Reported {selectedRequest.timestamp}</p>
             </div>
 
             {/* Primary Action */}

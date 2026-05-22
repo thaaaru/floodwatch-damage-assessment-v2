@@ -1036,9 +1036,9 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 `;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -1048,12 +1048,12 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                 </svg>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-900">SAR Processing Toolkit</h1>
-                <p className="text-xs text-slate-500">Sentinel-1 Before/After Composites & Google Earth Integration</p>
+                <h1 className="text-lg font-bold text-white">SAR Processing Toolkit</h1>
+                <p className="text-xs text-slate-400">Sentinel-1 Before/After Composites & Google Earth Integration</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <a href="/damage-gallery" className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors">
+              <a href="/damage-gallery" className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-900 text-slate-200 text-sm font-medium transition-colors">
                 Damage Gallery
               </a>
               <a href="/" className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
@@ -1065,7 +1065,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
       </header>
 
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-1 overflow-x-auto">
             {[
@@ -1081,7 +1081,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-orange-500 text-orange-600'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-300 hover:text-white'
                 }`}
               >
                 <span className="mr-1.5">{tab.icon}</span>
@@ -1094,8 +1094,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Configuration Panel */}
-        <div className="mb-6 bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-          <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
+        <div className="mb-6 bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
             <span className="w-6 h-6 rounded-lg bg-orange-100 flex items-center justify-center text-xs">⚙️</span>
             Processing Configuration
           </h3>
@@ -1103,9 +1103,9 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Region Selection */}
             <div>
-              <label className="text-xs font-medium text-slate-600 block mb-1.5">Preset Region</label>
+              <label className="text-xs font-medium text-slate-300 block mb-1.5">Preset Region</label>
               <select
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
                 onChange={(e) => {
                   const preset = PRESET_REGIONS.find(p => p.name === e.target.value);
                   if (preset) updateBbox(preset);
@@ -1119,19 +1119,19 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* Bounding Box Display */}
             <div>
-              <label className="text-xs font-medium text-slate-600 block mb-1.5">Bounding Box</label>
-              <div className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-mono text-slate-700">
+              <label className="text-xs font-medium text-slate-300 block mb-1.5">Bounding Box</label>
+              <div className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-slate-200">
                 [{config.bbox.minLon}, {config.bbox.minLat}, {config.bbox.maxLon}, {config.bbox.maxLat}]
               </div>
             </div>
 
             {/* Resolution */}
             <div>
-              <label className="text-xs font-medium text-slate-600 block mb-1.5">Resolution (m)</label>
+              <label className="text-xs font-medium text-slate-300 block mb-1.5">Resolution (m)</label>
               <select
                 value={config.resolution}
                 onChange={(e) => setConfig({ ...config, resolution: parseInt(e.target.value) })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
               >
                 <option value={10}>10m (Standard)</option>
                 <option value={20}>20m (Faster)</option>
@@ -1141,11 +1141,11 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* Workflow */}
             <div>
-              <label className="text-xs font-medium text-slate-600 block mb-1.5">Workflow</label>
+              <label className="text-xs font-medium text-slate-300 block mb-1.5">Workflow</label>
               <select
                 value={config.workflow}
                 onChange={(e) => setConfig({ ...config, workflow: e.target.value as 'snap' | 'gee' })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900"
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
               >
                 <option value="gee">Google Earth Engine (Cloud)</option>
                 <option value="snap">SNAP Desktop (Local)</option>
@@ -1155,37 +1155,37 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
           {/* Date Ranges */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200">
+            <div className="bg-emerald-600/20 rounded-lg p-3 border border-emerald-700/50">
               <div className="text-xs font-semibold text-emerald-800 mb-2">BEFORE Period</div>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="date"
                   value={config.beforeDateStart}
                   onChange={(e) => setConfig({ ...config, beforeDateStart: e.target.value })}
-                  className="bg-white border border-emerald-200 rounded px-2 py-1.5 text-sm"
+                  className="bg-slate-800 border border-emerald-700/50 rounded px-2 py-1.5 text-sm"
                 />
                 <input
                   type="date"
                   value={config.beforeDateEnd}
                   onChange={(e) => setConfig({ ...config, beforeDateEnd: e.target.value })}
-                  className="bg-white border border-emerald-200 rounded px-2 py-1.5 text-sm"
+                  className="bg-slate-800 border border-emerald-700/50 rounded px-2 py-1.5 text-sm"
                 />
               </div>
             </div>
-            <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+            <div className="bg-red-600/20 rounded-lg p-3 border border-red-700/50">
               <div className="text-xs font-semibold text-red-800 mb-2">AFTER Period</div>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="date"
                   value={config.afterDateStart}
                   onChange={(e) => setConfig({ ...config, afterDateStart: e.target.value })}
-                  className="bg-white border border-red-200 rounded px-2 py-1.5 text-sm"
+                  className="bg-slate-800 border border-red-700/50 rounded px-2 py-1.5 text-sm"
                 />
                 <input
                   type="date"
                   value={config.afterDateEnd}
                   onChange={(e) => setConfig({ ...config, afterDateEnd: e.target.value })}
-                  className="bg-white border border-red-200 rounded px-2 py-1.5 text-sm"
+                  className="bg-slate-800 border border-red-700/50 rounded px-2 py-1.5 text-sm"
                 />
               </div>
             </div>
@@ -1196,8 +1196,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Workflow Diagram */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">SAR Processing Workflow</h3>
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">SAR Processing Workflow</h3>
               <div className="space-y-3">
                 {[
                   { step: 1, name: 'Data Acquisition', desc: 'Download Sentinel-1 IW GRD products', icon: '📡' },
@@ -1209,13 +1209,13 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                   { step: 7, name: 'RGB Composite', desc: 'R=VV, G=VH, B=VV-VH ratio', icon: '🎨' },
                   { step: 8, name: 'Export', desc: 'GeoTIFF + KMZ for Google Earth', icon: '💾' },
                 ].map((item) => (
-                  <div key={item.step} className="flex items-center gap-3 p-2 rounded-lg bg-slate-50">
-                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-700">
+                  <div key={item.step} className="flex items-center gap-3 p-2 rounded-lg bg-slate-900">
+                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-300">
                       {item.step}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-slate-900">{item.name}</div>
-                      <div className="text-xs text-slate-500">{item.desc}</div>
+                      <div className="text-sm font-medium text-white">{item.name}</div>
+                      <div className="text-xs text-slate-400">{item.desc}</div>
                     </div>
                     <span className="text-xl">{item.icon}</span>
                   </div>
@@ -1225,8 +1225,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* Output Files */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Output Files</h3>
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+                <h3 className="text-lg font-semibold text-white mb-4">Output Files</h3>
                 <div className="space-y-3">
                   {[
                     { name: 'sri_lanka_before.tif', desc: 'RGB GeoTIFF composite (before event)', color: 'emerald' },
@@ -1239,8 +1239,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                     <div key={file.name} className={`flex items-center gap-3 p-3 rounded-lg bg-${file.color}-50 border border-${file.color}-200`}>
                       <span className="text-xl">📄</span>
                       <div>
-                        <div className="text-sm font-mono font-medium text-slate-900">{file.name}</div>
-                        <div className="text-xs text-slate-500">{file.desc}</div>
+                        <div className="text-sm font-mono font-medium text-white">{file.name}</div>
+                        <div className="text-xs text-slate-400">{file.desc}</div>
                       </div>
                     </div>
                   ))}
@@ -1248,32 +1248,32 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
               </div>
 
               {/* RGB Composite Explanation */}
-              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">RGB Composite Bands</h3>
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+                <h3 className="text-lg font-semibold text-white mb-4">RGB Composite Bands</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded bg-red-500"></div>
                     <div>
                       <div className="text-sm font-medium">Red = VV (dB)</div>
-                      <div className="text-xs text-slate-500">Vertical-Vertical polarization (-20 to 0 dB)</div>
+                      <div className="text-xs text-slate-400">Vertical-Vertical polarization (-20 to 0 dB)</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded bg-green-500"></div>
                     <div>
                       <div className="text-sm font-medium">Green = VH (dB)</div>
-                      <div className="text-xs text-slate-500">Vertical-Horizontal polarization (-25 to -5 dB)</div>
+                      <div className="text-xs text-slate-400">Vertical-Horizontal polarization (-25 to -5 dB)</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded bg-blue-500"></div>
                     <div>
                       <div className="text-sm font-medium">Blue = VV/VH Ratio (dB)</div>
-                      <div className="text-xs text-slate-500">Polarization ratio (-10 to 5 dB)</div>
+                      <div className="text-xs text-slate-400">Polarization ratio (-10 to 5 dB)</div>
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-800">
+                <div className="mt-4 p-3 bg-amber-600/20 rounded-lg border border-amber-700/50 text-xs text-amber-800">
                   <strong>Interpretation:</strong> Water appears dark blue (low backscatter).
                   Urban areas appear bright. Vegetation shows green tones.
                   Flooded areas show distinct color change from before to after.
@@ -1285,18 +1285,18 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
         {activeTab === 'snap' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
                 <div>
-                  <h3 className="font-semibold text-slate-900">SNAP Python Script (snappy)</h3>
-                  <p className="text-sm text-slate-500">Complete local processing workflow</p>
+                  <h3 className="font-semibold text-white">SNAP Python Script (snappy)</h3>
+                  <p className="text-sm text-slate-400">Complete local processing workflow</p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(generateSnapCode(), 'snap')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     copiedCode === 'snap'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-orange-100 hover:bg-orange-200 text-orange-700'
+                      ? 'bg-emerald-100 text-emerald-300'
+                      : 'bg-orange-100 hover:bg-orange-200 text-orange-300'
                   }`}
                 >
                   {copiedCode === 'snap' ? '✓ Copied!' : 'Copy Code'}
@@ -1308,9 +1308,9 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
             </div>
 
             {/* SNAP Requirements */}
-            <div className="bg-amber-50 rounded-xl p-4 border border-amber-200">
+            <div className="bg-amber-600/20 rounded-xl p-4 border border-amber-700/50">
               <h4 className="font-semibold text-amber-800 mb-2">Requirements for SNAP Workflow</h4>
-              <div className="text-sm text-amber-700 space-y-1">
+              <div className="text-sm text-amber-300 space-y-1">
                 <p>1. Install ESA SNAP Desktop: <a href="https://step.esa.int/main/download/snap-download/" target="_blank" className="underline">step.esa.int</a></p>
                 <p>2. Configure snappy: <code className="bg-amber-100 px-1 rounded">cd &lt;snap&gt;/bin && ./snappy-conf python3</code></p>
                 <p>3. Install dependencies: <code className="bg-amber-100 px-1 rounded">pip install gdal numpy matplotlib simplekml</code></p>
@@ -1322,18 +1322,18 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
         {activeTab === 'gee' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
                 <div>
-                  <h3 className="font-semibold text-slate-900">Google Earth Engine Script</h3>
-                  <p className="text-sm text-slate-500">Cloud-based processing (no downloads needed)</p>
+                  <h3 className="font-semibold text-white">Google Earth Engine Script</h3>
+                  <p className="text-sm text-slate-400">Cloud-based processing (no downloads needed)</p>
                 </div>
                 <div className="flex gap-2">
                   <a
                     href="https://code.earthengine.google.com/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-lg bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-medium transition-colors"
+                    className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-blue-200 text-blue-300 text-sm font-medium transition-colors"
                   >
                     Open GEE Editor
                   </a>
@@ -1341,8 +1341,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                     onClick={() => copyToClipboard(generateGEECode(), 'gee')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       copiedCode === 'gee'
-                        ? 'bg-emerald-100 text-emerald-700'
-                        : 'bg-orange-100 hover:bg-orange-200 text-orange-700'
+                        ? 'bg-emerald-100 text-emerald-300'
+                        : 'bg-orange-100 hover:bg-orange-200 text-orange-300'
                     }`}
                   >
                     {copiedCode === 'gee' ? '✓ Copied!' : 'Copy Code'}
@@ -1355,9 +1355,9 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
             </div>
 
             {/* GEE Instructions */}
-            <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+            <div className="bg-emerald-600/20 rounded-xl p-4 border border-emerald-700/50">
               <h4 className="font-semibold text-emerald-800 mb-2">How to Use Google Earth Engine</h4>
-              <ol className="text-sm text-emerald-700 space-y-1 list-decimal list-inside">
+              <ol className="text-sm text-emerald-300 space-y-1 list-decimal list-inside">
                 <li>Sign up for GEE at <a href="https://earthengine.google.com/" target="_blank" className="underline">earthengine.google.com</a></li>
                 <li>Open Code Editor: <a href="https://code.earthengine.google.com/" target="_blank" className="underline">code.earthengine.google.com</a></li>
                 <li>Click "Copy Code" button above</li>
@@ -1372,18 +1372,18 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
         {activeTab === 'kmz' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
                 <div>
-                  <h3 className="font-semibold text-slate-900">GeoTIFF to KMZ Conversion</h3>
-                  <p className="text-sm text-slate-500">Shell script + Python utility for Google Earth overlays</p>
+                  <h3 className="font-semibold text-white">GeoTIFF to KMZ Conversion</h3>
+                  <p className="text-sm text-slate-400">Shell script + Python utility for Google Earth overlays</p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(generateKMZCode(), 'kmz')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     copiedCode === 'kmz'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-orange-100 hover:bg-orange-200 text-orange-700'
+                      ? 'bg-emerald-100 text-emerald-300'
+                      : 'bg-orange-100 hover:bg-orange-200 text-orange-300'
                   }`}
                 >
                   {copiedCode === 'kmz' ? '✓ Copied!' : 'Copy Code'}
@@ -1395,24 +1395,24 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
             </div>
 
             {/* CLI Quick Reference */}
-            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-              <h4 className="font-semibold text-slate-900 mb-3">Quick CLI Commands</h4>
+            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+              <h4 className="font-semibold text-white mb-3">Quick CLI Commands</h4>
               <div className="space-y-3 font-mono text-sm">
-                <div className="bg-slate-100 p-3 rounded-lg">
-                  <div className="text-slate-500 text-xs mb-1"># Convert GeoTIFF to PNG</div>
-                  <code className="text-slate-800">gdal_translate -of PNG input.tif output.png</code>
+                <div className="bg-slate-900 p-3 rounded-lg">
+                  <div className="text-slate-400 text-xs mb-1"># Convert GeoTIFF to PNG</div>
+                  <code className="text-slate-100">gdal_translate -of PNG input.tif output.png</code>
                 </div>
-                <div className="bg-slate-100 p-3 rounded-lg">
-                  <div className="text-slate-500 text-xs mb-1"># Get GeoTIFF bounds</div>
-                  <code className="text-slate-800">gdalinfo input.tif | grep -E "Upper Left|Lower Right"</code>
+                <div className="bg-slate-900 p-3 rounded-lg">
+                  <div className="text-slate-400 text-xs mb-1"># Get GeoTIFF bounds</div>
+                  <code className="text-slate-100">gdalinfo input.tif | grep -E "Upper Left|Lower Right"</code>
                 </div>
-                <div className="bg-slate-100 p-3 rounded-lg">
-                  <div className="text-slate-500 text-xs mb-1"># Create KMZ from KML + PNG</div>
-                  <code className="text-slate-800">zip output.kmz doc.kml overlay.png</code>
+                <div className="bg-slate-900 p-3 rounded-lg">
+                  <div className="text-slate-400 text-xs mb-1"># Create KMZ from KML + PNG</div>
+                  <code className="text-slate-100">zip output.kmz doc.kml overlay.png</code>
                 </div>
-                <div className="bg-slate-100 p-3 rounded-lg">
-                  <div className="text-slate-500 text-xs mb-1"># Python alternative</div>
-                  <code className="text-slate-800">python generate_kmz.py input.tif output.kmz "Name" 0.7</code>
+                <div className="bg-slate-900 p-3 rounded-lg">
+                  <div className="text-slate-400 text-xs mb-1"># Python alternative</div>
+                  <code className="text-slate-100">python generate_kmz.py input.tif output.kmz "Name" 0.7</code>
                 </div>
               </div>
             </div>
@@ -1422,13 +1422,13 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
         {activeTab === 'instructions' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Step by Step Guide */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Step-by-Step Guide</h3>
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Step-by-Step Guide</h3>
 
               <div className="space-y-4">
                 <div className="border-l-4 border-blue-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">Option A: Google Earth Engine (Recommended)</h4>
-                  <ol className="mt-2 text-sm text-slate-600 space-y-2 list-decimal list-inside">
+                  <h4 className="font-semibold text-white">Option A: Google Earth Engine (Recommended)</h4>
+                  <ol className="mt-2 text-sm text-slate-300 space-y-2 list-decimal list-inside">
                     <li>Go to "Earth Engine" tab above</li>
                     <li>Adjust configuration (region, dates)</li>
                     <li>Click "Copy Code"</li>
@@ -1442,8 +1442,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                 </div>
 
                 <div className="border-l-4 border-orange-500 pl-4">
-                  <h4 className="font-semibold text-slate-900">Option B: SNAP Desktop (Local)</h4>
-                  <ol className="mt-2 text-sm text-slate-600 space-y-2 list-decimal list-inside">
+                  <h4 className="font-semibold text-white">Option B: SNAP Desktop (Local)</h4>
+                  <ol className="mt-2 text-sm text-slate-300 space-y-2 list-decimal list-inside">
                     <li>Install <a href="https://step.esa.int/main/download/snap-download/" target="_blank" className="text-blue-600 underline">ESA SNAP</a></li>
                     <li>Configure snappy Python module</li>
                     <li>Download Sentinel-1 data from <a href="https://scihub.copernicus.eu/" target="_blank" className="text-blue-600 underline">Copernicus Hub</a></li>
@@ -1459,8 +1459,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* Validation */}
             <div className="space-y-6">
-              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Validation Checklist</h3>
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+                <h3 className="text-lg font-semibold text-white mb-4">Validation Checklist</h3>
                 <div className="space-y-2">
                   {[
                     'GeoTIFF opens correctly in QGIS/ArcGIS',
@@ -1472,26 +1472,26 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                     'Resolution matches configuration (10m pixels)',
                     'No clipping at edges or DEM artifacts',
                   ].map((item, idx) => (
-                    <label key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50">
-                      <input type="checkbox" className="w-4 h-4 rounded border-slate-300" />
-                      <span className="text-sm text-slate-700">{item}</span>
+                    <label key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-900">
+                      <input type="checkbox" className="w-4 h-4 rounded border-slate-600" />
+                      <span className="text-sm text-slate-200">{item}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Troubleshooting</h3>
+              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+                <h3 className="text-lg font-semibold text-white mb-4">Troubleshooting</h3>
                 <div className="space-y-3 text-sm">
-                  <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                  <div className="p-3 bg-red-600/20 rounded-lg border border-red-700/50">
                     <div className="font-medium text-red-800">No images found in GEE</div>
                     <div className="text-red-600">Try expanding date range or check orbit pass filter</div>
                   </div>
-                  <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="p-3 bg-amber-600/20 rounded-lg border border-amber-700/50">
                     <div className="font-medium text-amber-800">KMZ misaligned in Google Earth</div>
                     <div className="text-amber-600">Check CRS is EPSG:4326 and bounds are correct</div>
                   </div>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="p-3 bg-blue-600/20 rounded-lg border border-blue-700/50">
                     <div className="font-medium text-blue-800">SNAP snappy import error</div>
                     <div className="text-blue-600">Run snappy-conf again with correct Python path</div>
                   </div>
@@ -1503,10 +1503,10 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white mt-8">
+      <footer className="border-t border-slate-700 bg-slate-800 mt-8">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-slate-400">
               Data: <span className="font-medium">Copernicus Sentinel-1 GRD</span> •
               Processing: <span className="font-medium">ESA SNAP / Google Earth Engine</span>
             </div>

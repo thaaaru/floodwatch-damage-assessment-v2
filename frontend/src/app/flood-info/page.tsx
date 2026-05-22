@@ -81,7 +81,7 @@ export default function FloodInformationPage() {
   const getRiverStatusColor = (status: string) => {
     switch (status) {
       case 'rising': return 'bg-orange-500 text-white';
-      case 'alert': return 'bg-yellow-500 text-black';
+      case 'alert': return 'bg-yellow-500 text-white';
       case 'falling': return 'bg-blue-500 text-white';
       default:
         return 'bg-green-600 text-white';
@@ -140,15 +140,15 @@ export default function FloodInformationPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-3 gap-4 text-center">
-                    <div className="glass rounded-xl p-3 border border-red-300 shadow-md">
+                    <div className="glass rounded-xl p-3 border border-red-700/50 shadow-md">
                       <div className="text-2xl font-bold text-red-400">{floodThreat.summary.critical_districts}</div>
                       <div className="text-xs text-gray-300">Critical Districts</div>
                     </div>
-                    <div className="glass rounded-xl p-3 border border-orange-300 shadow-md">
+                    <div className="glass rounded-xl p-3 border border-orange-700/50 shadow-md">
                       <div className="text-2xl font-bold text-orange-400">{floodThreat.summary.high_risk_districts}</div>
                       <div className="text-xs text-gray-300">High Risk</div>
                     </div>
-                    <div className="glass rounded-xl p-3 border border-yellow-300 shadow-sm">
+                    <div className="glass rounded-xl p-3 border border-yellow-700/50 shadow-sm">
                       <div className="text-2xl font-bold text-yellow-400">{floodThreat.summary.medium_risk_districts}</div>
                       <div className="text-xs text-gray-300">Medium Risk</div>
                     </div>
@@ -187,7 +187,7 @@ export default function FloodInformationPage() {
                 {/* River Summary by River Name */}
                 <div className="mb-3 sm:mb-4">
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-400 mb-1 sm:mb-2">Status by River</h3>
-                  <p className="text-[10px] sm:text-xs text-gray-500 mb-2">Data source: Sri Lanka Department of Meteorology (updated every 5 mins)</p>
+                  <p className="text-[10px] sm:text-xs text-slate-400 mb-2">Data source: Sri Lanka Department of Meteorology (updated every 5 mins)</p>
                   <div className="overflow-x-auto -mx-3 sm:mx-0">
                     <div className="inline-block min-w-full px-3 sm:px-0">
                     <table className="w-full text-xs sm:text-sm min-w-[640px]">
@@ -227,7 +227,7 @@ export default function FloodInformationPage() {
                             })
                             .sort((a, b) => b.highestPct - a.highestPct)
                             .map((row, idx) => (
-                              <tr key={idx} className="border-b border-gray-700 hover:bg-white/10 group/row relative transition-colors">
+                              <tr key={idx} className="border-b border-gray-700 hover:bg-slate-800/10 group/row relative transition-colors">
                                 <td className="py-2 px-1 sm:px-2 font-medium cursor-help relative">
                                   {row.river}
                                   {/* Hover tooltip with station details */}
@@ -245,25 +245,25 @@ export default function FloodInformationPage() {
                                           <span className="font-medium">{s.station}</span>
                                           <span className="font-mono text-right">
                                             {fmt(s.water_level_m, 2)}m
-                                            <span className="text-gray-500 ml-1">({s.status})</span>
+                                            <span className="text-slate-400 ml-1">({s.status})</span>
                                           </span>
                                         </div>
                                       ))}
                                     </div>
-                                    <div className="mt-2 pt-2 border-t border-gray-700 text-gray-500 text-[10px]">
+                                    <div className="mt-2 pt-2 border-t border-gray-700 text-slate-400 text-[10px]">
                                       Format: Current Level (status code)
                                     </div>
                                   </div>
                                 </td>
                                 <td className="text-center py-2 px-1 text-gray-400">{row.stations.length}</td>
                                 <td className="text-center py-2 px-1">
-                                  {row.rising > 0 ? <span className="text-orange-500 font-bold">{row.rising}</span> : <span className="text-gray-600">0</span>}
+                                  {row.rising > 0 ? <span className="text-orange-500 font-bold">{row.rising}</span> : <span className="text-slate-300">0</span>}
                                 </td>
                                 <td className="text-center py-2 px-1">
-                                  {row.alert > 0 ? <span className="text-yellow-500 font-bold">{row.alert}</span> : <span className="text-gray-600">0</span>}
+                                  {row.alert > 0 ? <span className="text-yellow-500 font-bold">{row.alert}</span> : <span className="text-slate-300">0</span>}
                                 </td>
                                 <td className="text-center py-2 px-1">
-                                  {row.falling > 0 ? <span className="text-blue-500 font-bold">{row.falling}</span> : <span className="text-gray-600">0</span>}
+                                  {row.falling > 0 ? <span className="text-blue-500 font-bold">{row.falling}</span> : <span className="text-slate-300">0</span>}
                                 </td>
                                 <td className="text-center py-2 px-1">
                                   <span className="text-green-500">{row.normal}</span>
@@ -319,7 +319,7 @@ export default function FloodInformationPage() {
                     </thead>
                     <tbody>
                       {floodThreat.top_risk_districts.slice(0, 10).map((d, idx) => (
-                        <tr key={idx} className="border-b border-gray-700 hover:bg-white/10 transition-colors">
+                        <tr key={idx} className="border-b border-gray-700 hover:bg-slate-800/10 transition-colors">
                           <td className="py-2 px-1 sm:px-2 font-medium">{d.district}</td>
                           <td className="text-center py-2 px-1">
                             <div className="flex items-center justify-center gap-1 sm:gap-2">

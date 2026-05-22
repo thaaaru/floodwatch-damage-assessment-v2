@@ -47,11 +47,11 @@ export default function RiverNetworkStatus() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: '320px' }}>
-        <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-blue-50">
+      <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col" style={{ height: '320px' }}>
+        <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between bg-blue-50">
           <div className="flex items-center gap-2">
             <span className="text-lg">🌊</span>
-            <h2 className="text-sm font-bold text-slate-900">River Network Status</h2>
+            <h2 className="text-sm font-bold text-white">River Network Status</h2>
           </div>
         </div>
         <div className="flex-1 flex items-center justify-center">
@@ -95,7 +95,7 @@ export default function RiverNetworkStatus() {
     switch (status) {
       case 'rising': return 'bg-rose-100 text-rose-700 border-rose-300';
       case 'alert': return 'bg-amber-100 text-amber-700 border-amber-300';
-      case 'falling': return 'bg-blue-100 text-blue-700 border-blue-300';
+      case 'falling': return 'bg-slate-800 text-blue-700 border-blue-300';
       default: return 'bg-emerald-100 text-emerald-700 border-emerald-300';
     }
   };
@@ -103,17 +103,17 @@ export default function RiverNetworkStatus() {
   const criticalCount = summary.rising + summary.alert;
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col" style={{ height: '320px' }}>
+    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden flex flex-col" style={{ height: '320px' }}>
       {/* Header */}
-      <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between bg-blue-50">
+      <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between bg-blue-50">
         <div className="flex items-center gap-2">
           <span className="text-lg">🌊</span>
-          <h2 className="text-sm font-bold text-slate-900">River Network Status</h2>
+          <h2 className="text-sm font-bold text-white">River Network Status</h2>
         </div>
         <div className="flex items-center gap-2">
           <a
             href="/rivers"
-            className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
+            className="text-xs font-bold text-blue-700 bg-slate-800 px-2 py-0.5 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
           >
             {data.count} stations
           </a>
@@ -173,7 +173,7 @@ export default function RiverNetworkStatus() {
         {/* View All Button */}
         <a
           href="/rivers"
-          className="block w-full text-center text-[10px] text-blue-700 hover:text-blue-900 font-bold py-1.5 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200"
+          className="block w-full text-center text-[10px] text-blue-700 hover:text-blue-900 font-bold py-1.5 hover:bg-blue-50 rounded-lg transition-colors border border-slate-700"
         >
           View all {data.count} stations →
         </a>

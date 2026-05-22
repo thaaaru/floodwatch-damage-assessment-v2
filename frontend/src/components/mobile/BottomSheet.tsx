@@ -126,7 +126,7 @@ export default function BottomSheet({
       {/* Bottom Sheet */}
       <div
         ref={sheetRef}
-        className="fixed left-0 right-0 bg-white z-50 shadow-2xl"
+        className="fixed left-0 right-0 bg-slate-800 z-50 shadow-2xl"
         style={{
           bottom: 0,
           borderTopLeftRadius: '16px',

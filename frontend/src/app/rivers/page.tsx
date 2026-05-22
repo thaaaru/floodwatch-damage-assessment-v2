@@ -10,10 +10,10 @@ import { api, IrrigationStation, RiverStation } from '@/lib/api';
 const RiversMap = dynamic(() => import('@/components/RiversMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-[600px] sm:h-[720px] w-full bg-slate-100 rounded-2xl flex items-center justify-center">
+    <div className="h-[600px] sm:h-[720px] w-full bg-slate-900 rounded-2xl flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
-        <span className="text-sm text-slate-500">Loading map...</span>
+        <div className="w-10 h-10 border-2 border-blue-700/50 border-t-blue-600 rounded-full animate-spin" />
+        <span className="text-sm text-slate-400">Loading map...</span>
       </div>
     </div>
   ),
@@ -93,7 +93,7 @@ export default function RiversPage() {
       case 'rising':
         return 'bg-orange-500 text-white';
       case 'alert':
-        return 'bg-yellow-500 text-black';
+        return 'bg-yellow-500 text-white';
       case 'falling':
         return 'bg-blue-500 text-white';
       default:
@@ -122,7 +122,7 @@ export default function RiversPage() {
       case 'minor_flood':
         return 'bg-orange-500 text-white';
       case 'alert':
-        return 'bg-yellow-500 text-black';
+        return 'bg-yellow-500 text-white';
       default:
         return 'bg-green-600 text-white';
     }
@@ -151,19 +151,19 @@ export default function RiversPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900">
+    <div className="min-h-screen bg-slate-900 text-white">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <div className="bg-slate-800 border-b border-slate-700 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center gap-2 sm:gap-3">
-            <a href="/" className="text-slate-600 hover:text-slate-900 transition-colors flex-shrink-0">
+            <a href="/" className="text-slate-300 hover:text-white transition-colors flex-shrink-0">
               <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </a>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold truncate">Rivers</h1>
-              <p className="text-xs sm:text-sm text-slate-600 mt-0.5 hidden sm:block">
+              <p className="text-xs sm:text-sm text-slate-300 mt-0.5 hidden sm:block">
                 River water level monitoring
               </p>
             </div>
@@ -181,36 +181,36 @@ export default function RiversPage() {
           <div className="space-y-6">
             {/* Error Banner */}
             {error && (
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg">
-                <p className="text-sm text-yellow-700">{error}</p>
+              <div className="bg-yellow-600/20 border-l-4 border-yellow-600 p-4 rounded-lg">
+                <p className="text-sm text-yellow-300">{error}</p>
               </div>
             )}
 
             {/* Map + summary */}
             {irrigationStations.length > 0 && (
-              <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                <div className="p-3 sm:p-4 border-b border-slate-200">
+              <div className="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden">
+                <div className="p-3 sm:p-4 border-b border-slate-700">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
                       <h2 className="text-base sm:text-lg font-semibold flex items-center gap-2">
                         <span className="text-xl sm:text-2xl">🗺️</span>
                         <span>Live Gauging Station Map</span>
                       </h2>
-                      <p className="text-[10px] sm:text-xs text-slate-600 mt-1">
+                      <p className="text-[10px] sm:text-xs text-slate-300 mt-1">
                         {summary.total} stations from Sri Lanka Irrigation Department - click a marker for details.
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-50 border border-red-200 text-red-700">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-600/20 border border-red-700/50 text-red-300">
                         <span className="w-2 h-2 rounded-full bg-red-500" /> Major {summary.major}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-50 border border-orange-200 text-orange-700">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-orange-600/20 border border-orange-700/50 text-orange-300">
                         <span className="w-2 h-2 rounded-full bg-orange-500" /> Minor {summary.minor}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-yellow-50 border border-yellow-200 text-yellow-700">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-yellow-600/20 border border-yellow-700/50 text-yellow-300">
                         <span className="w-2 h-2 rounded-full bg-yellow-500" /> Alert {summary.alert}
                       </span>
-                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-50 border border-green-200 text-green-700">
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-green-600/20 border border-green-700/50 text-green-300">
                         <span className="w-2 h-2 rounded-full bg-green-500" /> Normal {summary.normal}
                       </span>
                     </div>
@@ -226,16 +226,16 @@ export default function RiversPage() {
                 </div>
 
                 {selectedStation && (
-                  <div className="p-3 sm:p-4 border-t border-slate-200 bg-slate-50">
+                  <div className="p-3 sm:p-4 border-t border-slate-700 bg-slate-900">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm font-semibold text-slate-900">
+                        <div className="text-sm font-semibold text-white">
                           {selectedStation.station}
-                          <span className="ml-2 text-xs font-normal text-slate-500">
+                          <span className="ml-2 text-xs font-normal text-slate-400">
                             ({selectedStation.river})
                           </span>
                         </div>
-                        <div className="text-[11px] text-slate-600 mt-0.5">
+                        <div className="text-[11px] text-slate-300 mt-0.5">
                           {selectedStation.districts.join(', ')} - updated{' '}
                           {new Date(selectedStation.last_updated).toLocaleString()}
                         </div>
@@ -249,27 +249,27 @@ export default function RiversPage() {
                       </span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-3 text-xs">
-                      <div className="bg-white rounded-lg p-2 border border-slate-200">
-                        <div className="text-slate-500">Water level</div>
-                        <div className="font-mono font-semibold text-slate-900">
+                      <div className="bg-slate-800 rounded-lg p-2 border border-slate-700">
+                        <div className="text-slate-400">Water level</div>
+                        <div className="font-mono font-semibold text-white">
                           {fmt(selectedStation.water_level_m, 2)} m
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-slate-200">
-                        <div className="text-slate-500">Alert level</div>
-                        <div className="font-mono text-slate-900">
+                      <div className="bg-slate-800 rounded-lg p-2 border border-slate-700">
+                        <div className="text-slate-400">Alert level</div>
+                        <div className="font-mono text-white">
                           {fmt(selectedStation.alert_level_m, 2)} m
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-slate-200">
-                        <div className="text-slate-500">Minor flood</div>
-                        <div className="font-mono text-orange-700">
+                      <div className="bg-slate-800 rounded-lg p-2 border border-slate-700">
+                        <div className="text-slate-400">Minor flood</div>
+                        <div className="font-mono text-orange-300">
                           {fmt(selectedStation.minor_flood_level_m, 2)} m
                         </div>
                       </div>
-                      <div className="bg-white rounded-lg p-2 border border-slate-200">
-                        <div className="text-slate-500">Major flood</div>
-                        <div className="font-mono text-red-700">
+                      <div className="bg-slate-800 rounded-lg p-2 border border-slate-700">
+                        <div className="text-slate-400">Major flood</div>
+                        <div className="font-mono text-red-300">
                           {fmt(selectedStation.major_flood_level_m, 2)} m
                         </div>
                       </div>
@@ -281,14 +281,14 @@ export default function RiversPage() {
 
             {/* River Network Status (Navy/intel feed grouped by river) */}
             {riverStations.length > 0 && (
-              <div className="bg-white rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-200">
+              <div className="bg-slate-800 rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-700">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
                   <h2 className="text-base sm:text-lg font-semibold flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <div className="flex items-center gap-2">
                       <span className="text-xl sm:text-2xl">🌊</span>
                       <span>River Network Status</span>
                     </div>
-                    <span className="text-xs sm:text-sm font-normal text-slate-600">
+                    <span className="text-xs sm:text-sm font-normal text-slate-300">
                       ({riverStations.length} stations monitored)
                     </span>
                   </h2>
@@ -309,15 +309,15 @@ export default function RiversPage() {
                 </div>
 
                 <div className="mb-3 sm:mb-4">
-                  <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-1 sm:mb-2">Status by River</h3>
-                  <p className="text-[10px] sm:text-xs text-slate-600 mb-2">
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-200 mb-1 sm:mb-2">Status by River</h3>
+                  <p className="text-[10px] sm:text-xs text-slate-300 mb-2">
                     Data source: Sri Lanka Department of Meteorology (updated every 5 mins)
                   </p>
                   <div className="overflow-x-auto -mx-3 sm:mx-0">
                     <div className="inline-block min-w-full px-3 sm:px-0">
                       <table className="w-full text-xs sm:text-sm min-w-[640px]">
                         <thead>
-                          <tr className="bg-slate-50 text-slate-700 border-b border-slate-300 text-[10px] sm:text-xs">
+                          <tr className="bg-slate-900 text-slate-200 border-b border-slate-600 text-[10px] sm:text-xs">
                             <th className="text-left py-2 px-1 sm:px-2">River</th>
                             <th
                               className="text-center py-2 px-1 cursor-help"
@@ -326,25 +326,25 @@ export default function RiversPage() {
                               Stations
                             </th>
                             <th
-                              className="text-center py-2 px-1 text-red-700 cursor-help"
+                              className="text-center py-2 px-1 text-red-300 cursor-help"
                               title="Stations with rising water levels"
                             >
                               Rising
                             </th>
                             <th
-                              className="text-center py-2 px-1 text-orange-700 cursor-help"
+                              className="text-center py-2 px-1 text-orange-300 cursor-help"
                               title="Stations in alert status"
                             >
                               Alert
                             </th>
                             <th
-                              className="text-center py-2 px-1 text-blue-700 cursor-help"
+                              className="text-center py-2 px-1 text-blue-300 cursor-help"
                               title="Stations with falling water levels"
                             >
                               Falling
                             </th>
                             <th
-                              className="text-center py-2 px-1 text-green-700 cursor-help"
+                              className="text-center py-2 px-1 text-green-300 cursor-help"
                               title="Stations at normal water levels"
                             >
                               Normal
@@ -398,7 +398,7 @@ export default function RiversPage() {
                               .map((row, idx) => (
                                 <tr
                                   key={idx}
-                                  className="border-b border-slate-200 hover:bg-slate-50 group/row relative transition-colors"
+                                  className="border-b border-slate-700 hover:bg-slate-900 group/row relative transition-colors"
                                 >
                                   <td className="py-2 px-1 sm:px-2 font-medium cursor-help relative">
                                     {row.river}
@@ -431,14 +431,14 @@ export default function RiversPage() {
                                               <span className="font-medium">{s.station}</span>
                                               <span className="font-mono text-right">
                                                 {fmt(s.water_level_m, 2)}m
-                                                <span className="text-gray-500 ml-1">({s.status})</span>
+                                                <span className="text-slate-400 ml-1">({s.status})</span>
                                               </span>
                                             </div>
                                           ))}
                                       </div>
                                     </div>
                                   </td>
-                                  <td className="text-center py-2 px-1 text-slate-600">{row.stations.length}</td>
+                                  <td className="text-center py-2 px-1 text-slate-300">{row.stations.length}</td>
                                   <td className="text-center py-2 px-1">
                                     {row.rising > 0 ? (
                                       <span className="text-red-600 font-bold">{row.rising}</span>
@@ -485,7 +485,7 @@ export default function RiversPage() {
 
             {/* Empty state */}
             {irrigationStations.length === 0 && riverStations.length === 0 && !error && (
-              <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-200 text-center text-slate-500">
+              <div className="bg-slate-800 rounded-2xl p-8 shadow-lg border border-slate-700 text-center text-slate-400">
                 No river data available right now. Try refreshing in a few moments.
               </div>
             )}

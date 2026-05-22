@@ -216,11 +216,11 @@ export default function DamageMap({
       />
 
       {/* Info banner */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg px-6 py-3 z-[1000] max-w-2xl">
-        <h1 className="text-lg font-semibold text-slate-900">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 rounded-lg shadow-lg px-6 py-3 z-[1000] max-w-2xl">
+        <h1 className="text-lg font-semibold text-white">
           Satellite Damage Assessment - Sri Lanka
         </h1>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-slate-300">
           Real Sentinel-2 satellite imagery (10m resolution) - Compare 2020 vs 2021
         </p>
         <div className="mt-2 flex items-center gap-2 text-xs">

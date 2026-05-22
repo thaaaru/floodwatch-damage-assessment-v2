@@ -79,27 +79,19 @@ export default function Header() {
     setIsMenuOpen(false);
   }, [pathname]);
 
-  // Pages with a dark background need the header to invert its text colours so
-  // the nav links stay readable. Today only the /intel "command center" view
-  // is dark; this list is intentionally explicit (rather than e.g. inspecting
-  // document.body) so the SSR render matches the client one.
-  const darkPagePrefixes = ['/intel'];
-  const isDarkPage = darkPagePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  // The entire site uses a dark theme (slate-900 base) modelled after the
+  // /data-sources page; the Header therefore renders in dark mode everywhere.
+  // The `palette` block is kept (rather than inlined) so a light page can be
+  // re-introduced later just by extending `lightPagePrefixes`.
+  const lightPagePrefixes: string[] = [];
+  const isLightPage = lightPagePrefixes.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 
   // Palette tokens used throughout the rest of the header markup. Swapping
   // here keeps every link / button / hover state in lockstep.
-  const palette = isDarkPage
+  const palette = isLightPage
     ? {
-        headerBg: 'bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60',
-        logoText: 'text-white',
-        subText: 'text-slate-300',
-        linkIdle: 'text-slate-200 hover:text-white hover:bg-white/10',
-        hoverPanel: 'hover:bg-white/10',
-        mobileBtn: 'text-slate-200 hover:text-white hover:bg-white/10',
-        mobileBorder: 'border-slate-700/60',
-        partnerChip: 'text-slate-200 hover:text-white',
-      }
-    : {
         headerBg: 'bg-white/10 backdrop-blur-md border-b border-slate-200/30',
         logoText: 'text-slate-900',
         subText: 'text-blue-600',
@@ -108,6 +100,16 @@ export default function Header() {
         mobileBtn: 'text-slate-600 hover:text-slate-900 hover:bg-white/50',
         mobileBorder: 'border-slate-200/60',
         partnerChip: 'text-slate-600 hover:text-slate-900',
+      }
+    : {
+        headerBg: 'bg-slate-800/50 backdrop-blur-md border-b border-slate-700/50',
+        logoText: 'text-white',
+        subText: 'text-slate-300',
+        linkIdle: 'text-slate-300 hover:text-white hover:bg-white/10',
+        hoverPanel: 'hover:bg-white/10',
+        mobileBtn: 'text-slate-300 hover:text-white hover:bg-white/10',
+        mobileBorder: 'border-slate-700/50',
+        partnerChip: 'text-slate-300 hover:text-white',
       };
 
   return (

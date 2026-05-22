@@ -6,17 +6,17 @@ import { useEffect, useState } from 'react';
 import { NewsItem, getMockNews, formatRelativeTime } from '@/lib/newsService';
 
 const categoryConfig: Record<NewsItem['category'], { icon: string; bgColor: string; textColor: string }> = {
-  cyclone: { icon: '🌀', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
-  flood: { icon: '🌊', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
-  weather: { icon: '⛈️', bgColor: 'bg-slate-100', textColor: 'text-slate-700' },
-  alert: { icon: '⚠️', bgColor: 'bg-amber-100', textColor: 'text-amber-700' },
-  general: { icon: '📰', bgColor: 'bg-gray-100', textColor: 'text-gray-700' },
+  cyclone: { icon: '🌀', bgColor: 'bg-purple-100', textColor: 'text-purple-300' },
+  flood: { icon: '🌊', bgColor: 'bg-slate-900', textColor: 'text-blue-300' },
+  weather: { icon: '⛈️', bgColor: 'bg-slate-900', textColor: 'text-slate-200' },
+  alert: { icon: '⚠️', bgColor: 'bg-amber-100', textColor: 'text-amber-300' },
+  general: { icon: '📰', bgColor: 'bg-slate-900', textColor: 'text-slate-200' },
 };
 
 const severityConfig: Record<NonNullable<NewsItem['severity']>, { border: string; dot: string; badge: string }> = {
-  critical: { border: 'border-l-red-500', dot: 'bg-red-500', badge: 'bg-red-100 text-red-700' },
-  warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-700' },
-  info: { border: 'border-l-blue-500', dot: 'bg-blue-500', badge: 'bg-blue-100 text-blue-700' },
+  critical: { border: 'border-l-red-500', dot: 'bg-red-500', badge: 'bg-red-100 text-red-300' },
+  warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-300' },
+  info: { border: 'border-l-blue-500', dot: 'bg-blue-500', badge: 'bg-slate-900 text-blue-300' },
 };
 
 export default function NewsPage() {
@@ -49,19 +49,19 @@ export default function NewsPage() {
     : news.filter(item => item.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <div className="glass border-b border-slate-200 sticky top-0 z-10 shadow-md">
+      <div className="glass border-b border-slate-700 sticky top-0 z-10 shadow-md">
         <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
           <div className="flex items-center gap-3 mb-4">
-            <a href="/" className="text-slate-400 hover:text-slate-900 transition-colors flex-shrink-0">
+            <a href="/" className="text-slate-400 hover:text-white transition-colors flex-shrink-0">
               <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </a>
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-slate-900">News & Updates</h1>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1">Latest flood alerts and weather warnings for Sri Lanka</p>
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">News & Updates</h1>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1">Latest flood alerts and weather warnings for Sri Lanka</p>
             </div>
           </div>
 
@@ -72,7 +72,7 @@ export default function NewsPage() {
               className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all font-medium ${
                 selectedCategory === 'all'
                   ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                  : 'glass text-slate-700 hover:bg-white/90'
+                  : 'glass text-slate-200 hover:bg-slate-800/90'
               }`}
             >
               All Updates
@@ -84,7 +84,7 @@ export default function NewsPage() {
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all flex items-center gap-1.5 font-medium ${
                   selectedCategory === cat
                     ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                    : 'glass text-slate-700 hover:bg-white/90'
+                    : 'glass text-slate-200 hover:bg-slate-800/90'
                 }`}
               >
                 <span>{categoryConfig[cat].icon}</span>
@@ -106,8 +106,8 @@ export default function NewsPage() {
         ) : filteredNews.length === 0 ? (
           <div className="glass rounded-2xl text-center py-16 shadow-md">
             <div className="text-6xl mb-4">📰</div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">No updates available</h3>
-            <p className="text-slate-600">Check back later for the latest news and alerts.</p>
+            <h3 className="text-xl font-bold text-white mb-2">No updates available</h3>
+            <p className="text-slate-300">Check back later for the latest news and alerts.</p>
           </div>
         ) : (
           <>
@@ -122,18 +122,18 @@ export default function NewsPage() {
                 >
                   <div className="relative bg-gradient-to-br from-blue-600 to-cyan-500 p-8 sm:p-12">
                     <div className="absolute top-4 right-4">
-                      <span className="px-3 py-1.5 rounded-full text-xs font-bold uppercase bg-white/20 text-white backdrop-blur-sm">
+                      <span className="px-3 py-1.5 rounded-full text-xs font-bold uppercase bg-slate-800/20 text-white backdrop-blur-sm">
                         Featured Story
                       </span>
                     </div>
                     <div className="max-w-3xl">
                       <div className="flex items-center gap-2 mb-4">
                         <span className="text-4xl">{categoryConfig[filteredNews[0].category].icon}</span>
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-white/20 text-white backdrop-blur-sm">
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-800/20 text-white backdrop-blur-sm">
                           {filteredNews[0].category}
                         </span>
                         {filteredNews[0].severity && (
-                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-white/20 text-white backdrop-blur-sm">
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-800/20 text-white backdrop-blur-sm">
                             {filteredNews[0].severity}
                           </span>
                         )}
@@ -169,13 +169,13 @@ export default function NewsPage() {
 
         {/* Source Attribution */}
         <div className="mt-12 p-6 glass rounded-2xl shadow-md">
-          <h3 className="text-sm font-bold text-slate-900 mb-3">Official Sources</h3>
+          <h3 className="text-sm font-bold text-white mb-3">Official Sources</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <a
               href="https://www.nbro.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -186,7 +186,7 @@ export default function NewsPage() {
               href="https://www.dmc.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -197,7 +197,7 @@ export default function NewsPage() {
               href="https://www.meteo.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -208,7 +208,7 @@ export default function NewsPage() {
               href="https://www.irrigation.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-cyan-600 transition-colors"
+              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -250,26 +250,26 @@ function NewsCard({ item }: { item: NewsItem }) {
                 {item.severity}
               </span>
             )}
-            <span className="text-xs text-slate-500 ml-auto">{formatRelativeTime(item.publishedAt)}</span>
+            <span className="text-xs text-slate-400 ml-auto">{formatRelativeTime(item.publishedAt)}</span>
           </div>
 
           {/* Title */}
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight mb-2">
+          <h3 className="text-base sm:text-lg font-bold text-white leading-tight mb-2">
             {item.title}
           </h3>
 
           {/* Summary */}
-          <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-3">
+          <p className="text-sm sm:text-base text-slate-300 leading-relaxed mb-3">
             {item.summary}
           </p>
 
           {/* Meta */}
-          <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-500">
+          <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-400">
             <span className="flex items-center gap-1.5">
               <span className="text-base">{item.sourceIcon}</span>
               <span className="font-medium">{item.source}</span>
             </span>
-            <span className="flex items-center gap-1 text-cyan-600 group-hover:text-cyan-700 font-medium">
+            <span className="flex items-center gap-1 text-cyan-600 group-hover:text-cyan-300 font-medium">
               <span>Read more</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />

@@ -12,10 +12,10 @@ interface NewsFeedProps {
 
 const categoryConfig: Record<NewsItem['category'], { icon: string; bgColor: string; textColor: string }> = {
   cyclone: { icon: '🌀', bgColor: 'bg-purple-100', textColor: 'text-purple-700' },
-  flood: { icon: '🌊', bgColor: 'bg-blue-100', textColor: 'text-blue-700' },
-  weather: { icon: '⛈️', bgColor: 'bg-slate-100', textColor: 'text-slate-700' },
+  flood: { icon: '🌊', bgColor: 'bg-slate-800', textColor: 'text-blue-700' },
+  weather: { icon: '⛈️', bgColor: 'bg-slate-900', textColor: 'text-slate-200' },
   alert: { icon: '⚠️', bgColor: 'bg-amber-100', textColor: 'text-amber-700' },
-  general: { icon: '📰', bgColor: 'bg-gray-100', textColor: 'text-gray-700' },
+  general: { icon: '📰', bgColor: 'bg-slate-900', textColor: 'text-slate-200' },
 };
 
 const severityConfig: Record<NonNullable<NewsItem['severity']>, { border: string; dot: string }> = {
@@ -64,7 +64,7 @@ export default function NewsFeed({ maxItems = 10, compact = false }: NewsFeedPro
     return (
       <div className="animate-pulse space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="bg-slate-100 rounded-lg h-20" />
+          <div key={i} className="bg-slate-900 rounded-lg h-20" />
         ))}
       </div>
     );
@@ -80,7 +80,7 @@ export default function NewsFeed({ maxItems = 10, compact = false }: NewsFeedPro
             className={`px-2 py-1 text-xs rounded-md transition-all ${
               selectedCategory === 'all'
                 ? 'bg-brand-600 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                : 'bg-slate-900 text-slate-300 hover:bg-slate-200'
             }`}
           >
             All
@@ -92,7 +92,7 @@ export default function NewsFeed({ maxItems = 10, compact = false }: NewsFeedPro
               className={`px-2 py-1 text-xs rounded-md transition-all flex items-center gap-1 ${
                 selectedCategory === cat
                   ? 'bg-brand-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-900 text-slate-300 hover:bg-slate-200'
               }`}
             >
               <span>{categoryConfig[cat].icon}</span>
@@ -136,7 +136,7 @@ function NewsCard({ item, compact }: { item: NewsItem; compact: boolean }) {
       href={item.url}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block rounded-lg border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all ${
+      className={`block rounded-lg border border-slate-700 hover:border-slate-600 hover:shadow-sm transition-all ${
         compact ? 'p-2.5' : 'p-3'
       } border-l-4 ${severity.border}`}
     >
@@ -150,13 +150,13 @@ function NewsCard({ item, compact }: { item: NewsItem; compact: boolean }) {
 
         <div className="flex-1 min-w-0">
           {/* Title */}
-          <h4 className={`font-medium text-slate-900 leading-tight ${compact ? 'text-sm' : 'text-sm'} line-clamp-2`}>
+          <h4 className={`font-medium text-white leading-tight ${compact ? 'text-sm' : 'text-sm'} line-clamp-2`}>
             {item.title}
           </h4>
 
           {/* Summary - only in non-compact mode */}
           {!compact && (
-            <p className="text-xs text-slate-600 mt-1 line-clamp-2">
+            <p className="text-xs text-slate-300 mt-1 line-clamp-2">
               {item.summary}
             </p>
           )}

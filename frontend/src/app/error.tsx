@@ -16,8 +16,8 @@ export default function Error({ error, reset }: ErrorProps) {
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8 max-w-md w-full text-center">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+      <div className="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 p-8 max-w-md w-full text-center">
         {/* Error Icon */}
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
@@ -36,21 +36,21 @@ export default function Error({ error, reset }: ErrorProps) {
         </div>
 
         {/* Error Message */}
-        <h1 className="text-xl font-bold text-slate-900 mb-2">
+        <h1 className="text-xl font-bold text-white mb-2">
           Something went wrong
         </h1>
-        <p className="text-sm text-slate-600 mb-6">
+        <p className="text-sm text-slate-300 mb-6">
           An unexpected error occurred while loading the dashboard. This could be due to a network issue or temporary server problem.
         </p>
 
         {/* Error Details (only in development) */}
         {process.env.NODE_ENV === 'development' && error.message && (
-          <div className="bg-slate-100 rounded-lg p-3 mb-6 text-left">
-            <p className="text-xs font-mono text-slate-700 break-words">
+          <div className="bg-slate-900 rounded-lg p-3 mb-6 text-left">
+            <p className="text-xs font-mono text-slate-200 break-words">
               {error.message}
             </p>
             {error.digest && (
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-400 mt-1">
                 Digest: {error.digest}
               </p>
             )}
@@ -67,14 +67,14 @@ export default function Error({ error, reset }: ErrorProps) {
           </button>
           <button
             onClick={() => window.location.href = '/'}
-            className="px-6 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition-colors"
+            className="px-6 py-2.5 bg-slate-900 hover:bg-slate-900 text-slate-200 font-semibold rounded-lg transition-colors"
           >
             Go Home
           </button>
         </div>
 
         {/* Help Text */}
-        <p className="text-xs text-slate-500 mt-6">
+        <p className="text-xs text-slate-400 mt-6">
           If this problem persists, please try refreshing the page or check your internet connection.
         </p>
       </div>

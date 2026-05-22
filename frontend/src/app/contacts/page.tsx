@@ -4,7 +4,7 @@
 
 export default function EmergencyContacts() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
       <header className="bg-gradient-to-r from-red-600 to-red-700 text-white px-4 py-8">
         <div className="max-w-5xl mx-auto">
@@ -19,7 +19,7 @@ export default function EmergencyContacts() {
           <h2 className="text-xl font-bold mb-1 text-red-600">
             National Emergency Numbers
           </h2>
-          <p className="text-sm text-slate-500 mb-6">ජාතික මට්ටමේ හදිසි ඇමතුම් අංක</p>
+          <p className="text-sm text-slate-400 mb-6">ජාතික මට්ටමේ හදිසි ඇමතුම් අංක</p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <ContactCard
@@ -171,7 +171,7 @@ export default function EmergencyContacts() {
             href="https://floodsupport.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-white text-brand-700 px-6 py-3 rounded-xl font-bold text-lg hover:bg-brand-50 transition-colors"
+            className="inline-flex items-center gap-2 bg-slate-800 text-brand-700 px-6 py-3 rounded-xl font-bold text-lg hover:bg-brand-50 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -210,12 +210,12 @@ function ContactCard({
   const styles = colorClasses[color] || colorClasses.blue;
 
   return (
-    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/60 hover:shadow-soft transition-all">
+    <div className="bg-slate-900 rounded-xl p-4 border border-slate-700/60 hover:shadow-soft transition-all">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-slate-900">{title}</div>
-          <div className="text-xs text-slate-500 mb-1">{titleSi}</div>
-          <div className="text-sm text-slate-600">{description}</div>
+          <div className="font-semibold text-white">{title}</div>
+          <div className="text-xs text-slate-400 mb-1">{titleSi}</div>
+          <div className="text-sm text-slate-300">{description}</div>
         </div>
         <a
           href={`tel:${number.replace(/\s/g, '')}`}
@@ -243,8 +243,8 @@ function ProvinceSection({
     <section className="card p-6">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h2 className="text-lg font-bold text-slate-900">{title}</h2>
-          <p className="text-sm text-slate-500">{titleSi}</p>
+          <h2 className="text-lg font-bold text-white">{title}</h2>
+          <p className="text-sm text-slate-400">{titleSi}</p>
         </div>
         {note && (
           <span className="badge-warning">{note}</span>
@@ -252,19 +252,19 @@ function ProvinceSection({
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {districts.map((d) => (
-          <div key={d.name} className="bg-slate-50 rounded-xl p-4 border border-slate-200/60">
-            <div className="font-semibold text-slate-900">{d.name}</div>
-            <div className="text-xs text-slate-500 mb-3">{d.nameSi}</div>
+          <div key={d.name} className="bg-slate-900 rounded-xl p-4 border border-slate-700/60">
+            <div className="font-semibold text-white">{d.name}</div>
+            <div className="text-xs text-slate-400 mb-3">{d.nameSi}</div>
             <div className="flex flex-col gap-2">
               <a
                 href={`tel:${d.phone1.replace(/\s/g, '')}`}
-                className="text-sm bg-slate-200 hover:bg-brand-600 hover:text-white px-3 py-2 rounded-lg text-center font-medium transition-colors"
+                className="text-sm bg-slate-900 hover:bg-brand-600 hover:text-white px-3 py-2 rounded-lg text-center font-medium transition-colors"
               >
                 {d.phone1}
               </a>
               <a
                 href={`tel:${d.phone2.replace(/\s/g, '')}`}
-                className="text-sm bg-slate-200 hover:bg-emerald-600 hover:text-white px-3 py-2 rounded-lg text-center font-medium transition-colors"
+                className="text-sm bg-slate-900 hover:bg-emerald-600 hover:text-white px-3 py-2 rounded-lg text-center font-medium transition-colors"
               >
                 {d.phone2}
               </a>

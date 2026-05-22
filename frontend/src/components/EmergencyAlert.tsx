@@ -58,7 +58,7 @@ export default function EmergencyAlert() {
         <div className="flex items-start gap-3">
           {/* Icon */}
           <div className="flex-shrink-0">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center animate-pulse">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-800/20 backdrop-blur-sm flex items-center justify-center animate-pulse">
               <span className="text-2xl sm:text-3xl">🚨</span>
             </div>
           </div>
@@ -69,7 +69,7 @@ export default function EmergencyAlert() {
             <div className="flex items-start justify-between gap-3 mb-2">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="inline-block px-2 py-0.5 bg-white/30 backdrop-blur-sm rounded text-xs font-bold uppercase tracking-wide">
+                  <span className="inline-block px-2 py-0.5 bg-slate-800/30 backdrop-blur-sm rounded text-xs font-bold uppercase tracking-wide">
                     Critical Emergency
                   </span>
                   <span className="text-xs opacity-90">{alert.updatedAt}</span>
@@ -82,7 +82,7 @@ export default function EmergencyAlert() {
               {/* Dismiss button */}
               <button
                 onClick={() => setDismissed(true)}
-                className="flex-shrink-0 p-1 hover:bg-white/20 rounded transition-colors"
+                className="flex-shrink-0 p-1 hover:bg-slate-800/20 rounded transition-colors"
                 aria-label="Dismiss alert"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,7 +98,7 @@ export default function EmergencyAlert() {
 
             {/* Details */}
             {alert.details && alert.details.length > 0 && (
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 mb-3">
+              <div className="bg-slate-800/10 backdrop-blur-sm rounded-lg p-3 mb-3">
                 <div className="text-xs sm:text-sm font-semibold mb-2">Current Situation:</div>
                 <ul className="space-y-1.5">
                   {alert.details.map((detail, idx) => (
@@ -115,7 +115,7 @@ export default function EmergencyAlert() {
             <div className="flex flex-wrap items-center gap-2">
               <a
                 href="/flood-info"
-                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-white text-red-700 rounded-lg text-xs sm:text-sm font-bold hover:bg-red-50 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-800 text-red-700 rounded-lg text-xs sm:text-sm font-bold hover:bg-red-50 transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -126,7 +126,7 @@ export default function EmergencyAlert() {
                 href="https://floodsupport.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 rounded-lg text-xs sm:text-sm font-bold transition-colors"
+                className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-slate-800/20 backdrop-blur-sm hover:bg-slate-800/30 rounded-lg text-xs sm:text-sm font-bold transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />

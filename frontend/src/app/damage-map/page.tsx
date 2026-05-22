@@ -8,10 +8,10 @@ import dynamic from 'next/dynamic';
 const DamageMapLeaflet = dynamic(() => import('@/components/DamageMapLeaflet'), {
   ssr: false,
   loading: () => (
-    <div className="h-full bg-slate-100 flex items-center justify-center">
+    <div className="h-full bg-slate-900 flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        <span className="text-sm text-slate-600">Loading satellite map...</span>
+        <span className="text-sm text-slate-300">Loading satellite map...</span>
       </div>
     </div>
   )
@@ -432,14 +432,14 @@ export default function DamageMapPage() {
           </div>
         );
       default:
-        return <div className="w-6 h-6 rounded-full border-2 border-slate-300 flex-shrink-0" />;
+        return <div className="w-6 h-6 rounded-full border-2 border-slate-600 flex-shrink-0" />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
+      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -449,14 +449,14 @@ export default function DamageMapPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-slate-900">Satellite Flood Damage Detection</h1>
-                <p className="text-xs text-slate-500">Sentinel-1 SAR & Sentinel-2 Optical Analysis • Sri Lanka</p>
+                <h1 className="text-lg font-bold text-white">Satellite Flood Damage Detection</h1>
+                <p className="text-xs text-slate-400">Sentinel-1 SAR & Sentinel-2 Optical Analysis • Sri Lanka</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowPythonScript(!showPythonScript)}
-                className="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors flex items-center gap-2"
+                className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-900 text-slate-200 text-sm font-medium transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
@@ -472,7 +472,7 @@ export default function DamageMapPage() {
       </header>
 
       {/* Tab Navigation */}
-      <div className="bg-white border-b border-slate-200">
+      <div className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-1">
             {[
@@ -486,7 +486,7 @@ export default function DamageMapPage() {
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   selectedTab === tab.id
                     ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-slate-600 hover:text-slate-900'
+                    : 'border-transparent text-slate-300 hover:text-white'
                 }`}
               >
                 <span className="mr-1.5">{tab.icon}</span>
@@ -503,25 +503,25 @@ export default function DamageMapPage() {
             {/* Left Panel - Controls */}
             <div className="space-y-4">
               {/* Data Configuration */}
-              <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-blue-100 flex items-center justify-center text-xs">📡</span>
+              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-lg bg-slate-900 flex items-center justify-center text-xs">📡</span>
                   Satellite Data Sources
                 </h3>
                 <div className="space-y-2">
-                  <label className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100 border border-slate-200">
-                    <input type="checkbox" defaultChecked className="mt-0.5 w-4 h-4 rounded text-blue-500 border-slate-300" />
+                  <label className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-900 cursor-pointer hover:bg-slate-900 border border-slate-700">
+                    <input type="checkbox" defaultChecked className="mt-0.5 w-4 h-4 rounded text-blue-500 border-slate-600" />
                     <div>
-                      <div className="text-sm font-medium text-slate-900">Sentinel-1 SAR</div>
-                      <div className="text-xs text-slate-500">C-band radar, VV+VH polarization, 10m resolution</div>
+                      <div className="text-sm font-medium text-white">Sentinel-1 SAR</div>
+                      <div className="text-xs text-slate-400">C-band radar, VV+VH polarization, 10m resolution</div>
                       <div className="text-xs text-blue-600 mt-1">✓ Cloud-penetrating, day/night operation</div>
                     </div>
                   </label>
-                  <label className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100 border border-slate-200">
-                    <input type="checkbox" defaultChecked className="mt-0.5 w-4 h-4 rounded text-blue-500 border-slate-300" />
+                  <label className="flex items-start gap-3 p-2.5 rounded-lg bg-slate-900 cursor-pointer hover:bg-slate-900 border border-slate-700">
+                    <input type="checkbox" defaultChecked className="mt-0.5 w-4 h-4 rounded text-blue-500 border-slate-600" />
                     <div>
-                      <div className="text-sm font-medium text-slate-900">Sentinel-2 Optical</div>
-                      <div className="text-xs text-slate-500">13 spectral bands, 10-60m resolution</div>
+                      <div className="text-sm font-medium text-white">Sentinel-2 Optical</div>
+                      <div className="text-xs text-slate-400">13 spectral bands, 10-60m resolution</div>
                       <div className="text-xs text-emerald-600 mt-1">✓ NDWI water index, high accuracy</div>
                     </div>
                   </label>
@@ -529,23 +529,23 @@ export default function DamageMapPage() {
               </div>
 
               {/* Processing Parameters */}
-              <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-xs">⚙️</span>
                   Processing Parameters
                 </h3>
                 <div className="space-y-3">
                   <div>
-                    <label className="text-xs font-medium text-slate-600 block mb-1.5">Water Detection Method</label>
-                    <select className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label className="text-xs font-medium text-slate-300 block mb-1.5">Water Detection Method</label>
+                    <select className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                       <option value="otsu">Otsu Threshold (Automatic)</option>
                       <option value="ratio">VV/VH Polarization Ratio</option>
                       <option value="fixed">Fixed Threshold (-15 dB)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-slate-600 block mb-1.5">Speckle Filter</label>
-                    <select className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <label className="text-xs font-medium text-slate-300 block mb-1.5">Speckle Filter</label>
+                    <select className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                       <option value="lee">Lee Filter (5×5 window)</option>
                       <option value="refined_lee">Refined Lee (7×7, edge-preserving)</option>
                       <option value="gamma">Gamma MAP Filter</option>
@@ -554,20 +554,20 @@ export default function DamageMapPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="text-xs font-medium text-slate-600 block mb-1.5">Min Area (px)</label>
+                      <label className="text-xs font-medium text-slate-300 block mb-1.5">Min Area (px)</label>
                       <input
                         type="number"
                         defaultValue={100}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-slate-600 block mb-1.5">NDWI Threshold</label>
+                      <label className="text-xs font-medium text-slate-300 block mb-1.5">NDWI Threshold</label>
                       <input
                         type="number"
                         step="0.1"
                         defaultValue={0.3}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-900"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white"
                       />
                     </div>
                   </div>
@@ -580,7 +580,7 @@ export default function DamageMapPage() {
                 disabled={isProcessing}
                 className={`w-full py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-sm ${
                   isProcessing
-                    ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                    ? 'bg-slate-900 text-slate-400 cursor-not-allowed'
                     : 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200'
                 }`}
               >
@@ -600,9 +600,9 @@ export default function DamageMapPage() {
               </button>
 
               {/* Bounding Box Info */}
-              <div className="bg-blue-50 rounded-xl p-3 border border-blue-200">
+              <div className="bg-blue-600/20 rounded-xl p-3 border border-blue-700/50">
                 <div className="text-xs font-semibold text-blue-800 mb-1">Analysis Region</div>
-                <div className="text-xs text-blue-700 font-mono">
+                <div className="text-xs text-blue-300 font-mono">
                   Sri Lanka: {BBOX[0]}°E to {BBOX[2]}°E, {BBOX[1]}°N to {BBOX[3]}°N
                 </div>
                 <div className="text-xs text-blue-600 mt-1">Coverage: ~65,610 km² land area</div>
@@ -612,14 +612,14 @@ export default function DamageMapPage() {
             {/* Center - Map & Results */}
             <div className="lg:col-span-2 space-y-4">
               {/* Map */}
-              <div className="bg-white rounded-xl overflow-hidden border border-slate-200 shadow-sm">
+              <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-sm">
                 <div className="h-[600px] relative">
                   <DamageMapLeaflet hasResults={hasResults} activeLayer={activeLayer} />
 
                   {/* Layer Controls */}
                   <div className="absolute top-3 right-3 z-[1000]">
-                    <div className="bg-white rounded-lg p-2 border border-slate-200 shadow-md">
-                      <div className="text-xs text-slate-500 font-medium mb-2 px-1">Overlay Layers</div>
+                    <div className="bg-slate-800 rounded-lg p-2 border border-slate-700 shadow-md">
+                      <div className="text-xs text-slate-400 font-medium mb-2 px-1">Overlay Layers</div>
                       <div className="space-y-1">
                         {[
                           { id: 'flood', label: 'Flood Extent', color: 'bg-blue-500', desc: 'Detected flood areas' },
@@ -632,8 +632,8 @@ export default function DamageMapPage() {
                             onClick={() => setActiveLayer(layer.id)}
                             className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
                               activeLayer === layer.id
-                                ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                                : 'text-slate-600 hover:bg-slate-50 border border-transparent'
+                                ? 'bg-blue-600/20 text-blue-300 border border-blue-700/50'
+                                : 'text-slate-300 hover:bg-slate-900 border border-transparent'
                             }`}
                           >
                             <span className={`w-3 h-3 rounded-sm ${layer.color}`}></span>
@@ -648,24 +648,24 @@ export default function DamageMapPage() {
 
                   {/* Legend */}
                   <div className="absolute bottom-3 left-3 z-[1000]">
-                    <div className="bg-white rounded-lg p-3 border border-slate-200 shadow-md">
-                      <div className="text-xs text-slate-600 font-semibold mb-2">Flood Severity</div>
+                    <div className="bg-slate-800 rounded-lg p-3 border border-slate-700 shadow-md">
+                      <div className="text-xs text-slate-300 font-semibold mb-2">Flood Severity</div>
                       <div className="space-y-1.5">
                         <div className="flex items-center gap-2">
                           <span className="w-4 h-3 rounded-sm bg-red-500"></span>
-                          <span className="text-xs text-slate-700">High Risk ({'>'}50cm depth)</span>
+                          <span className="text-xs text-slate-200">High Risk ({'>'}50cm depth)</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-4 h-3 rounded-sm bg-orange-500"></span>
-                          <span className="text-xs text-slate-700">Medium (20-50cm)</span>
+                          <span className="text-xs text-slate-200">Medium (20-50cm)</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-4 h-3 rounded-sm bg-yellow-500"></span>
-                          <span className="text-xs text-slate-700">Low ({'<'}20cm)</span>
+                          <span className="text-xs text-slate-200">Low ({'<'}20cm)</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="w-4 h-3 rounded-sm bg-cyan-400"></span>
-                          <span className="text-xs text-slate-700">Permanent Water</span>
+                          <span className="text-xs text-slate-200">Permanent Water</span>
                         </div>
                       </div>
                     </div>
@@ -676,24 +676,24 @@ export default function DamageMapPage() {
               {/* Quick Stats */}
               {hasResults && stats && (
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
-                    <div className="text-xs text-slate-500 mb-1">Flood Area</div>
+                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                    <div className="text-xs text-slate-400 mb-1">Flood Area</div>
                     <div className="text-xl font-bold text-blue-600">{stats.flood_area_km2.toFixed(0)}</div>
                     <div className="text-xs text-slate-400">km²</div>
                   </div>
-                  <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
-                    <div className="text-xs text-slate-500 mb-1">Coverage</div>
+                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                    <div className="text-xs text-slate-400 mb-1">Coverage</div>
                     <div className="text-xl font-bold text-emerald-600">{stats.flood_percentage.toFixed(2)}%</div>
                     <div className="text-xs text-slate-400">of land</div>
                   </div>
-                  <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
-                    <div className="text-xs text-slate-500 mb-1">Districts</div>
+                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                    <div className="text-xs text-slate-400 mb-1">Districts</div>
                     <div className="text-xl font-bold text-amber-600">{stats.affected_districts.length}</div>
                     <div className="text-xs text-slate-400">affected</div>
                   </div>
-                  <div className="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
-                    <div className="text-xs text-slate-500 mb-1">Cloud Cover</div>
-                    <div className="text-xl font-bold text-slate-600">{stats.cloud_cover_pct.toFixed(0)}%</div>
+                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                    <div className="text-xs text-slate-400 mb-1">Cloud Cover</div>
+                    <div className="text-xl font-bold text-slate-300">{stats.cloud_cover_pct.toFixed(0)}%</div>
                     <div className="text-xs text-slate-400">optical</div>
                   </div>
                 </div>
@@ -701,40 +701,40 @@ export default function DamageMapPage() {
 
               {/* Download Options */}
               {hasResults && stats && (
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-3">Download Results</h3>
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+                  <h3 className="text-sm font-semibold text-white mb-3">Download Results</h3>
                   <div className="grid grid-cols-4 gap-2">
                     <button
                       onClick={() => downloadGeoJSON(stats)}
-                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-900 hover:bg-slate-900 border border-slate-700 transition-colors"
                     >
                       <span className="text-2xl">📍</span>
-                      <span className="text-xs font-medium text-slate-700">GeoJSON</span>
-                      <span className="text-[10px] text-slate-500">.json</span>
+                      <span className="text-xs font-medium text-slate-200">GeoJSON</span>
+                      <span className="text-[10px] text-slate-400">.json</span>
                     </button>
                     <button
                       onClick={() => downloadPNG()}
-                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-900 hover:bg-slate-900 border border-slate-700 transition-colors"
                     >
                       <span className="text-2xl">🖼️</span>
-                      <span className="text-xs font-medium text-slate-700">PNG Map</span>
-                      <span className="text-[10px] text-slate-500">.png</span>
+                      <span className="text-xs font-medium text-slate-200">PNG Map</span>
+                      <span className="text-[10px] text-slate-400">.png</span>
                     </button>
                     <button
                       onClick={() => downloadHTML(stats)}
-                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-900 hover:bg-slate-900 border border-slate-700 transition-colors"
                     >
                       <span className="text-2xl">🌐</span>
-                      <span className="text-xs font-medium text-slate-700">Web Map</span>
-                      <span className="text-[10px] text-slate-500">.html</span>
+                      <span className="text-xs font-medium text-slate-200">Web Map</span>
+                      <span className="text-[10px] text-slate-400">.html</span>
                     </button>
                     <button
                       onClick={() => downloadCSV(stats)}
-                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors"
+                      className="flex flex-col items-center gap-1 p-3 rounded-lg bg-slate-900 hover:bg-slate-900 border border-slate-700 transition-colors"
                     >
                       <span className="text-2xl">📊</span>
-                      <span className="text-xs font-medium text-slate-700">CSV Data</span>
-                      <span className="text-[10px] text-slate-500">.csv</span>
+                      <span className="text-xs font-medium text-slate-200">CSV Data</span>
+                      <span className="text-[10px] text-slate-400">.csv</span>
                     </button>
                   </div>
                 </div>
@@ -743,8 +743,8 @@ export default function DamageMapPage() {
 
             {/* Right Panel - Processing Steps */}
             <div className="space-y-4">
-              <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
                   <span className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-xs">⚡</span>
                   Processing Pipeline
                 </h3>
@@ -753,9 +753,9 @@ export default function DamageMapPage() {
                     <div
                       key={step.id}
                       className={`p-2.5 rounded-lg transition-all ${
-                        step.status === 'processing' ? 'bg-blue-50 border border-blue-200' :
-                        step.status === 'completed' ? 'bg-emerald-50 border border-emerald-200' :
-                        'bg-slate-50 border border-slate-200'
+                        step.status === 'processing' ? 'bg-blue-600/20 border border-blue-700/50' :
+                        step.status === 'completed' ? 'bg-emerald-600/20 border border-emerald-700/50' :
+                        'bg-slate-900 border border-slate-700'
                       }`}
                     >
                       <div className="flex items-start gap-2">
@@ -763,9 +763,9 @@ export default function DamageMapPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <div className={`text-xs font-semibold ${
-                              step.status === 'completed' ? 'text-emerald-700' :
-                              step.status === 'processing' ? 'text-blue-700' :
-                              'text-slate-600'
+                              step.status === 'completed' ? 'text-emerald-300' :
+                              step.status === 'processing' ? 'text-blue-300' :
+                              'text-slate-300'
                             }`}>
                               {idx + 1}. {step.name}
                             </div>
@@ -773,7 +773,7 @@ export default function DamageMapPage() {
                               <span className="text-[10px] text-slate-400">{(step.duration / 1000).toFixed(1)}s</span>
                             )}
                           </div>
-                          <div className="text-[11px] text-slate-500 mt-0.5">{step.description}</div>
+                          <div className="text-[11px] text-slate-400 mt-0.5">{step.description}</div>
                           {step.status === 'processing' && (
                             <div className="text-[10px] text-blue-600 mt-1 leading-snug">{step.details}</div>
                           )}
@@ -786,18 +786,18 @@ export default function DamageMapPage() {
 
               {/* Affected Districts */}
               {hasResults && stats && (
-                <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                  <h3 className="text-sm font-semibold text-slate-900 mb-3">Affected Districts</h3>
+                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+                  <h3 className="text-sm font-semibold text-white mb-3">Affected Districts</h3>
                   <div className="space-y-1.5">
                     {stats.affected_districts.map((district) => {
                       const districtData = DISTRICTS.find(d => d.name === district);
                       return (
-                        <div key={district} className="flex items-center justify-between p-2 rounded-lg bg-slate-50">
-                          <span className="text-sm text-slate-700">{district}</span>
+                        <div key={district} className="flex items-center justify-between p-2 rounded-lg bg-slate-900">
+                          <span className="text-sm text-slate-200">{district}</span>
                           <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                            districtData?.risk === 'high' ? 'bg-red-100 text-red-700' :
-                            districtData?.risk === 'medium' ? 'bg-orange-100 text-orange-700' :
-                            'bg-yellow-100 text-yellow-700'
+                            districtData?.risk === 'high' ? 'bg-red-100 text-red-300' :
+                            districtData?.risk === 'medium' ? 'bg-orange-100 text-orange-300' :
+                            'bg-yellow-100 text-yellow-300'
                           }`}>
                             {districtData?.risk?.toUpperCase()}
                           </span>
@@ -814,17 +814,17 @@ export default function DamageMapPage() {
         {selectedTab === 'analysis' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Severity Breakdown */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Flood Severity Distribution</h3>
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Flood Severity Distribution</h3>
               {hasResults && stats ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-red-600 font-medium">High Severity</span>
-                        <span className="text-slate-600">{stats.severity_breakdown.high} km²</span>
+                        <span className="text-slate-300">{stats.severity_breakdown.high} km²</span>
                       </div>
-                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-3 bg-slate-900 rounded-full overflow-hidden">
                         <div className="h-full bg-red-500 rounded-full" style={{ width: `${(stats.severity_breakdown.high / stats.flood_area_km2) * 100}%` }}></div>
                       </div>
                     </div>
@@ -833,9 +833,9 @@ export default function DamageMapPage() {
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-orange-600 font-medium">Medium Severity</span>
-                        <span className="text-slate-600">{stats.severity_breakdown.medium} km²</span>
+                        <span className="text-slate-300">{stats.severity_breakdown.medium} km²</span>
                       </div>
-                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-3 bg-slate-900 rounded-full overflow-hidden">
                         <div className="h-full bg-orange-500 rounded-full" style={{ width: `${(stats.severity_breakdown.medium / stats.flood_area_km2) * 100}%` }}></div>
                       </div>
                     </div>
@@ -844,83 +844,83 @@ export default function DamageMapPage() {
                     <div className="flex-1">
                       <div className="flex justify-between text-sm mb-1">
                         <span className="text-yellow-600 font-medium">Low Severity</span>
-                        <span className="text-slate-600">{stats.severity_breakdown.low} km²</span>
+                        <span className="text-slate-300">{stats.severity_breakdown.low} km²</span>
                       </div>
-                      <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-3 bg-slate-900 rounded-full overflow-hidden">
                         <div className="h-full bg-yellow-500 rounded-full" style={{ width: `${(stats.severity_breakdown.low / stats.flood_area_km2) * 100}%` }}></div>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-slate-400">
                   <p>Run flood detection to see analysis results</p>
                 </div>
               )}
             </div>
 
             {/* Data Quality */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">Data Quality Metrics</h3>
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">Data Quality Metrics</h3>
               {hasResults && stats ? (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="text-xs text-slate-500 mb-1">Satellite Passes</div>
+                  <div className="bg-slate-900 rounded-lg p-4">
+                    <div className="text-xs text-slate-400 mb-1">Satellite Passes</div>
                     <div className="text-2xl font-bold text-blue-600">{stats.satellite_passes}</div>
                     <div className="text-xs text-slate-400">last 12 days</div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="text-xs text-slate-500 mb-1">Cloud-Free Area</div>
+                  <div className="bg-slate-900 rounded-lg p-4">
+                    <div className="text-xs text-slate-400 mb-1">Cloud-Free Area</div>
                     <div className="text-2xl font-bold text-emerald-600">{(100 - stats.cloud_cover_pct).toFixed(0)}%</div>
                     <div className="text-xs text-slate-400">optical imagery</div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="text-xs text-slate-500 mb-1">SAR Resolution</div>
-                    <div className="text-2xl font-bold text-slate-700">10m</div>
+                  <div className="bg-slate-900 rounded-lg p-4">
+                    <div className="text-xs text-slate-400 mb-1">SAR Resolution</div>
+                    <div className="text-2xl font-bold text-slate-200">10m</div>
                     <div className="text-xs text-slate-400">ground sampling</div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <div className="text-xs text-slate-500 mb-1">Processing Time</div>
-                    <div className="text-2xl font-bold text-slate-700">{(processingSteps.reduce((a, s) => a + (s.duration || 0), 0) / 1000).toFixed(1)}s</div>
+                  <div className="bg-slate-900 rounded-lg p-4">
+                    <div className="text-xs text-slate-400 mb-1">Processing Time</div>
+                    <div className="text-2xl font-bold text-slate-200">{(processingSteps.reduce((a, s) => a + (s.duration || 0), 0) / 1000).toFixed(1)}s</div>
                     <div className="text-xs text-slate-400">total pipeline</div>
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8 text-slate-500">
+                <div className="text-center py-8 text-slate-400">
                   <p>Run flood detection to see quality metrics</p>
                 </div>
               )}
             </div>
 
             {/* District Impact Table */}
-            <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-              <h3 className="text-lg font-semibold text-slate-900 mb-4">District-Level Analysis</h3>
+            <div className="lg:col-span-2 bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+              <h3 className="text-lg font-semibold text-white mb-4">District-Level Analysis</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200">
-                      <th className="text-left py-3 px-4 font-semibold text-slate-600">District</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-600">Risk Level</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-600">Latitude</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-600">Longitude</th>
-                      <th className="text-left py-3 px-4 font-semibold text-slate-600">Status</th>
+                    <tr className="border-b border-slate-700">
+                      <th className="text-left py-3 px-4 font-semibold text-slate-300">District</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-300">Risk Level</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-300">Latitude</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-300">Longitude</th>
+                      <th className="text-left py-3 px-4 font-semibold text-slate-300">Status</th>
                     </tr>
                   </thead>
                   <tbody>
                     {DISTRICTS.map((d) => (
-                      <tr key={d.name} className="border-b border-slate-100 hover:bg-slate-50">
-                        <td className="py-3 px-4 font-medium text-slate-900">{d.name}</td>
+                      <tr key={d.name} className="border-b border-slate-100 hover:bg-slate-900">
+                        <td className="py-3 px-4 font-medium text-white">{d.name}</td>
                         <td className="py-3 px-4">
                           <span className={`text-xs font-medium px-2 py-1 rounded ${
-                            d.risk === 'high' ? 'bg-red-100 text-red-700' :
-                            d.risk === 'medium' ? 'bg-orange-100 text-orange-700' :
-                            'bg-yellow-100 text-yellow-700'
+                            d.risk === 'high' ? 'bg-red-100 text-red-300' :
+                            d.risk === 'medium' ? 'bg-orange-100 text-orange-300' :
+                            'bg-yellow-100 text-yellow-300'
                           }`}>
                             {d.risk.toUpperCase()}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-600 font-mono text-xs">{d.lat.toFixed(4)}°N</td>
-                        <td className="py-3 px-4 text-slate-600 font-mono text-xs">{d.lon.toFixed(4)}°E</td>
+                        <td className="py-3 px-4 text-slate-300 font-mono text-xs">{d.lat.toFixed(4)}°N</td>
+                        <td className="py-3 px-4 text-slate-300 font-mono text-xs">{d.lon.toFixed(4)}°E</td>
                         <td className="py-3 px-4">
                           {hasResults && stats?.affected_districts.includes(d.name) ? (
                             <span className="text-xs text-red-600 font-medium">⚠️ Affected</span>
@@ -940,83 +940,83 @@ export default function DamageMapPage() {
         {selectedTab === 'methodology' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* SAR Processing */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
                   <span className="text-xl">📡</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">SAR Processing</h3>
-                  <p className="text-sm text-slate-500">Sentinel-1 C-band radar analysis</p>
+                  <h3 className="text-lg font-semibold text-white">SAR Processing</h3>
+                  <p className="text-sm text-slate-400">Sentinel-1 C-band radar analysis</p>
                 </div>
               </div>
-              <div className="space-y-4 text-sm text-slate-600">
+              <div className="space-y-4 text-sm text-slate-300">
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-1">1. Radiometric Calibration</h4>
+                  <h4 className="font-semibold text-slate-100 mb-1">1. Radiometric Calibration</h4>
                   <p>Convert raw digital numbers to calibrated backscatter coefficient (σ0) in decibels. Water surfaces appear dark in SAR imagery due to specular reflection away from the sensor.</p>
-                  <code className="block mt-2 p-2 bg-slate-100 rounded text-xs font-mono">σ0_dB = 10 × log10(DN² / K²)</code>
+                  <code className="block mt-2 p-2 bg-slate-900 rounded text-xs font-mono">σ0_dB = 10 × log10(DN² / K²)</code>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-1">2. Speckle Filtering</h4>
+                  <h4 className="font-semibold text-slate-100 mb-1">2. Speckle Filtering</h4>
                   <p>Apply Lee adaptive filter to reduce multiplicative speckle noise while preserving edges. The filter adapts based on local statistics.</p>
-                  <code className="block mt-2 p-2 bg-slate-100 rounded text-xs font-mono">filtered = mean + k × (original - mean)</code>
+                  <code className="block mt-2 p-2 bg-slate-900 rounded text-xs font-mono">filtered = mean + k × (original - mean)</code>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-1">3. Water Detection</h4>
+                  <h4 className="font-semibold text-slate-100 mb-1">3. Water Detection</h4>
                   <p>Use Otsu's automatic thresholding on VV polarization. Water typically shows backscatter {'<'} -15 dB. VV/VH ratio {'>'} 2 dB indicates smooth water surfaces.</p>
                 </div>
               </div>
             </div>
 
             {/* Optical Processing */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center">
                   <span className="text-xl">🛰️</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Optical Processing</h3>
-                  <p className="text-sm text-slate-500">Sentinel-2 multispectral analysis</p>
+                  <h3 className="text-lg font-semibold text-white">Optical Processing</h3>
+                  <p className="text-sm text-slate-400">Sentinel-2 multispectral analysis</p>
                 </div>
               </div>
-              <div className="space-y-4 text-sm text-slate-600">
+              <div className="space-y-4 text-sm text-slate-300">
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-1">1. Cloud Masking</h4>
+                  <h4 className="font-semibold text-slate-100 mb-1">1. Cloud Masking</h4>
                   <p>Use Scene Classification Layer (SCL) to identify cloudy pixels. Classes 8, 9 (cloud), 10 (cirrus), and 3 (shadow) are masked out.</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-1">2. NDWI Calculation</h4>
+                  <h4 className="font-semibold text-slate-100 mb-1">2. NDWI Calculation</h4>
                   <p>Compute Normalized Difference Water Index from Green (B03) and NIR (B08) bands. Water bodies have positive NDWI values.</p>
-                  <code className="block mt-2 p-2 bg-slate-100 rounded text-xs font-mono">NDWI = (Green - NIR) / (Green + NIR)</code>
+                  <code className="block mt-2 p-2 bg-slate-900 rounded text-xs font-mono">NDWI = (Green - NIR) / (Green + NIR)</code>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-slate-800 mb-1">3. Threshold Classification</h4>
+                  <h4 className="font-semibold text-slate-100 mb-1">3. Threshold Classification</h4>
                   <p>Apply threshold (typically NDWI {'>'} 0.3) to classify water pixels. Higher accuracy than SAR but limited by cloud cover.</p>
                 </div>
               </div>
             </div>
 
             {/* Data Fusion */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
                   <span className="text-xl">🔗</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Data Fusion Strategy</h3>
-                  <p className="text-sm text-slate-500">Combining SAR and optical results</p>
+                  <h3 className="text-lg font-semibold text-white">Data Fusion Strategy</h3>
+                  <p className="text-sm text-slate-400">Combining SAR and optical results</p>
                 </div>
               </div>
-              <div className="space-y-4 text-sm text-slate-600">
+              <div className="space-y-4 text-sm text-slate-300">
                 <p>The fusion strategy leverages the strengths of both sensor types:</p>
                 <ul className="list-disc pl-5 space-y-2">
                   <li><strong>Cloud-free areas:</strong> Use union of SAR and optical masks for highest accuracy</li>
                   <li><strong>Cloudy areas:</strong> Rely solely on SAR (cloud-penetrating capability)</li>
                   <li><strong>Permanent water:</strong> Baseline comparison to distinguish rivers/lakes from flood</li>
                 </ul>
-                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="p-3 bg-blue-600/20 rounded-lg border border-blue-700/50">
                   <div className="text-xs font-semibold text-blue-800 mb-1">Fusion Formula</div>
-                  <code className="text-xs font-mono text-blue-700">
+                  <code className="text-xs font-mono text-blue-300">
                     merged = SAR_mask | (optical_mask & ~cloud_mask)
                   </code>
                 </div>
@@ -1024,43 +1024,43 @@ export default function DamageMapPage() {
             </div>
 
             {/* Output Generation */}
-            <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
                   <span className="text-xl">📊</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-slate-900">Output Generation</h3>
-                  <p className="text-sm text-slate-500">Map and data products</p>
+                  <h3 className="text-lg font-semibold text-white">Output Generation</h3>
+                  <p className="text-sm text-slate-400">Map and data products</p>
                 </div>
               </div>
-              <div className="space-y-3 text-sm text-slate-600">
-                <div className="flex gap-3 p-3 bg-slate-50 rounded-lg">
+              <div className="space-y-3 text-sm text-slate-300">
+                <div className="flex gap-3 p-3 bg-slate-900 rounded-lg">
                   <span className="text-xl">🗺️</span>
                   <div>
-                    <div className="font-semibold text-slate-800">GeoTIFF Mask</div>
-                    <div className="text-xs text-slate-500">Georeferenced raster with CRS, ideal for GIS analysis</div>
+                    <div className="font-semibold text-slate-100">GeoTIFF Mask</div>
+                    <div className="text-xs text-slate-400">Georeferenced raster with CRS, ideal for GIS analysis</div>
                   </div>
                 </div>
-                <div className="flex gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="flex gap-3 p-3 bg-slate-900 rounded-lg">
                   <span className="text-xl">🖼️</span>
                   <div>
-                    <div className="font-semibold text-slate-800">PNG Damage Map</div>
-                    <div className="text-xs text-slate-500">Publication-ready with legend, scale bar, attribution</div>
+                    <div className="font-semibold text-slate-100">PNG Damage Map</div>
+                    <div className="text-xs text-slate-400">Publication-ready with legend, scale bar, attribution</div>
                   </div>
                 </div>
-                <div className="flex gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="flex gap-3 p-3 bg-slate-900 rounded-lg">
                   <span className="text-xl">🌐</span>
                   <div>
-                    <div className="font-semibold text-slate-800">Leaflet HTML Map</div>
-                    <div className="text-xs text-slate-500">Interactive web map with layer controls, popups</div>
+                    <div className="font-semibold text-slate-100">Leaflet HTML Map</div>
+                    <div className="text-xs text-slate-400">Interactive web map with layer controls, popups</div>
                   </div>
                 </div>
-                <div className="flex gap-3 p-3 bg-slate-50 rounded-lg">
+                <div className="flex gap-3 p-3 bg-slate-900 rounded-lg">
                   <span className="text-xl">📍</span>
                   <div>
-                    <div className="font-semibold text-slate-800">GeoJSON Vectors</div>
-                    <div className="text-xs text-slate-500">Flood polygons with area calculations per district</div>
+                    <div className="font-semibold text-slate-100">GeoJSON Vectors</div>
+                    <div className="text-xs text-slate-400">Flood polygons with area calculations per district</div>
                   </div>
                 </div>
               </div>
@@ -1072,17 +1072,17 @@ export default function DamageMapPage() {
       {/* Python Script Modal */}
       {showPythonScript && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-slate-50">
+          <div className="bg-slate-800 rounded-2xl max-w-5xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">flood_damage_detection.py</h3>
-                <p className="text-sm text-slate-500">Complete Python script for satellite-based flood detection</p>
+                <h3 className="text-lg font-semibold text-white">flood_damage_detection.py</h3>
+                <p className="text-sm text-slate-400">Complete Python script for satellite-based flood detection</p>
               </div>
               <button
                 onClick={() => setShowPythonScript(false)}
-                className="p-2 rounded-lg hover:bg-slate-200 transition-colors"
+                className="p-2 rounded-lg hover:bg-slate-900 transition-colors"
               >
-                <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -1276,14 +1276,14 @@ if __name__ == "__main__":
     run_flood_detection(args.output_dir, args.use_optical)`}
               </pre>
             </div>
-            <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
-              <div className="text-xs text-slate-500">
-                Full script: <code className="bg-slate-200 px-1.5 py-0.5 rounded">backend/scripts/flood_damage_detection.py</code>
+            <div className="p-4 border-t border-slate-700 bg-slate-900 flex justify-between items-center">
+              <div className="text-xs text-slate-400">
+                Full script: <code className="bg-slate-900 px-1.5 py-0.5 rounded">backend/scripts/flood_damage_detection.py</code>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => navigator.clipboard.writeText('pip install rasterio numpy matplotlib geopandas folium requests scipy scikit-image shapely branca')}
-                  className="px-3 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 text-sm font-medium transition-colors"
+                  className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-300 text-slate-200 text-sm font-medium transition-colors"
                 >
                   Copy Dependencies
                 </button>
@@ -1300,10 +1300,10 @@ if __name__ == "__main__":
       )}
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white mt-8">
+      <footer className="border-t border-slate-700 bg-slate-800 mt-8">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-slate-400">
               Data: <span className="font-medium">Copernicus Sentinel-1 & Sentinel-2</span> •
               API: <span className="font-medium">Copernicus Dataspace</span> •
               Processing: <span className="font-medium">FloodWatch.lk</span>

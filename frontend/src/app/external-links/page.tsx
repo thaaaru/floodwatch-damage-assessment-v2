@@ -8,7 +8,7 @@ export default function ExternalLinks() {
   const [activeCategory, setActiveCategory] = useState<string>('all');
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
       <header className="bg-gradient-to-r from-brand-600 to-brand-700 text-white px-4 py-8">
         <div className="max-w-7xl mx-auto">
@@ -27,7 +27,7 @@ export default function ExternalLinks() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 activeCategory === cat
                   ? 'bg-brand-600 text-white'
-                  : 'bg-white text-slate-600 hover:bg-slate-100'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-900'
               }`}
             >
               {cat.charAt(0).toUpperCase() + cat.slice(1)}
@@ -42,8 +42,8 @@ export default function ExternalLinks() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-3xl">🌊</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">NAVY WLRS - Real-Time River Monitoring</h2>
-                  <p className="text-sm text-slate-600 mt-1">Water Level & Rainfall System - 24hr rainfall, water levels, real-time location maps</p>
+                  <h2 className="text-2xl font-bold text-white">NAVY WLRS - Real-Time River Monitoring</h2>
+                  <p className="text-sm text-slate-300 mt-1">Water Level & Rainfall System - 24hr rainfall, water levels, real-time location maps</p>
                   <a
                     href="https://floodms.navy.lk/wlrs/"
                     target="_blank"
@@ -60,7 +60,7 @@ export default function ExternalLinks() {
 
               {/* Major Rivers (Ganga) */}
               <div className="mb-6">
-                <h3 className="text-lg font-bold text-slate-900 mb-3">🏞️ Major Rivers (Ganga)</h3>
+                <h3 className="text-lg font-bold text-white mb-3">🏞️ Major Rivers (Ganga)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {[
                     { name: 'Kelani Ganga', code: 'RB 01', url: 'https://floodms.navy.lk/wlrs/index.php', stations: 'Nagalagam Street, Hanwella, Kitulgala, Glencourse, Deraniyagala, Holombuwa, Norwood' },
@@ -76,18 +76,18 @@ export default function ExternalLinks() {
                       href={river.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block bg-slate-50 rounded-lg p-4 border border-slate-200 hover:border-brand-500 hover:shadow-md transition-all group"
+                      className="block bg-slate-900 rounded-lg p-4 border border-slate-700 hover:border-brand-500 hover:shadow-md transition-all group"
                     >
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
-                          <div className="font-semibold text-slate-900 group-hover:text-brand-600">{river.name}</div>
-                          <div className="text-xs text-slate-500">{river.code}</div>
+                          <div className="font-semibold text-white group-hover:text-brand-600">{river.name}</div>
+                          <div className="text-xs text-slate-400">{river.code}</div>
                         </div>
                         <svg className="w-4 h-4 text-slate-400 group-hover:text-brand-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                       </div>
-                      <div className="text-xs text-slate-600">
+                      <div className="text-xs text-slate-300">
                         <span className="font-medium">Stations:</span> {river.stations}
                       </div>
                     </a>
@@ -97,7 +97,7 @@ export default function ExternalLinks() {
 
               {/* Streams (Oya) */}
               <div>
-                <h3 className="text-lg font-bold text-slate-900 mb-3">💧 Streams (Oya)</h3>
+                <h3 className="text-lg font-bold text-white mb-3">💧 Streams (Oya)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {[
                     { name: 'Kirindi Oya', code: 'RB 22', url: 'https://floodms.navy.lk/wlrs/kirindioya.php', region: 'Southern' },
@@ -117,18 +117,18 @@ export default function ExternalLinks() {
                       href={stream.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="block bg-blue-50 rounded-lg p-4 border border-blue-200 hover:border-blue-500 hover:shadow-md transition-all group"
+                      className="block bg-blue-600/20 rounded-lg p-4 border border-blue-700/50 hover:border-blue-500 hover:shadow-md transition-all group"
                     >
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <div>
-                          <div className="font-semibold text-slate-900 group-hover:text-blue-600">{stream.name}</div>
-                          <div className="text-xs text-slate-500">{stream.code}</div>
+                          <div className="font-semibold text-white group-hover:text-blue-600">{stream.name}</div>
+                          <div className="text-xs text-slate-400">{stream.code}</div>
                         </div>
                         <svg className="w-4 h-4 text-slate-400 group-hover:text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                         </svg>
                       </div>
-                      <div className="text-xs text-blue-700">
+                      <div className="text-xs text-blue-300">
                         <span className="font-medium">Region:</span> {stream.region}
                       </div>
                     </a>
@@ -144,8 +144,8 @@ export default function ExternalLinks() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-3xl">📱</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">RiverNet.LK - Irrigation Department Early Warning</h2>
-                  <p className="text-sm text-slate-600 mt-1">Live river levels, flood alerts, mobile app interface</p>
+                  <h2 className="text-2xl font-bold text-white">RiverNet.LK - Irrigation Department Early Warning</h2>
+                  <p className="text-sm text-slate-300 mt-1">Live river levels, flood alerts, mobile app interface</p>
                   <a
                     href="https://rivernet.lk/"
                     target="_blank"
@@ -177,15 +177,15 @@ export default function ExternalLinks() {
                     href={link.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block bg-emerald-50 rounded-lg p-4 border border-emerald-200 hover:border-emerald-500 hover:shadow-md transition-all group"
+                    className="block bg-emerald-600/20 rounded-lg p-4 border border-emerald-700/50 hover:border-emerald-500 hover:shadow-md transition-all group"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="font-semibold text-slate-900 group-hover:text-emerald-600">{link.name}</div>
+                      <div className="font-semibold text-white group-hover:text-emerald-600">{link.name}</div>
                       <svg className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </div>
-                    <div className="text-xs text-emerald-700">{link.desc}</div>
+                    <div className="text-xs text-emerald-300">{link.desc}</div>
                   </a>
                 ))}
               </div>
@@ -198,8 +198,8 @@ export default function ExternalLinks() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-3xl">🗺️</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Navy Flood MS - Historical Maps & Emergency</h2>
-                  <p className="text-sm text-slate-600 mt-1">Dashboards, situation reports, district maps, rescue resources</p>
+                  <h2 className="text-2xl font-bold text-white">Navy Flood MS - Historical Maps & Emergency</h2>
+                  <p className="text-sm text-slate-300 mt-1">Dashboards, situation reports, district maps, rescue resources</p>
                   <a
                     href="https://floodms.navy.lk/"
                     target="_blank"
@@ -216,15 +216,15 @@ export default function ExternalLinks() {
 
               {/* Dashboards */}
               <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-700 mb-2">📊 Dashboards & Reports</h3>
+                <h3 className="text-sm font-bold text-slate-200 mb-2">📊 Dashboards & Reports</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   {[
                     { name: 'Current Flood Situation', url: 'https://floodms.navy.lk/flood.php' },
                     { name: 'Historical Flood Data', url: 'https://floodms.navy.lk/historical.php' },
                     { name: 'Safe Places/Shelters', url: 'https://floodms.navy.lk/rescue.php' },
                   ].map((link) => (
-                    <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm bg-slate-100 hover:bg-brand-50 px-3 py-2 rounded-lg flex items-center justify-between group">
-                      <span className="text-slate-700 group-hover:text-brand-700 font-medium">{link.name}</span>
+                    <a key={link.url} href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm bg-slate-900 hover:bg-brand-50 px-3 py-2 rounded-lg flex items-center justify-between group">
+                      <span className="text-slate-200 group-hover:text-brand-700 font-medium">{link.name}</span>
                       <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
@@ -235,7 +235,7 @@ export default function ExternalLinks() {
 
               {/* District Maps - Ratnapura */}
               <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-700 mb-2">🗺️ Sabaragamuwa Province (Ratnapura District)</h3>
+                <h3 className="text-sm font-bold text-slate-200 mb-2">🗺️ Sabaragamuwa Province (Ratnapura District)</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
                   {[
                     { name: 'Eheliyagoda', url: 'https://floodms.navy.lk/Eheliyagoda.php' },
@@ -248,7 +248,7 @@ export default function ExternalLinks() {
                     { name: 'Ratnapura', url: 'https://floodms.navy.lk/Rathnapura.php' },
                     { name: 'Nivithigala', url: 'https://floodms.navy.lk/Nivithigala.php' },
                   ].map((dsd) => (
-                    <a key={dsd.url} href={dsd.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-amber-50 hover:bg-amber-100 px-2 py-2 rounded text-center border border-amber-200 hover:border-amber-400 transition-all">
+                    <a key={dsd.url} href={dsd.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-amber-600/20 hover:bg-amber-100 px-2 py-2 rounded text-center border border-amber-700/50 hover:border-amber-600 transition-all">
                       {dsd.name}
                     </a>
                   ))}
@@ -257,7 +257,7 @@ export default function ExternalLinks() {
 
               {/* Other Districts */}
               <div className="mb-4">
-                <h3 className="text-sm font-bold text-slate-700 mb-2">🗺️ Other Provinces</h3>
+                <h3 className="text-sm font-bold text-slate-200 mb-2">🗺️ Other Provinces</h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {[
                     { name: 'Puttalam (North Western)', url: 'https://floodms.navy.lk/puttalam.php' },
@@ -266,7 +266,7 @@ export default function ExternalLinks() {
                     { name: 'Anuradhapura - Malwathu Oya (North Central)', url: 'https://floodms.navy.lk/anuradhapura.php' },
                     { name: 'Galle & Matara (Southern)', url: 'https://floodms.navy.lk/galle.php' },
                   ].map((district) => (
-                    <a key={district.url} href={district.url} target="_blank" rel="noopener noreferrer" className="text-sm bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-lg border border-slate-300 hover:border-slate-400 transition-all text-slate-700">
+                    <a key={district.url} href={district.url} target="_blank" rel="noopener noreferrer" className="text-sm bg-slate-900 hover:bg-slate-900 px-3 py-2 rounded-lg border border-slate-600 hover:border-slate-400 transition-all text-slate-200">
                       {district.name}
                     </a>
                   ))}
@@ -275,7 +275,7 @@ export default function ExternalLinks() {
 
               {/* Rescue Boats */}
               <div>
-                <h3 className="text-sm font-bold text-slate-700 mb-2">🚤 Rescue Boat Locations</h3>
+                <h3 className="text-sm font-bold text-slate-200 mb-2">🚤 Rescue Boat Locations</h3>
                 <div className="flex gap-2 flex-wrap">
                   {[
                     { year: '2022', url: 'https://floodms.navy.lk/boat_details_2022.php' },
@@ -298,8 +298,8 @@ export default function ExternalLinks() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-3xl">🏛️</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Government & Official Portals</h2>
-                  <p className="text-sm text-slate-600 mt-1">Official government monitoring systems and reports</p>
+                  <h2 className="text-2xl font-bold text-white">Government & Official Portals</h2>
+                  <p className="text-sm text-slate-300 mt-1">Official government monitoring systems and reports</p>
                 </div>
               </div>
 
@@ -317,15 +317,15 @@ export default function ExternalLinks() {
                     href={portal.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block bg-purple-50 rounded-lg p-4 border border-purple-200 hover:border-purple-500 hover:shadow-md transition-all group"
+                    className="block bg-purple-600/20 rounded-lg p-4 border border-purple-700/50 hover:border-purple-500 hover:shadow-md transition-all group"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="font-semibold text-slate-900 group-hover:text-purple-600">{portal.name}</div>
+                      <div className="font-semibold text-white group-hover:text-purple-600">{portal.name}</div>
                       <svg className="w-4 h-4 text-slate-400 group-hover:text-purple-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </div>
-                    <div className="text-xs text-purple-700">{portal.desc}</div>
+                    <div className="text-xs text-purple-300">{portal.desc}</div>
                   </a>
                 ))}
               </div>
@@ -338,8 +338,8 @@ export default function ExternalLinks() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-3xl">🛰️</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Weather & Satellite Monitoring</h2>
-                  <p className="text-sm text-slate-600 mt-1">Real-time weather maps, satellite imagery, rainfall monitoring</p>
+                  <h2 className="text-2xl font-bold text-white">Weather & Satellite Monitoring</h2>
+                  <p className="text-sm text-slate-300 mt-1">Real-time weather maps, satellite imagery, rainfall monitoring</p>
                 </div>
               </div>
 
@@ -356,15 +356,15 @@ export default function ExternalLinks() {
                     href={weather.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block bg-cyan-50 rounded-lg p-4 border border-cyan-200 hover:border-cyan-500 hover:shadow-md transition-all group"
+                    className="block bg-cyan-600/20 rounded-lg p-4 border border-cyan-700/50 hover:border-cyan-500 hover:shadow-md transition-all group"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="font-semibold text-slate-900 group-hover:text-cyan-600">{weather.name}</div>
+                      <div className="font-semibold text-white group-hover:text-cyan-600">{weather.name}</div>
                       <svg className="w-4 h-4 text-slate-400 group-hover:text-cyan-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </div>
-                    <div className="text-xs text-cyan-700">{weather.desc}</div>
+                    <div className="text-xs text-cyan-300">{weather.desc}</div>
                   </a>
                 ))}
               </div>
@@ -377,8 +377,8 @@ export default function ExternalLinks() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-3xl">🌍</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">International & Regional Resources</h2>
-                  <p className="text-sm text-slate-600 mt-1">Global disaster alerts and humanitarian updates</p>
+                  <h2 className="text-2xl font-bold text-white">International & Regional Resources</h2>
+                  <p className="text-sm text-slate-300 mt-1">Global disaster alerts and humanitarian updates</p>
                 </div>
               </div>
 
@@ -393,15 +393,15 @@ export default function ExternalLinks() {
                     href={intl.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block bg-indigo-50 rounded-lg p-4 border border-indigo-200 hover:border-indigo-500 hover:shadow-md transition-all group"
+                    className="block bg-indigo-600/20 rounded-lg p-4 border border-indigo-700/50 hover:border-indigo-500 hover:shadow-md transition-all group"
                   >
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="font-semibold text-slate-900 group-hover:text-indigo-600">{intl.name}</div>
+                      <div className="font-semibold text-white group-hover:text-indigo-600">{intl.name}</div>
                       <svg className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                     </div>
-                    <div className="text-xs text-indigo-700">{intl.desc}</div>
+                    <div className="text-xs text-indigo-300">{intl.desc}</div>
                   </a>
                 ))}
               </div>
@@ -414,8 +414,8 @@ export default function ExternalLinks() {
               <div className="flex items-start gap-3 mb-4">
                 <span className="text-3xl">📄</span>
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900">Reference Documents</h2>
-                  <p className="text-sm text-slate-600 mt-1">Technical documentation and concept papers</p>
+                  <h2 className="text-2xl font-bold text-white">Reference Documents</h2>
+                  <p className="text-sm text-slate-300 mt-1">Technical documentation and concept papers</p>
                 </div>
               </div>
 
@@ -423,14 +423,14 @@ export default function ExternalLinks() {
                 href="https://floodms.navy.lk/Map_PDF/consept.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3 hover:bg-red-100 hover:border-red-400 transition-all group"
+                className="inline-flex items-center gap-2 bg-red-600/20 border border-red-700/50 rounded-lg px-4 py-3 hover:bg-red-100 hover:border-red-600 transition-all group"
               >
                 <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                 </svg>
                 <div>
-                  <div className="font-semibold text-slate-900 group-hover:text-red-600">Navy Flood MS Concept Paper</div>
-                  <div className="text-xs text-red-700">PDF Document</div>
+                  <div className="font-semibold text-white group-hover:text-red-600">Navy Flood MS Concept Paper</div>
+                  <div className="text-xs text-red-300">PDF Document</div>
                 </div>
                 <svg className="w-4 h-4 text-slate-400 group-hover:text-red-600 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -441,7 +441,7 @@ export default function ExternalLinks() {
 
           {/* Summary Statistics */}
           <section className="card p-6 bg-gradient-to-br from-slate-100 to-slate-50">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">📊 Summary Statistics</h2>
+            <h2 className="text-xl font-bold text-white mb-4">📊 Summary Statistics</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {[
                 { label: 'Major Rivers (Ganga)', count: '7' },
@@ -454,14 +454,14 @@ export default function ExternalLinks() {
               ].map((stat) => (
                 <div key={stat.label} className="text-center">
                   <div className="text-3xl font-bold text-brand-600">{stat.count}</div>
-                  <div className="text-xs text-slate-600 mt-1">{stat.label}</div>
+                  <div className="text-xs text-slate-300 mt-1">{stat.label}</div>
                 </div>
               ))}
             </div>
           </section>
 
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-600/20 border border-blue-700/50 rounded-lg p-4">
             <div className="flex gap-3">
               <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

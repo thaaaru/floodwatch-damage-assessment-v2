@@ -37,7 +37,7 @@ export function LayerPanel({
 
   return (
     <div className="absolute top-4 left-4 z-[1000] w-72">
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div className="bg-slate-800 rounded-lg shadow-lg overflow-hidden">
         {/* Header */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -64,12 +64,12 @@ export function LayerPanel({
           <div className="p-4 space-y-4">
             {/* Base imagery opacity */}
             <div>
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Base Imagery</h3>
+              <h3 className="text-sm font-semibold text-white mb-3">Base Imagery</h3>
 
               <div className="space-y-3">
                 {/* Before imagery opacity */}
                 <div>
-                  <label className="text-xs text-slate-600 mb-1 block">
+                  <label className="text-xs text-slate-300 mb-1 block">
                     Before Image Opacity
                   </label>
                   <input
@@ -90,7 +90,7 @@ export function LayerPanel({
 
                 {/* After imagery opacity */}
                 <div>
-                  <label className="text-xs text-slate-600 mb-1 block">
+                  <label className="text-xs text-slate-300 mb-1 block">
                     After Image Opacity
                   </label>
                   <input
@@ -112,7 +112,7 @@ export function LayerPanel({
             </div>
 
             <div className="border-t pt-4">
-              <h3 className="text-sm font-semibold text-slate-900 mb-3">Overlay Layers</h3>
+              <h3 className="text-sm font-semibold text-white mb-3">Overlay Layers</h3>
               <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-3">
                 <p className="text-xs text-blue-800">
                   <strong>Phase 2:</strong> Damage and flood overlays require satellite imagery processing and AI models (not yet implemented).
@@ -122,7 +122,7 @@ export function LayerPanel({
               {/* Damage layer */}
               <div className="mb-3">
                 <label className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-700 flex items-center gap-2">
+                  <span className="text-sm text-slate-200 flex items-center gap-2">
                     <div className="w-3 h-3 rounded bg-red-500"></div>
                     Building Damage
                   </span>
@@ -154,7 +154,7 @@ export function LayerPanel({
               {/* Flood layer */}
               <div>
                 <label className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-slate-700 flex items-center gap-2">
+                  <span className="text-sm text-slate-200 flex items-center gap-2">
                     <div className="w-3 h-3 rounded bg-blue-500"></div>
                     Flood Extent
                   </span>
@@ -186,23 +186,23 @@ export function LayerPanel({
 
             {/* Legend */}
             <div className="border-t pt-4">
-              <h3 className="text-sm font-semibold text-slate-900 mb-2">Damage Legend</h3>
+              <h3 className="text-sm font-semibold text-white mb-2">Damage Legend</h3>
               <div className="space-y-1.5 text-xs">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: '#10b981' }}></div>
-                  <span className="text-slate-600">No Damage</span>
+                  <span className="text-slate-300">No Damage</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: '#fbbf24' }}></div>
-                  <span className="text-slate-600">Minor Damage</span>
+                  <span className="text-slate-300">Minor Damage</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: '#f97316' }}></div>
-                  <span className="text-slate-600">Major Damage</span>
+                  <span className="text-slate-300">Major Damage</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 rounded" style={{ backgroundColor: '#ef4444' }}></div>
-                  <span className="text-slate-600">Destroyed</span>
+                  <span className="text-slate-300">Destroyed</span>
                 </div>
               </div>
             </div>
