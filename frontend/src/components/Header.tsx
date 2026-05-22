@@ -12,7 +12,8 @@ const navigation = [
   { name: 'News', href: '/news' },
   { name: 'Early Warning', href: '/early-warning', dynamic: true },
   { name: 'Rivers', href: '/rivers' },
-  { name: 'Flood Hub', href: '/floods' },
+  // 'Flood Hub' (/floods) is hidden per UX request 2026-05-22; the page
+  // still exists but is no longer linked from the nav.
   { name: 'Intel', href: '/intel' },
   { name: 'External Links', href: '/external-links' },
   { name: 'Data Sources', href: '/data-sources' },
@@ -78,12 +79,41 @@ export default function Header() {
     setIsMenuOpen(false);
   }, [pathname]);
 
+  // Pages with a dark background need the header to invert its text colours so
+  // the nav links stay readable. Today only the /intel "command center" view
+  // is dark; this list is intentionally explicit (rather than e.g. inspecting
+  // document.body) so the SSR render matches the client one.
+  const darkPagePrefixes = ['/intel'];
+  const isDarkPage = darkPagePrefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
+  // Palette tokens used throughout the rest of the header markup. Swapping
+  // here keeps every link / button / hover state in lockstep.
+  const palette = isDarkPage
+    ? {
+        headerBg: 'bg-slate-900/80 backdrop-blur-md border-b border-slate-700/60',
+        logoText: 'text-white',
+        subText: 'text-slate-300',
+        linkIdle: 'text-slate-200 hover:text-white hover:bg-white/10',
+        hoverPanel: 'hover:bg-white/10',
+        mobileBtn: 'text-slate-200 hover:text-white hover:bg-white/10',
+        mobileBorder: 'border-slate-700/60',
+        partnerChip: 'text-slate-200 hover:text-white',
+      }
+    : {
+        headerBg: 'bg-white/10 backdrop-blur-md border-b border-slate-200/30',
+        logoText: 'text-slate-900',
+        subText: 'text-blue-600',
+        linkIdle: 'text-slate-600 hover:text-slate-900 hover:bg-white/50',
+        hoverPanel: 'hover:bg-white/50',
+        mobileBtn: 'text-slate-600 hover:text-slate-900 hover:bg-white/50',
+        mobileBorder: 'border-slate-200/60',
+        partnerChip: 'text-slate-600 hover:text-slate-900',
+      };
+
   return (
     <header
       className={`sticky top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? 'bg-white/10 backdrop-blur-md border-b border-slate-200/30 shadow-sm'
-          : 'bg-white/10 backdrop-blur-md border-b border-slate-200/30'
+        scrolled ? `${palette.headerBg} shadow-sm` : palette.headerBg
       }`}
     >
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,15 +129,15 @@ export default function Header() {
                 </div>
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-slate-900 text-base leading-tight">FloodWatch</span>
-                <span className="text-xs font-semibold text-blue-600">Sri Lanka</span>
+                <span className={`font-bold text-base leading-tight ${palette.logoText}`}>FloodWatch</span>
+                <span className={`text-xs font-semibold ${palette.subText}`}>Sri Lanka</span>
               </div>
             </Link>
             <a
               href="https://hackandbuild.dev/"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-1 px-2.5 py-1 glass rounded-lg text-xs text-slate-600 hover:text-slate-900 transition-all hover:shadow-sm"
+              className={`hidden sm:flex items-center gap-1 px-2.5 py-1 glass rounded-lg text-xs ${palette.partnerChip} transition-all hover:shadow-sm`}
               title="Built by Hack & Build"
             >
               <span>by</span>
@@ -136,7 +166,7 @@ export default function Header() {
                       ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
                       : isDynamic && highestRiskLevel
                       ? `${riskColor}`
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                      : palette.linkIdle
                   }`}
                 >
                   {item.name}
@@ -164,7 +194,7 @@ export default function Header() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-white/50 transition-colors"
+              className={`p-1.5 rounded-lg transition-colors ${palette.mobileBtn}`}
               aria-label="Toggle menu"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -180,7 +210,7 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-slate-200/60 animate-fade-in">
+          <div className={`md:hidden py-4 border-t ${palette.mobileBorder} animate-fade-in`}>
             <div className="flex flex-col gap-1">
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
@@ -198,14 +228,14 @@ export default function Header() {
                         ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
                         : isDynamic && highestRiskLevel
                         ? `${riskColor}`
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                        : palette.linkIdle
                     }`}
                   >
                     {item.name}
                   </Link>
                 );
               })}
-              <div className="pt-3 mt-2 border-t border-slate-200/60">
+              <div className={`pt-3 mt-2 border-t ${palette.mobileBorder}`}>
                 <a
                   href="https://floodsupport.org"
                   target="_blank"
