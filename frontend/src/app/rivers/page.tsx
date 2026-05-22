@@ -10,7 +10,7 @@ import { api, IrrigationStation, RiverStation } from '@/lib/api';
 const RiversMap = dynamic(() => import('@/components/RiversMap'), {
   ssr: false,
   loading: () => (
-    <div className="h-[480px] w-full bg-slate-100 rounded-2xl flex items-center justify-center">
+    <div className="h-[600px] sm:h-[720px] w-full bg-slate-100 rounded-2xl flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <div className="w-10 h-10 border-2 border-blue-200 border-t-blue-600 rounded-full animate-spin" />
         <span className="text-sm text-slate-500">Loading map...</span>
@@ -217,7 +217,7 @@ export default function RiversPage() {
                   </div>
                 </div>
 
-                <div className="relative" style={{ height: '480px' }}>
+                <div className="relative h-[600px] sm:h-[720px]">
                   <RiversMap
                     stations={irrigationStations}
                     selectedStation={selectedStation}

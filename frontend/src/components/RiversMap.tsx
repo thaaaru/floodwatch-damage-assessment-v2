@@ -50,14 +50,15 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
     // Add zoom control to top-right
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Dark theme map tiles
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Bright basemap. CARTO Voyager keeps water/road colors saturated so
+    // the river network is easy to read at country zoom. Free, no API key.
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
     }).addTo(map);
 
     // Add attribution
     L.control.attribution({ position: 'bottomright' })
-      .addAttribution('&copy; <a href="https://carto.com/">CARTO</a>')
+      .addAttribution('&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org/copyright">OSM</a>')
       .addTo(map);
 
     mapRef.current = map;
@@ -93,10 +94,10 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
         const points: L.LatLngTuple[] = sorted.map(s => [s.lat, s.lon]);
 
         L.polyline(points, {
-          color: '#4a5568',
-          weight: 2,
-          opacity: 0.5,
-          dashArray: '5, 5',
+          color: '#1d4ed8', // blue-700 - stands out on the bright basemap
+          weight: 2.5,
+          opacity: 0.55,
+          dashArray: '6, 6',
         }).addTo(mapRef.current!);
       }
     });
@@ -118,11 +119,11 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
         fillOpacity: 0.9,
       });
 
-      // Create popup content
+      // Create popup content (styled to read clearly against the bright basemap)
       const popupContent = `
-        <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 180px;">
+        <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 180px; color: #1f2937;">
           <div style="font-weight: bold; font-size: 14px; margin-bottom: 4px;">${station.station}</div>
-          <div style="color: #9ca3af; font-size: 12px; margin-bottom: 8px;">${station.river}</div>
+          <div style="color: #6b7280; font-size: 12px; margin-bottom: 8px;">${station.river}</div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
             <span style="background: ${color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold;">
               ${getStatusLabel(station.status)}
@@ -130,19 +131,19 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
             <div>
-              <div style="color: #9ca3af;">Level</div>
+              <div style="color: #6b7280;">Level</div>
               <div style="font-weight: bold; color: ${color};">${station.water_level_m.toFixed(2)}m</div>
             </div>
             <div>
-              <div style="color: #9ca3af;">Threshold</div>
-              <div style="font-weight: bold;">${station.major_flood_level_m.toFixed(2)}m</div>
+              <div style="color: #6b7280;">Threshold</div>
+              <div style="font-weight: bold; color: #111827;">${station.major_flood_level_m.toFixed(2)}m</div>
             </div>
           </div>
-          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #374151;">
-            <div style="background: #374151; border-radius: 4px; height: 6px; overflow: hidden;">
+          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+            <div style="background: #e5e7eb; border-radius: 4px; height: 6px; overflow: hidden;">
               <div style="background: ${color}; height: 100%; width: ${Math.min(station.pct_to_major_flood, 100)}%;"></div>
             </div>
-            <div style="text-align: center; font-size: 11px; color: #9ca3af; margin-top: 4px;">
+            <div style="text-align: center; font-size: 11px; color: #6b7280; margin-top: 4px;">
               ${station.pct_to_major_flood.toFixed(0)}% to major flood
             </div>
           </div>
@@ -150,7 +151,7 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
       `;
 
       marker.bindPopup(popupContent, {
-        className: 'dark-popup',
+        className: 'rivers-map-popup',
         closeButton: true,
       });
 
@@ -177,20 +178,20 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
   return (
     <>
       <style jsx global>{`
-        .dark-popup .leaflet-popup-content-wrapper {
-          background: #1f2937;
-          color: white;
+        .rivers-map-popup .leaflet-popup-content-wrapper {
+          background: #ffffff;
+          color: #1f2937;
           border-radius: 8px;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
         }
-        .dark-popup .leaflet-popup-tip {
-          background: #1f2937;
+        .rivers-map-popup .leaflet-popup-tip {
+          background: #ffffff;
         }
-        .dark-popup .leaflet-popup-close-button {
-          color: #9ca3af !important;
+        .rivers-map-popup .leaflet-popup-close-button {
+          color: #6b7280 !important;
         }
-        .dark-popup .leaflet-popup-close-button:hover {
-          color: white !important;
+        .rivers-map-popup .leaflet-popup-close-button:hover {
+          color: #111827 !important;
         }
 
         /* Pulsing animation for flood markers */
