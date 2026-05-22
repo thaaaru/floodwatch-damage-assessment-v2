@@ -3,7 +3,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { api, GoogleFloodGauge, GoogleFloodsResponse } from '@/lib/api';
+import { api, GoogleFloodGauge, GoogleFloodsResponse, IrrigationStation } from '@/lib/api';
 
 // HydroSHEDS reference data clipped to Sri Lanka (bundled at build time).
 // Source: HydroBASINS L8 + HydroRIVERS v1.0 (Lehner & Grill 2013).
@@ -29,6 +29,22 @@ const SEVERITY_STYLES: Record<string, { color: string; label: string; bg: string
 
 function styleFor(severity: string) {
   return SEVERITY_STYLES[severity?.toUpperCase()] ?? SEVERITY_STYLES.UNKNOWN;
+}
+
+// Sri Lanka Irrigation Department gauging-station palette. Distinct from
+// Google Flood Hub severity to avoid confusion: these stations report a
+// physically measured water level (m) plus alert / minor / major flood
+// thresholds. Squares (vs Google's circles) help users see at a glance
+// which data source a marker is from.
+const IRRIGATION_STYLES: Record<string, { color: string; label: string }> = {
+  major_flood: { color: '#dc2626', label: 'Major flood' },
+  minor_flood: { color: '#f97316', label: 'Minor flood' },
+  alert: { color: '#eab308', label: 'Alert' },
+  normal: { color: '#16a34a', label: 'Normal' },
+};
+
+function irrigationStyle(status: string) {
+  return IRRIGATION_STYLES[status] ?? IRRIGATION_STYLES.normal;
 }
 
 function formatValue(value: number | null, unit: string | null): string {
@@ -95,11 +111,23 @@ export default function FloodHubPage() {
   const [showAigBuildings, setShowAigBuildings] = useState(false);
   const [showAigFlood, setShowAigFlood] = useState(false);
 
+  // Sri Lanka Irrigation Department gauging stations (24 nationwide with
+  // measured water level + alert/minor/major flood thresholds). Default ON
+  // because this is the most accurate live data source we have.
+  const [showIrrigation, setShowIrrigation] = useState(true);
+  const [irrigationStations, setIrrigationStations] = useState<IrrigationStation[]>([]);
+
   const mapRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const googleMapRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const irrigationMarkersRef = useRef<any[]>([]);
+  // Lazily-built InfoWindow shared across all irrigation markers (so only one
+  // is open at a time and we don't leak `new google.maps.InfoWindow()` calls).
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const irrigationInfoWindowRef = useRef<any>(null);
   // Separate Data layers for each overlay so we can toggle independently.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const basinLayerRef = useRef<any>(null);
@@ -153,6 +181,33 @@ export default function FloodHubPage() {
     load();
     // Refresh every 10 minutes (server caches for 30, so this is essentially free).
     const interval = setInterval(load, 10 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // ------------------------------------------------------------------
+  // Irrigation Department gauging stations - live water levels with
+  // alert / minor / major flood thresholds. Independent of the Google
+  // Flood Hub fetch above so a failure of one source never hides the
+  // other. Refreshes every 5 minutes (matches the backend cache TTL).
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    let cancelled = false;
+    const loadIrrigation = async () => {
+      try {
+        const res = await api.getIrrigationData();
+        if (cancelled) return;
+        setIrrigationStations(res?.stations ?? []);
+      } catch (err: unknown) {
+        if (cancelled) return;
+        console.warn('Irrigation gauges fetch failed:', err);
+        // Leave any previous data in place rather than blanking the layer.
+      }
+    };
+    loadIrrigation();
+    const interval = setInterval(loadIrrigation, 5 * 60 * 1000);
     return () => {
       cancelled = true;
       clearInterval(interval);
@@ -277,6 +332,9 @@ export default function FloodHubPage() {
       try {
         markersRef.current.forEach((m) => m.setMap?.(null));
         markersRef.current = [];
+        irrigationMarkersRef.current.forEach((m) => m.setMap?.(null));
+        irrigationMarkersRef.current = [];
+        irrigationInfoWindowRef.current?.close?.();
         basinLayerRef.current?.setMap?.(null);
         riverLayerRef.current?.setMap?.(null);
       } catch (err) {
@@ -368,6 +426,96 @@ export default function FloodHubPage() {
       markersRef.current.push(marker);
     });
   }, [data, severityFilter]);
+
+  // ------------------------------------------------------------------
+  // Render Sri Lanka Irrigation Dept stations on the same Google Map.
+  // We use square markers (vs circles for Google Flood Hub gauges) so the
+  // two data sources are visually distinguishable. Toggleable via the
+  // "Water-level gauges" checkbox in the Layers strip.
+  // ------------------------------------------------------------------
+  useEffect(() => {
+    if (!googleMapRef.current || !window.google?.maps) return;
+
+    // Always clear before redrawing so we never leak markers when toggling.
+    irrigationMarkersRef.current.forEach((m) => m.setMap?.(null));
+    irrigationMarkersRef.current = [];
+
+    if (!showIrrigation || irrigationStations.length === 0) return;
+
+    // One InfoWindow instance reused across markers.
+    if (!irrigationInfoWindowRef.current) {
+      irrigationInfoWindowRef.current = new window.google.maps.InfoWindow();
+    }
+
+    irrigationStations.forEach((station) => {
+      const palette = irrigationStyle(station.status);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const marker = new window.google.maps.Marker({
+        position: { lat: station.lat, lng: station.lon },
+        map: googleMapRef.current,
+        title: `${station.station} (${station.river}) — ${palette.label}`,
+        icon: {
+          // BACKWARD_CLOSED_ARROW + zero rotation renders as a diamond/square
+          // shape; this makes irrigation stations visually distinct from the
+          // round Google Flood Hub markers without needing PNG sprites.
+          path: window.google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+          fillColor: palette.color,
+          fillOpacity: 0.95,
+          strokeColor: '#ffffff',
+          strokeWeight: 2,
+          scale: station.status === 'normal' ? 5 : 7,
+          rotation: 180, // flip so the "point" sits below the coordinate
+        },
+        zIndex: station.status === 'normal' ? 100 : 200, // flood stations on top
+      });
+
+      const pctBar = Math.min(Math.max(station.pct_to_major_flood ?? 0, 0), 100);
+      // Keep the popup small and explicitly styled so it reads cleanly on
+      // top of Google's busy basemap.
+      const popupHtml = `
+        <div style="font-family: system-ui, -apple-system, sans-serif; min-width: 200px; max-width: 240px; color: #1f2937;">
+          <div style="font-weight: 600; font-size: 13px; margin-bottom: 2px;">${station.station}</div>
+          <div style="color: #6b7280; font-size: 11px; margin-bottom: 6px;">${station.river}${station.districts?.length ? ` &middot; ${station.districts.join(', ')}` : ''}</div>
+          <div style="display: inline-block; background: ${palette.color}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; margin-bottom: 8px;">
+            ${palette.label.toUpperCase()}
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px;">
+            <div>
+              <div style="color: #6b7280;">Current</div>
+              <div style="font-weight: 700; color: ${palette.color}; font-size: 13px;">${station.water_level_m?.toFixed(2) ?? '—'} m</div>
+            </div>
+            <div>
+              <div style="color: #6b7280;">Alert</div>
+              <div style="font-weight: 600;">${station.alert_level_m?.toFixed(2) ?? '—'} m</div>
+            </div>
+            <div>
+              <div style="color: #6b7280;">Minor flood</div>
+              <div style="font-weight: 600; color: #f97316;">${station.minor_flood_level_m?.toFixed(2) ?? '—'} m</div>
+            </div>
+            <div>
+              <div style="color: #6b7280;">Major flood</div>
+              <div style="font-weight: 600; color: #dc2626;">${station.major_flood_level_m?.toFixed(2) ?? '—'} m</div>
+            </div>
+          </div>
+          <div style="margin-top: 8px; padding-top: 6px; border-top: 1px solid #e5e7eb;">
+            <div style="background: #e5e7eb; border-radius: 4px; height: 6px; overflow: hidden;">
+              <div style="background: ${palette.color}; height: 100%; width: ${pctBar}%;"></div>
+            </div>
+            <div style="text-align: center; font-size: 10px; color: #6b7280; margin-top: 3px;">
+              ${pctBar.toFixed(0)}% to major flood threshold
+            </div>
+          </div>
+        </div>
+      `;
+
+      marker.addListener('click', () => {
+        irrigationInfoWindowRef.current?.setContent(popupHtml);
+        irrigationInfoWindowRef.current?.open(googleMapRef.current, marker);
+      });
+
+      irrigationMarkersRef.current.push(marker);
+    });
+  }, [irrigationStations, showIrrigation]);
 
   const selectedGauge =
     // Note: `data?.gauges.find(...)` is NOT safe — `?.` only short-circuits on
@@ -486,7 +634,21 @@ export default function FloodHubPage() {
                 />
                 River network
               </label>
-              <span className="ml-auto text-slate-400 text-[10px]">HydroSHEDS v1.0</span>
+              <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showIrrigation}
+                  onChange={(e) => setShowIrrigation(e.target.checked)}
+                  className="rounded"
+                />
+                💧 Water-level gauges{' '}
+                {irrigationStations.length > 0 && (
+                  <span className="text-[10px] text-slate-500">
+                    ({irrigationStations.length})
+                  </span>
+                )}
+              </label>
+              <span className="ml-auto text-slate-400 text-[10px]">HydroSHEDS v1.0 · Sri Lanka Irrigation Dept</span>
             </div>
 
             {/* Cyclone Ditwah damage-assessment layers (Microsoft AI for Good).
