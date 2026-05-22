@@ -207,7 +207,7 @@ class WeatherCache:
                     districts = get_all_districts()
                     new_cache = {}
 
-                    for district in districts[:25]:  # Limit to avoid rate limits
+                    for district in districts:
                         try:
                             data = await weather_service.get_weather(
                                 district["latitude"],
@@ -223,7 +223,11 @@ class WeatherCache:
                             }
                         except Exception as e:
                             logger.error(f"Failed to fetch weather for {district['name']}: {e}")
-                        await asyncio.sleep(1.5)  # Rate limiting - Open-Meteo needs longer delays
+                        # Open-Meteo allows ~10k calls/day with no per-second
+                        # cap; 0.4s between calls gives ~150 req/min, well below
+                        # any practical limit and refreshes ~100 locations in
+                        # under a minute.
+                        await asyncio.sleep(0.4)
 
                 if new_cache:
                     self._cache = new_cache

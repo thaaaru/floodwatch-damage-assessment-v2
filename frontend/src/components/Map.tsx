@@ -966,20 +966,19 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       const borderColor = '#0c4a6e'; // sky-900
       // Always show rainfall markers with animation based on alert level
       const showLabel = currentZoom >= 9;
-      
-      // Use temperature icon if temperature conditions are met
-      let icon;
-      const temp = district.temperature_c;
-      const alertLevel = (district.alert_level || 'green').toLowerCase();
-      
-      // Show temperature icon if: temp > 32°C OR alert level is not green (yellow/orange/red)
-      const shouldShowTemp = temp !== null && temp !== undefined && typeof temp === 'number' && !isNaN(temp) && (Number(temp) > 32 || alertLevel !== 'green');
-      
-      if (shouldShowTemp) {
-        icon = createTemperatureIcon(Number(temp), showLabel);
-      } else {
-        icon = createRainfallMarker(markerColor, rainfallValue || 0, borderColor, district.alert_level, showLabel, null);
-      }
+
+      // Home dashboard is rainfall-only: always render the rain droplet icon,
+      // regardless of temperature or alert level. The previous branch that
+      // swapped in a thermometer when temp > 32C or alert != green has been
+      // removed (see git log: "home: rainfall-only map ...").
+      const icon = createRainfallMarker(
+        markerColor,
+        rainfallValue || 0,
+        borderColor,
+        district.alert_level,
+        showLabel,
+        null,
+      );
 
       // Calculate z-index for weather markers (1000-1999 range, below flood gauges)
       const baseZIndex = 1000;
