@@ -97,14 +97,15 @@ export default function Dashboard() {
     <div className={ui.page}>
       {/* Header strip */}
       <div className="bg-slate-800 border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-2">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="min-w-0">
               <h1 className={`${ui.h1} flex items-center gap-2`}>
                 <span>🌧️</span>
                 <span>Rainfall &amp; rivers now</span>
               </h1>
-              <p className={`${ui.intro} mt-0.5`}>
+              {/* Wide screens: hidden to give the map the height; the map credits name the same sources. */}
+              <p className={`${ui.intro} mt-0.5 lg:hidden`}>
                 Rainfall measured at {summary?.station_count ?? 0} stations of the{' '}
                 <a
                   href="https://meteo.gov.lk"
@@ -131,11 +132,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className={`max-w-screen-2xl ${ui.container} space-y-4`}>
+      <div className={`max-w-screen-2xl ${ui.container} lg:!pt-4 space-y-4`}>
       {/* Sri Lanka is tall: on wide screens the map takes full height on the left and news sits beside it. */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
       <div className={`relative ${ui.card} overflow-hidden`}>
-        <div className="h-[max(360px,55vh)] sm:h-[clamp(420px,60vh,640px)] lg:h-[max(480px,calc(100dvh-15rem))]">
+        <div className="h-[max(360px,55vh)] sm:h-[clamp(420px,60vh,640px)] lg:h-[max(480px,calc(100dvh-10.5rem))]">
           {loading && stations.length === 0 ? (
             <div className="h-full w-full bg-slate-900 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
@@ -216,7 +217,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div className="space-y-4 lg:h-[max(480px,calc(100dvh-15rem))] lg:overflow-y-auto">
+      <div className="space-y-4 lg:h-[max(480px,calc(100dvh-10.5rem))] lg:overflow-y-auto">
       {/* Status strip */}
       <div className={`${ui.card} ${ui.cardPad} flex flex-wrap items-center gap-x-4 gap-y-1 ${ui.body}`}>
         <span>
