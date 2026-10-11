@@ -3,7 +3,9 @@
 # Routing mirrors deploy/caddy/Caddyfile.
 
 floodwatch.teklab.dev {
-	encode gzip zstd
+	# Never re-encode the PMTiles archive: compression would break Range responses.
+	@compressible not path /tiles/*
+	encode @compressible gzip zstd
 
 	header {
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
@@ -13,6 +15,11 @@ floodwatch.teklab.dev {
 		Permissions-Policy "camera=(), microphone=(), payment=(), geolocation=(self)"
 		-Server
 		-X-Powered-By
+	}
+
+	# Self-hosted basemap (PMTiles, HTTP Range) from the floodwatch-tiles service
+	handle /tiles/* {
+		reverse_proxy floodwatch-tiles:8080
 	}
 
 	# Next.js route handlers

@@ -58,3 +58,6 @@ nohup.out
 cache/*.json
 tsconfig.tsbuildinfo
 .env*.local
+
+# Basemap archives (scripts/build_basemap.sh) live on the server, never in git
+*.pmtiles

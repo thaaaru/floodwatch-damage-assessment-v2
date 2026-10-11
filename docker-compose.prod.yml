@@ -89,6 +89,8 @@ services:
         # Maps JavaScript API only (no Places).
         NEXT_PUBLIC_API_URL: https://floodwatch.teklab.dev
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+        # Optional, public browser key: empty hides the "Satellite (Esri)" option.
+        NEXT_PUBLIC_ARCGIS_API_KEY: ${NEXT_PUBLIC_ARCGIS_API_KEY:-}
     restart: unless-stopped
     environment:
       BACKEND_URL: http://floodwatch-backend:8000
@@ -105,6 +107,25 @@ services:
       start_period: 20s
     mem_limit: 512m
     cpus: 0.5
+    logging: *logging
+
+  # Self-hosted basemap: serves /tiles/lka.pmtiles (scripts/build_basemap.sh)
+  # with HTTP Range support. Reached only via the host Caddy (handle /tiles/*).
+  floodwatch-tiles:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    volumes:
+      - ${FLOODWATCH_TILES_DIR:-/opt/floodwatch-data/tiles}:/srv/tiles:ro
+      - ./deploy/teklab/tiles.Caddyfile:/etc/caddy/Caddyfile:ro
+    networks:
+      - edge
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    mem_limit: 64m
+    cpus: 0.25
     logging: *logging
 
 secrets:

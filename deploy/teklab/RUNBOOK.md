@@ -12,6 +12,7 @@ Host: Ubuntu 24.04, shared with Synapses. FloodWatch is compose project `floodwa
 | age identity | `/etc/age/tencent.key` (root, 0400) |
 | Decrypted (tmpfs) | `/run/floodwatch/db_password` — dir 0700 root, file 0440 root:1000 |
 | DB volume | `floodwatch_postgres_data` |
+| Basemap tiles | `/opt/floodwatch-data/tiles/lka.pmtiles` (~175 MB, never in git) |
 
 All commands below run from `/opt/floodwatch` as root (or sudo) and use
 `dc() { docker compose -f docker-compose.prod.yml "$@"; }`.
@@ -52,6 +53,11 @@ docker exec synapses-app-caddy-1 caddy validate --config /etc/caddy/Caddyfile
 docker exec synapses-app-caddy-1 caddy reload   --config /etc/caddy/Caddyfile
 
 # 6. DNS: A record floodwatch.teklab.dev -> VM public IP (Caddy obtains the cert).
+
+# 6b. Self-hosted basemap (Protomaps extract, ~175 MB at z15; needs ~2x free disk while building)
+scripts/build_basemap.sh /opt/floodwatch-data/tiles 15
+#    Without it the tiles service returns 404 and every map falls back to
+#    tile.openstreetmap.org raster tiles (console warning), so this is not a blocker.
 
 # 7. Start
 dc up -d --build
@@ -129,6 +135,23 @@ dc exec -T db pg_restore -U floodwatch -d floodwatch --clean --if-exists \
 dc start floodwatch-backend floodwatch-frontend
 ```
 
+## 5b. Basemap refresh (monthly)
+
+The Sri Lanka extract comes from the latest Protomaps daily planet build.
+`build_basemap.sh` writes a temp file, verifies it and renames it over
+`lka.pmtiles` atomically, so `floodwatch-tiles` needs no restart.
+
+```bash
+# /etc/cron.d/floodwatch-basemap  (03:30 Colombo on the 1st of each month)
+CRON_TZ=Asia/Colombo
+30 3 1 * * root cd /opt/floodwatch && scripts/build_basemap.sh /opt/floodwatch-data/tiles 15 >> /var/log/floodwatch-basemap.log 2>&1
+```
+Check: `curl -sI -H 'Range: bytes=0-15' https://floodwatch.teklab.dev/tiles/lka.pmtiles`
+must return `206` with `Content-Range: bytes 0-15/<size>`. Browsers revalidate
+within a day (`Cache-Control: max-age=86400`, ETag); pmtiles-js refetches its
+header if the ETag changes mid-session. If the size grows past ~300 MB, rebuild
+with maxzoom 14.
+
 ## 6. Removal
 
 ```bash
@@ -138,7 +161,7 @@ dc down            # keeps the DB volume; add -v ONLY to destroy floodwatch data
 systemctl disable --now floodwatch-secrets.service
 rm -f /etc/systemd/system/floodwatch-secrets.service /usr/local/sbin/floodwatch-secrets
 systemctl daemon-reload
-rm -rf /run/floodwatch /etc/floodwatch
+rm -rf /run/floodwatch /etc/floodwatch /opt/floodwatch-data /etc/cron.d/floodwatch-basemap
 # Leave the `edge` network unless nothing else uses it:
 docker network inspect edge --format '{{len .Containers}}'
 ```
@@ -157,5 +180,10 @@ Never use `docker system prune` / `docker volume prune` on this shared host.
   `dc exec -T db psql -U floodwatch -tAc "select * from owm_usage order by day desc limit 3"`.
 - Freshness: the banner reads `/api/weather/cache-status` (`last_update`,
   `last_attempt_ok`) and flags data older than 3 h or a failed latest fetch.
-- Limits: db 512m/0.5 CPU, backend 768m/1 CPU, frontend 512m/0.5 CPU; logs json-file
+- Basemap: `floodwatch-tiles` (caddy:2-alpine, 64m/0.25 CPU, edge network only) serves
+  `/tiles/lka.pmtiles` with HTTP Range; the host Caddy routes `/tiles/*` to it and must
+  not re-encode it (see `@compressible` in the snippet). No CORS headers: same-origin only.
+  Optional "Satellite (Esri)" overlay appears only if `NEXT_PUBLIC_ARCGIS_API_KEY` is set
+  in `.env` at build time (public browser key; restrict it to the site referrer).
+- Limits: db 512m/0.5 CPU, backend 768m/1 CPU, frontend 512m/0.5 CPU, tiles 64m/0.25 CPU; logs json-file
   10m x 3. Check with `docker stats --no-stream $(dc ps -q)`.

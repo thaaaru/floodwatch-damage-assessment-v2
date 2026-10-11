@@ -1,0 +1,23 @@
+# floodwatch-tiles: static PMTiles server for the self-hosted basemap.
+# Caddy's file_server answers HTTP Range requests (206) natively.
+# No Access-Control-Allow-Origin header is sent, so only same-origin pages
+# (https://floodwatch.teklab.dev via the host Caddy) can read the archive.
+{
+	admin off
+	auto_https off
+}
+
+:8080 {
+	respond /healthz 200
+
+	handle /tiles/* {
+		root * /srv
+		header Content-Type application/vnd.pmtiles
+		# Refreshed monthly under the same name: a day of caching, then ETag/Last-Modified
+		# revalidation; pmtiles-js refetches its header if the ETag changes mid-session.
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	respond 404
+}
