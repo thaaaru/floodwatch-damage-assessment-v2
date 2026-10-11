@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { IrrigationStation } from '@/lib/api';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
 
 interface RiversMapProps {
   stations: IrrigationStation[];
@@ -50,15 +51,13 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
     // Add zoom control to top-right
     L.control.zoom({ position: 'topright' }).addTo(map);
 
-    // Bright basemap. CARTO Voyager keeps water/road colors saturated so
-    // the river network is easy to read at country zoom. Free, no API key.
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
+    L.tileLayer(BASEMAP_URL, {
+      maxZoom: BASEMAP_MAX_ZOOM,
     }).addTo(map);
 
     // Add attribution
     L.control.attribution({ position: 'bottomright' })
-      .addAttribution('&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org/copyright">OSM</a>')
+      .addAttribution(BASEMAP_ATTRIBUTION)
       .addTo(map);
 
     mapRef.current = map;

@@ -17,6 +17,7 @@ import { WindParticlesLayer } from './WindParticlesLayer';
 import { WindHeatmapLayer } from './WindHeatmapLayer';
 import { WindLegend } from './WindLegend';
 import { WindControls } from './WindControls';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM, DARK_BASEMAP_CLASS } from '@/lib/basemap';
 
 interface WindMapProps {
   initialCenter?: [number, number];
@@ -169,14 +170,15 @@ export function WindMap({
       <MapContainer
         center={initialCenter}
         zoom={initialZoom}
-        className="w-full h-full z-0"
+        className={`w-full h-full z-0 ${DARK_BASEMAP_CLASS}`}
         ref={mapRef}
         scrollWheelZoom={true}
         zoomControl={true}
       >
         <TileLayer
-          attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution={BASEMAP_ATTRIBUTION}
+          url={BASEMAP_URL}
+          maxZoom={BASEMAP_MAX_ZOOM}
         />
 
         <MapEventHandler onBoundsChange={handleBoundsChange} />

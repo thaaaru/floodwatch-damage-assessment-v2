@@ -426,3 +426,9 @@
 .animate-slide-up {
   animation: slideUp 0.3s ease-out;
 }
+
+/* Dark basemap: invert only the OSM tile pane; overlays, markers and
+   canvases live in other panes and stay unfiltered. */
+.fw-dark-basemap .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}

@@ -4,6 +4,7 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
 
 const DamageMapLeaflet = dynamic(() => import('@/components/DamageMapLeaflet'), {
   ssr: false,
@@ -306,8 +307,9 @@ export default function DamageMapPage() {
   <script>
     const map = L.map('map').setView([7.8731, 80.7718], 8);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap, &copy; CARTO'
+    L.tileLayer('${BASEMAP_URL}', {
+      attribution: '${BASEMAP_ATTRIBUTION}',
+      maxZoom: ${BASEMAP_MAX_ZOOM}
     }).addTo(map);
 
     const floodData = ${JSON.stringify(geojson)};

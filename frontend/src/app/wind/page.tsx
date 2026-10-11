@@ -11,6 +11,7 @@ import {
   formatWindSpeed,
   type WindVector,
 } from '@/utils/windToVector';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION } from '@/lib/basemap';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.teklab.dev';
 
@@ -209,9 +210,8 @@ export default function WindPage() {
       map.fitBounds(sriLankaBounds, { padding: [20, 20] });
 
       // Light basemap for better visibility
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
+      L.tileLayer(BASEMAP_URL, {
+        attribution: BASEMAP_ATTRIBUTION,
         maxZoom: 10
       }).addTo(map);
 

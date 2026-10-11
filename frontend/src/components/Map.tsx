@@ -9,6 +9,7 @@ import { getAlertColor, districts } from '@/lib/districts';
 import { riverPaths } from '@/lib/rivers';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
 
 // Store reference to native Map constructor to avoid conflict with component name
 const NativeMap = Map;
@@ -1578,8 +1579,9 @@ function WeatherMap(props: MapProps = {} as MapProps) {
       >
         <MapController weatherData={weatherData} onZoomChange={setCurrentZoom} />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={BASEMAP_ATTRIBUTION}
+          url={BASEMAP_URL}
+          maxZoom={BASEMAP_MAX_ZOOM}
         />
         {overlayType !== 'none' && overlayTileUrl && (
           <TileLayer

@@ -7,6 +7,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaf
 import { EarlyWarningDistrict } from '@/lib/api';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
 
 interface EarlyWarningMapProps {
   districts: EarlyWarningDistrict[];
@@ -103,8 +104,9 @@ export default function EarlyWarningMap({ districts, onDistrictSelect, selectedD
       >
         <MapController selectedDistrict={selectedDistrict} districts={districts} shouldZoom={shouldZoom} />
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution={BASEMAP_ATTRIBUTION}
+          url={BASEMAP_URL}
+          maxZoom={BASEMAP_MAX_ZOOM}
         />
 
         {districts.map((district) => {

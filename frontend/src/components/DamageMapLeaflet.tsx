@@ -5,6 +5,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
 
 interface DamageMapLeafletProps {
   hasResults: boolean;
@@ -90,16 +91,9 @@ export default function DamageMapLeaflet({ hasResults, activeLayer }: DamageMapL
     L.control.zoom({ position: 'topleft' }).addTo(map);
 
     // Light base layers
-    const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-    });
-
-    const cartoLight = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '© CARTO',
-    });
-
-    const cartoVoyager = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© CARTO Voyager',
+    const osmLayer = L.tileLayer(BASEMAP_URL, {
+      attribution: BASEMAP_ATTRIBUTION,
+      maxZoom: BASEMAP_MAX_ZOOM,
     });
 
     const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -111,13 +105,11 @@ export default function DamageMapLeaflet({ hasResults, activeLayer }: DamageMapL
     });
 
     // Add default light layer
-    cartoVoyager.addTo(map);
+    osmLayer.addTo(map);
 
     // Base layer control
     const baseLayers = {
-      'Voyager (Default)': cartoVoyager,
-      'Light': cartoLight,
-      'OpenStreetMap': osmLayer,
+      'OpenStreetMap (Default)': osmLayer,
       'Terrain': terrainLayer,
       'Satellite': satelliteLayer,
     };

@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MetStation } from '@/lib/api';
+import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
 
 interface MetStationsMapProps {
   stations: MetStation[];
@@ -142,13 +143,13 @@ export default function MetStationsMap({
       attributionControl: false,
     });
     L.control.zoom({ position: 'topright' }).addTo(map);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19,
+    L.tileLayer(BASEMAP_URL, {
+      maxZoom: BASEMAP_MAX_ZOOM,
     }).addTo(map);
     L.control
       .attribution({ position: 'bottomright' })
       .addAttribution(
-        '&copy; <a href="https://carto.com/">CARTO</a> &middot; ' +
+        BASEMAP_ATTRIBUTION + ' &middot; ' +
           'Rainfall: <a href="https://meteo.gov.lk">Sri Lanka DoM</a>',
       )
       .addTo(map);
