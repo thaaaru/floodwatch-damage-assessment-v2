@@ -56,6 +56,9 @@ docker exec synapses-app-caddy-1 wget -qO- http://floodwatch-backend:8000/api/he
 curl -sI https://floodwatch.teklab.dev | head -1
 ```
 
+Arch note: the backend pins `rasterio==1.3.10` (x86_64 wheels only); on an ARM VM the
+build fails (source build needs a yanked numpy). Confirm `uname -m` = `x86_64`.
+
 Build note: 2 vCPU / 7.5 GB — the frontend `next build` and backend GDAL wheel builds are
 the peak; build when Synapses is quiet, or build images elsewhere and push.
 
