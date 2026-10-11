@@ -216,7 +216,7 @@ export default function MetStationsMap({
     map.on('click focus', wheelOn);
     map.on('mouseout blur', () => map.scrollWheelZoom.disable());
     // Fit the whole island whatever the box size.
-    map.fitBounds([[5.9, 79.6], [9.85, 81.9]]);
+    map.fitBounds([[5.9, 79.6], [9.85, 81.9]], { paddingBottomRight: [0, 48] }); // keep the south clear of the attribution
     L.control.zoom({ position: 'topright' }).addTo(map);
     addFullscreenControl(map);
     addBasemap(map); // carries its own OSM/Protomaps attribution

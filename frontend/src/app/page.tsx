@@ -130,10 +130,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className={`max-w-7xl ${ui.container} space-y-4`}>
-      {/* Map box: part of the page flow, not full-screen. */}
+      <div className={`max-w-screen-2xl ${ui.container} space-y-4`}>
+      {/* Sri Lanka is tall: on wide screens the map takes full height on the left and the river table sits beside it. */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <div className={`relative ${ui.card} overflow-hidden`}>
-        <div className="h-[max(360px,55vh)] sm:h-[clamp(420px,60vh,640px)]">
+        <div className="h-[max(360px,55vh)] sm:h-[clamp(420px,60vh,640px)] lg:h-[max(480px,calc(100dvh-15rem))]">
           {loading && stations.length === 0 ? (
             <div className="h-full w-full bg-slate-900 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
@@ -214,6 +215,7 @@ export default function Dashboard() {
         )}
       </div>
 
+      <div className="space-y-4 lg:h-[max(480px,calc(100dvh-15rem))] lg:overflow-y-auto">
       {/* Status strip */}
       <div className={`${ui.card} ${ui.cardPad} flex flex-wrap items-center gap-x-4 gap-y-1 ${ui.body}`}>
         <span>
@@ -234,6 +236,8 @@ export default function Dashboard() {
       </div>
 
       <BasinStatusTable stations={gauges} />
+      </div>
+      </div>
 
       <RainContext />
 
