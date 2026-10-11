@@ -23,7 +23,7 @@ All commands below run from `/opt/floodwatch` as root (or sudo) and use
 # 1. Code + config
 git clone https://github.com/thaaaru/floodwatch-damage-assessment-v2.git /opt/floodwatch
 cd /opt/floodwatch && git checkout teklab-hosting
-cp .env.production.example .env && chmod 600 .env   # set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (Maps JavaScript API only)
+cp .env.production.example .env && chmod 600 .env   # all optional; see comments inside
 
 # 2. DB password secret (generate on the server; never echo it)
 install -d -m 0700 /etc/floodwatch/secrets
@@ -108,10 +108,6 @@ OpenWeatherMap key: re-encrypt `owm_api_key.age` as in §1, then
 
 Rotating the age key: re-encrypt every `*.age` to the new recipient, replace
 `/etc/age/tencent.key`, `systemctl restart floodwatch-secrets.service`.
-
-Google Maps key: create the new browser key (referrer `https://floodwatch.teklab.dev/*`,
-API restriction: Maps JavaScript API only), update `.env`, `dc up -d --build floodwatch-frontend`,
-then delete the old key in Google Cloud.
 
 ## 4. Rollback
 

@@ -86,11 +86,6 @@ services:
       context: ./frontend
       args:
         # NEXT_PUBLIC_* are inlined into the bundle at build time.
-        # The Maps key is a public browser key: restrict it in Google Cloud to
-        # HTTP referrer https://floodwatch.teklab.dev/* and to the
-        # Maps JavaScript API only (no Places).
-        NEXT_PUBLIC_API_URL: https://floodwatch.teklab.dev
-        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
         # Optional, public browser key: empty hides the "Satellite (Esri)" option.
         NEXT_PUBLIC_ARCGIS_API_KEY: ${NEXT_PUBLIC_ARCGIS_API_KEY:-}
     restart: unless-stopped

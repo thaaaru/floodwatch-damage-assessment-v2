@@ -20,12 +20,6 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-  if (!mapsApiKey) {
-    console.warn('Google Maps API key not configured. Set NEXT_PUBLIC_GOOGLE_MAPS_API_KEY environment variable.');
-  }
-
   return (
     <html lang="en" className={inter.variable}>
       <head>
@@ -41,10 +35,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-X70YJR4WSV');
           `}
         </Script>
-        <Script
-          src={`https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&loading=async`}
-          strategy="afterInteractive"
-        />
       </head>
       <body className={`${inter.className} antialiased bg-slate-900 text-white`}>
         <div className="min-h-screen flex flex-col">
