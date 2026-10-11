@@ -61,14 +61,17 @@ export function createForecastLayer(map: L.Map): L.LayerGroup {
 
   const control = new L.Control({ position: 'bottomright' });
   control.onAdd = () => {
-    const el = L.DomUtil.create('div', 'fw-forecast-legend');
+    // Collapsible like the basin legend: closed by default on narrow screens.
+    const el = L.DomUtil.create('details', 'fw-forecast-legend');
+    if (window.innerWidth >= 640) el.setAttribute('open', '');
+    el.innerHTML = '<summary class="fw-forecast-title">Rain forecast</summary><div></div>';
+    const body = el.querySelector('div') as HTMLDivElement;
     const render = () => {
-      el.innerHTML = `<div class="fw-forecast-title">Rain forecast</div>
-        <div class="fw-forecast-switch">${([24, 48] as const).map((h) =>
+      body.innerHTML = `<div class="fw-forecast-switch">${([24, 48] as const).map((h) =>
           `<button type="button" data-h="${h}" aria-pressed="${h === hours}">${h} h</button>`).join('')}</div>
         ${BINS.map((b) => `<div class="fw-forecast-row"><span style="background:${b.color}"></span>${b.label} mm</div>`).join('')}
         <div class="fw-forecast-note">${FORECAST_LABEL}</div>`;
-      el.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => {
+      body.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => {
         hours = Number(btn.dataset.h) as ForecastWindow;
         render();
         draw();

@@ -39,7 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${inter.className} antialiased bg-slate-900 text-white`}>
         <div className="min-h-screen flex flex-col">
           {/* Sticky wrapper keeps the disclaimer visible on every page. */}
-          <div className="sticky top-0 z-50">
+          <div id="site-sticky-header" className="sticky top-0 z-50">
             <Header />
             <StatusBanner />
           </div>

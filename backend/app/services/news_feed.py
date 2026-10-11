@@ -46,10 +46,12 @@ RELEVANT = re.compile(
     r"low[- ]pressure|drought|thunder|heat|advisory|warning|spill|tsunami|sea", re.I)
 
 
-def item(id, title, summary, source, icon, url, published_at: Optional[datetime], category, severity="info"):
+def item(id, title, summary, source, icon, url, published_at: Optional[datetime], category, severity="info",
+         kind: Optional[str] = None):
+    """kind: what the source says the item is (Warning / Advisory / Forecast / News), else None."""
     return {
         "id": id, "title": title, "summary": summary, "source": source, "sourceIcon": icon,
-        "url": url, "category": category, "severity": severity,
+        "url": url, "category": category, "severity": severity, "kind": kind,
         "publishedAt": published_at.astimezone(timezone.utc).isoformat() if published_at else None,
     }
 
@@ -114,7 +116,8 @@ async def fetch_slmet(client: httpx.AsyncClient) -> list[dict]:
         title = pwf.splitlines()[0].strip().title()
         heavy = bool(re.search(r"fairly heavy|heavy falls|75\s*mm|100\s*mm|150\s*mm", pwf, re.I))
         out.append(item("slmet-public-" + title, title, _paragraphs(pwf, 1, 2), "SL Met", "🇱🇰",
-                        "https://meteo.gov.lk", parse_issued_local(pwf), "weather", "warning" if heavy else "info"))
+                        "https://meteo.gov.lk", parse_issued_local(pwf), "weather", "warning" if heavy else "info",
+                        kind="Forecast"))
 
     sea = _english_block(data.get("sea_weather_forecast") or "", "WEATHER FORECAST FOR SEA AREAS")
     if sea:
@@ -122,7 +125,7 @@ async def fetch_slmet(client: httpx.AsyncClient) -> list[dict]:
         rough = bool(re.search(r"rough|strong winds|gale", sea, re.I))
         out.append(item(f"slmet-sea-{issued.isoformat() if issued else 'undated'}", "Sea area weather forecast",
                         _paragraphs(sea, 1, 2), "SL Met", "🌊", "https://meteo.gov.lk", issued, "weather",
-                        "warning" if rough else "info"))
+                        "warning" if rough else "info", kind="Forecast"))
 
     fleet = data.get("fleet_shipping_forecast") or ""
     system = re.search(r"[^.\n]*(cyclonic storm|cyclone|deep depression|depression|low[- ]pressure area)[^.\n]*\.", fleet, re.I)
@@ -132,7 +135,8 @@ async def fetch_slmet(client: httpx.AsyncClient) -> list[dict]:
         out.append(item(f"slmet-fleet-{issued.isoformat() if issued else 'undated'}",
                         f'Cyclonic storm "{name.group(1)}"' if name else "Weather system advisory (fleet forecast)",
                         system.group(0).strip(), "SL Met", "🌀", "https://meteo.gov.lk", issued, "cyclone",
-                        "critical" if re.search(r"cyclonic storm|severe", system.group(0), re.I) else "warning"))
+                        "critical" if re.search(r"cyclonic storm|severe", system.group(0), re.I) else "warning",
+                        kind="Advisory"))
 
     for key, path in (data.get("severe_weather_advisory") or {}).items():
         if not path or key not in ADVISORIES:
@@ -148,7 +152,7 @@ async def fetch_slmet(client: httpx.AsyncClient) -> list[dict]:
         title, category, severity = ADVISORIES[key]
         out.append(item(f"slmet-{key}-{published.isoformat() if published else 'undated'}", title,
                         "Advisory issued by the Department of Meteorology (PDF).", "SL Met", "⚠️", url,
-                        published, category, severity))
+                        published, category, severity, kind="Advisory"))
     return out
 
 
@@ -178,7 +182,8 @@ async def fetch_newsfirst(client: httpx.AsyncClient) -> list[dict]:
         elif "advisory" in lower or "warning" in lower or "alert" in lower:
             category, severity = "alert", "warning"
         out.append(item(f"newsfirst-{p.get('id')}", title, summary[:300], "NewsFirst", "📰",
-                        f"https://english.newsfirst.lk/{p.get('post_url', '').lstrip('/')}", published, category, severity))
+                        f"https://english.newsfirst.lk/{p.get('post_url', '').lstrip('/')}", published, category, severity,
+                        kind="News"))
     return out
 
 
@@ -210,7 +215,8 @@ async def fetch_gdacs(client: httpx.AsyncClient) -> list[dict]:
                         f"{level} alert: {p.get('name') or p.get('eventtype')}", _strip(p.get("htmldescription") or p.get("description") or ""),
                         "GDACS", "🔴", ((p.get("url") or {}).get("report")) or "https://www.gdacs.org",
                         published, "cyclone" if p.get("eventtype") == "TC" else "flood",
-                        {"Red": "critical", "Orange": "warning"}.get(level, "info")))
+                        {"Red": "critical", "Orange": "warning"}.get(level, "info"),
+                        kind="Warning" if level in ("Red", "Orange") else None))
     return out
 
 
@@ -235,7 +241,7 @@ def parse_imd(page: str) -> list[dict]:
     return [item(f"imd-two-{published.isoformat()}",
                  f"IMD Tropical Weather Outlook ({hhmm} UTC, {published:%d %b %Y})", summary, "IMD RSMC", "🇮🇳",
                  IMD_BASE + href.replace(" ", "%20").lstrip("/"), published, "cyclone",
-                 "warning" if active else "info")]
+                 "warning" if active else "info", kind="Warning" if active else "Forecast")]
 
 
 async def fetch_imd(client: httpx.AsyncClient) -> list[dict]:
@@ -271,7 +277,7 @@ async def fetch_reliefweb(client: httpx.AsyncClient, appname: str) -> list[dict]
         out.append(item(f"reliefweb-{rep.get('id')}", f.get("title", "ReliefWeb report"), _strip(f.get("body", ""))[:300],
                         "ReliefWeb", "🌐", f.get("url_alias") or f"https://reliefweb.int/node/{rep.get('id')}",
                         datetime.fromisoformat(created) if created else None,
-                        "cyclone" if "Cyclone" in types else "flood" if "Flood" in types else "general"))
+                        "cyclone" if "Cyclone" in types else "flood" if "Flood" in types else "general", kind="News"))
     return out
 
 

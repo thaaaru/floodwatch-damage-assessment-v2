@@ -2,22 +2,44 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
 import { NewsItem, NewsSourceStatus, formatColombo, formatRelativeTime } from '@/lib/newsService';
 
-const categoryConfig: Record<NewsItem['category'], { icon: string; bgColor: string; textColor: string }> = {
-  cyclone: { icon: '🌀', bgColor: 'bg-purple-100', textColor: 'text-purple-300' },
-  flood: { icon: '🌊', bgColor: 'bg-slate-900', textColor: 'text-blue-300' },
-  weather: { icon: '⛈️', bgColor: 'bg-slate-900', textColor: 'text-slate-200' },
-  alert: { icon: '⚠️', bgColor: 'bg-amber-100', textColor: 'text-amber-300' },
-  general: { icon: '📰', bgColor: 'bg-slate-900', textColor: 'text-slate-200' },
-};
+const SOURCE_CHIPS = ['SL Met', 'NewsFirst', 'IMD RSMC', 'GDACS'] as const;
+const CHIP_LABEL: Record<string, string> = { 'IMD RSMC': 'IMD' };
+// Official warning sources whose warnings/advisories get a coloured left edge.
+const OFFICIAL = new Set(['SL Met', 'IMD RSMC', 'GDACS']);
 
-const severityConfig: Record<NonNullable<NewsItem['severity']>, { border: string; dot: string; badge: string }> = {
-  critical: { border: 'border-l-red-500', dot: 'bg-red-500', badge: 'bg-red-100 text-red-300' },
-  warning: { border: 'border-l-amber-500', dot: 'bg-amber-500', badge: 'bg-amber-100 text-amber-300' },
-  info: { border: 'border-l-blue-500', dot: 'bg-blue-500', badge: 'bg-slate-900 text-blue-300' },
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const colomboDay = (d: Date) =>
+  d.toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' }); // YYYY-MM-DD, Colombo
+
+function dayLabel(key: string): string {
+  const now = new Date();
+  if (key === colomboDay(now)) return 'Today';
+  if (key === colomboDay(new Date(now.getTime() - 86_400_000))) return 'Yesterday';
+  const [y, m, d] = key.split('-').map(Number);
+  return `${d} ${MONTHS[m - 1]} ${y}`; // "11 Oct 2026" (en-GB would give "Sept")
+}
+
+// Height of the site's sticky header + banner, so day headers stick below it.
+function useStickyOffset(): number {
+  const [top, setTop] = useState(0);
+  useEffect(() => {
+    const el = document.getElementById('site-sticky-header');
+    if (!el) return;
+    const update = () => setTop(el.offsetHeight);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return top;
+}
+
+const STATUS_TEXT: Record<NewsSourceStatus['status'], string> = {
+  ok: 'OK', empty: 'No current items', disabled: 'Not configured', error: 'Error',
 };
 
 export default function NewsPage() {
@@ -25,7 +47,8 @@ export default function NewsPage() {
   const [sources, setSources] = useState<NewsSourceStatus[]>([]);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState<NewsItem['category'] | 'all'>('all');
+  const [source, setSource] = useState<string>('all');
+  const stickyTop = useStickyOffset();
 
   useEffect(() => {
     // Served from the backend's 15-minute snapshot; no mock items on failure.
@@ -41,300 +64,153 @@ export default function NewsPage() {
         setLoading(false);
       }
     };
-
     fetchNews();
     const id = setInterval(fetchNews, 5 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
 
-  const filteredNews = selectedCategory === 'all'
-    ? news
-    : news.filter(item => item.category === selectedCategory);
+  const filtered = useMemo(() => (source === 'all' ? news : news.filter((i) => i.source === source)), [news, source]);
+
+  // Items arrive newest first, undated last; group by Colombo day.
+  const groups = useMemo(() => {
+    const out: { key: string; label: string; items: NewsItem[] }[] = [];
+    for (const item of filtered) {
+      const key = item.publishedAt ? colomboDay(new Date(item.publishedAt)) : 'undated';
+      let g = out[out.length - 1];
+      if (!g || g.key !== key) {
+        g = { key, label: key === 'undated' ? 'Undated' : dayLabel(key), items: [] };
+        out.push(g);
+      }
+      g.items.push(item);
+    }
+    return out;
+  }, [filtered]);
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <div className="glass border-b border-slate-700 sticky top-0 z-10 shadow-md">
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
-          <div className="flex items-center gap-3 mb-4">
-            <a href="/" className="text-slate-400 hover:text-white transition-colors flex-shrink-0">
-              <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </a>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">News & Updates</h1>
-              <p className="text-xs sm:text-sm text-slate-300 mt-1">Latest flood alerts and weather warnings for Sri Lanka</p>
-            </div>
-          </div>
+    <div className="min-h-screen bg-slate-900 text-white">
+      <div className="bg-slate-800/50 border-b border-slate-700/50">
+        <div className="max-w-prose mx-auto px-4 py-5">
+          <h1 className="text-2xl font-bold">News &amp; updates</h1>
+          <p className="text-sm text-slate-300 mt-1">
+            Weather, flood and cyclone updates for Sri Lanka from official sources and news outlets.
+          </p>
+        </div>
+      </div>
 
-          {/* Category Filter */}
-          <div className="flex gap-2 flex-wrap">
+      <main className="max-w-prose mx-auto px-4 py-6 text-base leading-[1.55]">
+        {/* Source filter */}
+        <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by source">
+          {['all', ...SOURCE_CHIPS].map((s) => (
             <button
-              onClick={() => setSelectedCategory('all')}
-              className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all font-medium ${
-                selectedCategory === 'all'
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                  : 'glass text-slate-200 hover:bg-slate-800/90'
-              }`}
+              key={s}
+              type="button"
+              onClick={() => setSource(s)}
+              aria-pressed={source === s}
+              className={`chip ${source === s ? 'chip-active' : ''}`}
             >
-              All Updates
+              {s === 'all' ? 'All' : CHIP_LABEL[s] ?? s}
             </button>
-            {(['alert', 'flood', 'weather', 'cyclone'] as const).map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 text-xs sm:text-sm rounded-lg transition-all flex items-center gap-1.5 font-medium ${
-                  selectedCategory === cat
-                    ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                    : 'glass text-slate-200 hover:bg-slate-800/90'
-                }`}
-              >
-                <span>{categoryConfig[cat].icon}</span>
-                <span className="capitalize">{cat}</span>
-              </button>
-            ))}
-          </div>
+          ))}
+          {!loading && (
+            <span className="ml-auto text-sm text-slate-300" aria-live="polite">
+              {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
+            </span>
+          )}
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-5xl mx-auto px-3 sm:px-4 lg:px-8 py-6 sm:py-8">
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="animate-pulse glass rounded-xl h-32 shadow-sm" />
-            ))}
+          <div className="mt-6 space-y-6" aria-busy="true">
+            {[1, 2, 3].map((i) => <div key={i} className="h-20 rounded-lg bg-slate-800 animate-pulse" />)}
           </div>
-        ) : filteredNews.length === 0 ? (
-          <div className="glass rounded-2xl text-center py-16 shadow-md">
-            <div className="text-6xl mb-4">📰</div>
-            <h3 className="text-xl font-bold text-white mb-2">No updates available</h3>
-            <p className="text-slate-300">
-              {failed ? 'News could not be loaded right now.' : 'No items from the last 30 days.'} Check back later.
-            </p>
-          </div>
+        ) : filtered.length === 0 ? (
+          <p className="mt-10 text-slate-300">
+            {failed ? 'News could not be loaded right now.' : 'No items from the last 30 days.'} Please check back later.
+          </p>
         ) : (
-          <>
-            {/* Featured Story - First Item */}
-            {filteredNews.length > 0 && (
-              <div className="glass rounded-2xl overflow-hidden shadow-lg mb-6 border border-white/20">
-                <a
-                  href={filteredNews[0].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block group"
-                >
-                  <div className="relative bg-gradient-to-br from-blue-600 to-cyan-500 p-8 sm:p-12">
-                    <div className="absolute top-4 right-4">
-                      <span className="px-3 py-1.5 rounded-full text-xs font-bold uppercase bg-slate-800/20 text-white backdrop-blur-sm">
-                        Featured Story
-                      </span>
-                    </div>
-                    <div className="max-w-3xl">
-                      <div className="flex items-center gap-2 mb-4">
-                        <span className="text-4xl">{categoryConfig[filteredNews[0].category].icon}</span>
-                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-800/20 text-white backdrop-blur-sm">
-                          {filteredNews[0].category}
-                        </span>
-                        {filteredNews[0].severity && (
-                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-slate-800/20 text-white backdrop-blur-sm">
-                            {filteredNews[0].severity}
-                          </span>
-                        )}
-                      </div>
-                      <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-4 leading-tight group-hover:underline">
-                        {filteredNews[0].title}
-                      </h2>
-                      <p className="text-base sm:text-lg text-white/90 mb-6 leading-relaxed">
-                        {filteredNews[0].summary}
-                      </p>
-                      <div className="flex items-center gap-3 text-sm text-white/80">
-                        <span className="flex items-center gap-1.5">
-                          <span className="text-xl">{filteredNews[0].sourceIcon}</span>
-                          <span className="font-medium">{filteredNews[0].source}</span>
-                        </span>
-                        {filteredNews[0].publishedAt && (
-                          <>
-                            <span>•</span>
-                            <span title={formatColombo(filteredNews[0].publishedAt)}>
-                              {formatRelativeTime(filteredNews[0].publishedAt)}
-                            </span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </a>
-              </div>
-            )}
-
-            {/* News Grid - 3 columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredNews.slice(1).map((item) => (
-                <NewsCard key={item.id} item={item} />
-              ))}
-            </div>
-          </>
+          groups.map((g) => (
+            <section key={g.key} aria-labelledby={`day-${g.key}`} className="mt-6">
+              <h2
+                id={`day-${g.key}`}
+                style={{ top: stickyTop }}
+                className="sticky z-10 -mx-4 px-4 py-2 bg-slate-900/95 backdrop-blur text-sm font-semibold text-slate-200 border-b border-slate-700"
+              >
+                {g.label}
+              </h2>
+              <ul className="divide-y divide-slate-800">
+                {g.items.map((item) => <NewsRow key={item.id} item={item} />)}
+              </ul>
+            </section>
+          ))
         )}
 
-        {/* Source status */}
+        {/* Source status, collapsed */}
         {sources.length > 0 && (
-          <div className="mt-12 p-6 glass rounded-2xl shadow-md">
-            <h3 className="text-sm font-bold text-white mb-1">Sources</h3>
-            <p className="text-xs text-slate-400 mb-3">Checked every 15 minutes. Times are Colombo time. Items older than 30 days are hidden.</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-slate-300 min-w-[520px]">
-                <thead>
-                  <tr className="text-left text-slate-400 border-b border-slate-700">
-                    <th className="py-1.5 pr-3">Source</th>
-                    <th className="py-1.5 pr-3">Status</th>
-                    <th className="py-1.5 pr-3">Items</th>
-                    <th className="py-1.5 pr-3">Newest item</th>
-                    <th className="py-1.5">Last checked</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sources.map((s) => (
-                    <tr key={s.source} className="border-b border-slate-800 align-top">
-                      <td className="py-1.5 pr-3 font-medium text-white">{s.source}</td>
-                      <td className="py-1.5 pr-3">
-                        <span
-                          className={
-                            s.status === 'ok' ? 'text-emerald-400' : s.status === 'error' ? 'text-red-400' : 'text-slate-400'
-                          }
-                          title={s.message ?? undefined}
-                        >
-                          {s.status === 'ok' ? 'OK' : s.status === 'empty' ? 'No current items' : s.status === 'disabled' ? 'Not configured' : 'Error'}
-                        </span>
-                        {s.status === 'error' && s.message && <div className="text-[10px] text-slate-500">{s.message}</div>}
-                      </td>
-                      <td className="py-1.5 pr-3">{s.itemCount}</td>
-                      <td className="py-1.5 pr-3">{s.newest ? formatColombo(s.newest) : '—'}</td>
-                      <td className="py-1.5">{formatColombo(s.lastChecked)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <details className="mt-10 rounded-xl border border-slate-700 bg-slate-800">
+            <summary className="focus-ring cursor-pointer select-none min-h-[44px] flex items-center px-4 text-sm font-semibold text-slate-200 rounded-xl">
+              Sources and last checked
+            </summary>
+            <ul className="px-4 pb-4 text-sm text-slate-300 space-y-3">
+              <li className="text-slate-300">Checked every 15 minutes. Times are Colombo time. Items older than 30 days are hidden.</li>
+              {sources.map((s) => (
+                <li key={s.source} className="border-t border-slate-700 pt-3">
+                  <div className="flex flex-wrap justify-between gap-x-3">
+                    <span className="font-medium text-white">{s.source}</span>
+                    <span className={s.status === 'ok' ? 'text-emerald-300' : s.status === 'error' ? 'text-red-300' : 'text-slate-300'}>
+                      {STATUS_TEXT[s.status]} · {s.itemCount} {s.itemCount === 1 ? 'item' : 'items'}
+                    </span>
+                  </div>
+                  <div className="text-slate-300">
+                    Newest {s.newest ? formatColombo(s.newest) : '—'} · checked {formatColombo(s.lastChecked)}
+                  </div>
+                  {s.message && s.status !== 'ok' && <div className="text-slate-300 break-words">{s.message}</div>}
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
-
-        {/* Source Attribution */}
-        <div className="mt-6 p-6 glass rounded-2xl shadow-md">
-          <h3 className="text-sm font-bold text-white mb-3">Official Sources</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-            <a
-              href="https://www.nbro.gov.lk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              <span>NBRO - National Building Research Organisation</span>
-            </a>
-            <a
-              href="https://www.dmc.gov.lk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              <span>DMC - Disaster Management Centre</span>
-            </a>
-            <a
-              href="https://www.meteo.gov.lk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              <span>Met Department - Meteorological Department</span>
-            </a>
-            <a
-              href="https://www.irrigation.gov.lk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-300 hover:text-cyan-600 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-              <span>Irrigation Department - River Monitoring</span>
-            </a>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 }
 
-function NewsCard({ item }: { item: NewsItem }) {
-  const category = categoryConfig[item.category];
-  const severity = item.severity ? severityConfig[item.severity] : severityConfig.info;
+function NewsRow({ item }: { item: NewsItem }) {
+  const flagged =
+    OFFICIAL.has(item.source) && (item.kind === 'Warning' || item.kind === 'Advisory');
+  // On an inner wrapper: the list's divide-y border colour would override it on the <li>.
+  const edge = !flagged ? '' : item.severity === 'critical' ? 'border-l-4 border-red-500 pl-3' : 'border-l-4 border-amber-400 pl-3';
 
   return (
-    <a
-      href={item.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className={`block rounded-xl glass hover:shadow-lg transition-all p-4 sm:p-6 border-l-4 ${severity.border} group`}
-    >
-      <div className="flex items-start gap-4">
-        {/* Category Badge */}
-        <div className={`flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center text-2xl ${category.bgColor}`}>
-          {category.icon}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex flex-wrap items-start gap-2 mb-2">
-            <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${category.bgColor} ${category.textColor}`}>
-              {item.category}
+    <li className="py-3">
+      <div className={edge}>
+      <a
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="focus-ring block rounded py-[11px] text-[17px] font-semibold leading-snug text-white hover:text-cyan-300 hover:underline line-clamp-2"
+      >
+        {item.title}
+      </a>
+      <div className="flex flex-wrap items-center gap-x-2 text-sm text-slate-300">
+        <span>{item.source}</span>
+        {item.publishedAt && (
+          <>
+            <span aria-hidden="true">·</span>
+            <time dateTime={item.publishedAt} title={`${formatColombo(item.publishedAt)} (Colombo)`}>
+              {formatRelativeTime(item.publishedAt)}
+            </time>
+          </>
+        )}
+        {item.kind && (
+          <>
+            <span aria-hidden="true">·</span>
+            <span className="rounded border border-slate-600 px-1.5 text-xs font-medium uppercase tracking-wide text-slate-200">
+              {item.kind}
             </span>
-            {item.severity && (
-              <span className={`px-2 py-0.5 rounded text-xs font-bold uppercase ${severity.badge}`}>
-                {item.severity}
-              </span>
-            )}
-            {item.publishedAt && (
-              <span className="text-xs text-slate-400 ml-auto" title={formatColombo(item.publishedAt)}>
-                {formatRelativeTime(item.publishedAt)}
-              </span>
-            )}
-          </div>
-
-          {/* Title */}
-          <h3 className="text-base sm:text-lg font-bold text-white leading-tight mb-2">
-            {item.title}
-          </h3>
-
-          {/* Summary */}
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed mb-3">
-            {item.summary}
-          </p>
-
-          {/* Meta */}
-          <div className="flex items-center gap-3 text-xs sm:text-sm text-slate-400">
-            <span className="flex items-center gap-1.5">
-              <span className="text-base">{item.sourceIcon}</span>
-              <span className="font-medium">{item.source}</span>
-            </span>
-            <span className="flex items-center gap-1 text-cyan-600 group-hover:text-cyan-300 font-medium">
-              <span>Read more</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </span>
-          </div>
-        </div>
+          </>
+        )}
       </div>
-    </a>
+      {item.summary && <p className="mt-1.5 text-slate-300 line-clamp-3">{item.summary}</p>}
+      </div>
+    </li>
   );
 }

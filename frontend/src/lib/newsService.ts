@@ -18,6 +18,8 @@ export interface NewsItem {
   publishedAt: string | null;
   category: 'cyclone' | 'flood' | 'weather' | 'alert' | 'general';
   severity?: 'info' | 'warning' | 'critical';
+  /** What the source says this is; null when it doesn't say. */
+  kind?: 'Warning' | 'Advisory' | 'Forecast' | 'News' | null;
 }
 
 export interface NewsSourceStatus {

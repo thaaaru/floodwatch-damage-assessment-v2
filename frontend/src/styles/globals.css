@@ -40,12 +40,31 @@
 
 @layer components {
   /* Card component */
+  /* Dark-theme surface (site-wide dark since 5312d06) */
   .card {
-    @apply bg-white rounded-2xl border border-slate-200/60 shadow-soft;
+    @apply bg-slate-800 rounded-2xl border border-slate-700 shadow-soft;
   }
 
   .card-hover {
-    @apply card transition-all duration-200 hover:shadow-soft-lg hover:border-slate-300/60;
+    @apply card transition-all duration-200 hover:shadow-soft-lg hover:border-slate-500;
+  }
+
+  /* Visible keyboard focus on the dark background */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900;
+  }
+
+  /* Filter chips (/news, /external-links): >=44px tap target on mobile */
+  .chip {
+    @apply focus-ring inline-flex items-center justify-center min-h-[44px] sm:min-h-[36px] px-4 rounded-full border border-slate-600 bg-slate-800 text-sm font-medium text-slate-200 transition-colors hover:bg-slate-700 hover:text-white;
+  }
+  .chip-active {
+    @apply border-blue-600 bg-blue-600 text-white hover:bg-blue-600;
+  }
+
+  /* Outbound link tile on a .card */
+  .link-tile {
+    @apply focus-ring block rounded-xl border border-slate-700 bg-slate-900/60 p-4 transition-colors hover:border-slate-500 hover:bg-slate-900;
   }
 
   /* Button variants */
@@ -505,6 +524,10 @@
 }
 .fw-forecast-title {
   font-weight: 600;
+  cursor: pointer;
+}
+.fw-forecast-switch button {
+  min-height: 32px;
 }
 .fw-forecast-switch {
   display: flex;
