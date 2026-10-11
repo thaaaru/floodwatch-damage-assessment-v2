@@ -43,6 +43,8 @@ class Settings(BaseSettings):
     # SMS/WhatsApp subscriber alerts. Off by default: subscription routes are
     # not registered and the alert engine never sends messages.
     alerts_enabled: bool = False
+    # floodsupport.org SOS feed: routes and the background fetch run only when true.
+    sos_enabled: bool = False
 
     # Application
     alert_check_interval_minutes: int = 15

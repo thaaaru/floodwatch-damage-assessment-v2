@@ -285,11 +285,6 @@ export default function DataSourcesPage() {
               </thead>
               <tbody className="text-slate-300">
                 <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">SOS Reports (Internal DB)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">5 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Emergency SOS reports with priority analysis - Auto-refresh ✅</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
                   <td className="py-3 px-3 font-medium">Emergency Facilities (OpenStreetMap)</td>
                   <td className="py-3 px-3"><span className="px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs">24 hours</span></td>
                   <td className="py-3 px-3 text-xs">Hospitals, police, fire stations, shelters - Daily refresh ✅</td>
@@ -367,7 +362,6 @@ export default function DataSourcesPage() {
               <ul className="text-sm text-slate-300 space-y-1">
                 <li>• River levels</li>
                 <li>• Traffic incidents</li>
-                <li>• SOS reports</li>
                 <li>• Irrigation data</li>
               </ul>
             </div>

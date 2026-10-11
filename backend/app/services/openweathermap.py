@@ -5,35 +5,67 @@ OpenWeatherMap One Call API 3.0 Service
 Provides early warning system with government weather alerts,
 8-day daily forecast, 48-hour hourly forecast, and AI weather overview.
 
-Rate-limit strategy (One Call 3.0 free tier = 1,000 calls/day, billed beyond):
-  - Per-coord cache (onecall + overview) with TTL = CACHE_DURATION_MINUTES.
-  - Single-flight: only one bulk refresh of all districts can run at a time;
-    concurrent callers await the same task instead of triggering parallel fan-outs.
-  - Daily call counter with hard cap (DAILY_CALL_BUDGET). When exceeded, we serve
-    stale cache (or empty data) rather than incur overage charges.
-  - 429 handling: exponential backoff with jitter, then bail out and serve stale.
-At 3h cache, worst case = 25 districts * 2 endpoints * 8 refreshes = 400 calls/day.
+Cost control (One Call 3.0 free tier = 1,000 calls/day, billed beyond):
+  - Only the scheduler calls OWM (refresh_all). Every HTTP endpoint, including
+    unauthenticated ones, reads the cached snapshot and never calls upstream.
+  - One refresh = 25 districts x 2 calls (onecall + overview) = 50 calls.
+    Scheduled every REFRESH_INTERVAL_MINUTES (180) -> 8/day = 400 calls/day.
+    A refresh is skipped if the snapshot is younger than MIN_REFRESH_AGE_MINUTES
+    (170), so restarts cannot add runs: <= ceil(1440/170) = 9/day = 450 calls/day.
+  - No 429 retries: a failed call keeps that district's previous data (stale).
+  - Hard guard: DAILY_CALL_BUDGET (900) per UTC day, reserved atomically in
+    Postgres (owm_usage) *before* each HTTP request, so restarts don't reset it.
+    When exhausted, cached data is served and the stale flag is set.
+  - The processed snapshot is persisted (owm_cache) and reloaded on start.
 """
 import asyncio
 import logging
-import random
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import Optional
 
 import httpx
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+
+from ..database import SessionLocal, engine as default_engine
+from ..models import OwmCache
 
 logger = logging.getLogger(__name__)
+
+DAILY_CALL_BUDGET = 900
+
+
+def reserve_call(db_engine: Engine, day: date, budget: int = DAILY_CALL_BUDGET) -> bool:
+    """Atomically count one OWM call for `day`. False (nothing counted) once `budget` is reached."""
+    with db_engine.begin() as conn:
+        row = conn.execute(
+            text(
+                "INSERT INTO owm_usage (day, calls) VALUES (:day, 1) "
+                "ON CONFLICT (day) DO UPDATE SET calls = owm_usage.calls + 1 "
+                "WHERE owm_usage.calls < :budget "
+                "RETURNING calls"
+            ),
+            {"day": day, "budget": budget},
+        ).first()
+    return row is not None and row[0] <= budget
+
+
+def calls_used(db_engine: Engine, day: date) -> int:
+    with db_engine.connect() as conn:
+        row = conn.execute(text("SELECT calls FROM owm_usage WHERE day = :day"), {"day": day}).first()
+    return row[0] if row else 0
 
 
 class OpenWeatherMapService:
     """Service for fetching weather data from OpenWeatherMap One Call API 3.0"""
 
     BASE_URL = "https://api.openweathermap.org/data/3.0/onecall"
-    CACHE_DURATION_MINUTES = 180  # Cache per-coord data for 3 hours
-    ALL_DISTRICTS_CACHE_MINUTES = 180  # Cache the all-districts response for 3 hours
-    DAILY_CALL_BUDGET = 900  # Leave 100 calls/day headroom under the 1000 free-tier cap
-    MAX_429_RETRIES = 3
-    REFRESH_CONCURRENCY = 10  # Max parallel OWM requests during a bulk refresh
+    REFRESH_INTERVAL_MINUTES = 180
+    MIN_REFRESH_AGE_MINUTES = 170
+    STALE_AFTER_MINUTES = 240  # one missed refresh + margin
+    DAILY_CALL_BUDGET = DAILY_CALL_BUDGET
+    REFRESH_CONCURRENCY = 5
+    CACHE_KEY = "all_districts"
 
     # Sri Lanka district coordinates
     DISTRICTS = {
@@ -64,37 +96,19 @@ class OpenWeatherMapService:
         "Kegalle": {"lat": 7.2513, "lon": 80.3464},
     }
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, db_engine: Engine = default_engine):
         self.api_key = api_key
-        self._cache: dict = {}
-        self._cache_time: dict = {}
-        self._overview_cache: dict = {}
-        self._overview_cache_time: dict = {}
-        self._all_districts_cache: list = []
-        self._all_districts_cache_time: Optional[datetime] = None
-
-        # Concurrency control: only one bulk refresh in flight at a time.
+        self._engine = db_engine
+        self._results: list = []
+        self._fetched_at: Optional[datetime] = None
+        self._incomplete = False  # last refresh hit the budget or upstream errors
+        self._loaded = False
         self._refresh_lock = asyncio.Lock()
-
-        # Daily call counter (reset on UTC date rollover).
-        self._calls_today: int = 0
-        self._calls_day: date = datetime.utcnow().date()
-
-        # Shared HTTP client created lazily on first use. Connection-pooling
-        # avoids a fresh TLS handshake per request (~100-200ms saved per call
-        # against api.openweathermap.org).
         self._http_client: Optional[httpx.AsyncClient] = None
 
     async def _get_http_client(self) -> httpx.AsyncClient:
         if self._http_client is None or self._http_client.is_closed:
-            self._http_client = httpx.AsyncClient(
-                timeout=30.0,
-                limits=httpx.Limits(
-                    max_keepalive_connections=self.REFRESH_CONCURRENCY,
-                    max_connections=self.REFRESH_CONCURRENCY * 2,
-                    keepalive_expiry=60.0,
-                ),
-            )
+            self._http_client = httpx.AsyncClient(timeout=30.0)
         return self._http_client
 
     async def aclose(self) -> None:
@@ -103,242 +117,139 @@ class OpenWeatherMapService:
             await self._http_client.aclose()
 
     # ------------------------------------------------------------------
-    # Rate-limit accounting
+    # Upstream (scheduler only)
     # ------------------------------------------------------------------
 
-    def _budget_remaining(self) -> int:
-        today = datetime.utcnow().date()
-        if today != self._calls_day:
-            self._calls_day = today
-            self._calls_today = 0
-        return self.DAILY_CALL_BUDGET - self._calls_today
-
-    def _record_call(self) -> None:
-        # Counter is incremented even on non-200 responses; OWM bills/limits requests, not successes.
-        self._calls_today += 1
-
-    async def _request_with_retry(self, url: str, params: dict) -> Optional[dict]:
-        """
-        GET with respect for the daily budget and 429 backoff.
-        Returns parsed JSON on success, or None when the request is dropped
-        (budget exhausted, persistent 429, or non-recoverable error).
-        """
-        if self._budget_remaining() <= 0:
-            logger.warning(
-                "OWM daily call budget (%d) exhausted; skipping request to %s",
-                self.DAILY_CALL_BUDGET,
-                url,
-            )
+    async def _request(self, url: str, params: dict) -> Optional[dict]:
+        """One GET, counted against the persistent daily budget first. None on any failure."""
+        if not reserve_call(self._engine, datetime.now(timezone.utc).date(), self.DAILY_CALL_BUDGET):
+            logger.warning("OWM daily budget (%d) exhausted; serving cached data", self.DAILY_CALL_BUDGET)
             return None
+        try:
+            client = await self._get_http_client()
+            response = await client.get(url, params={**params, "appid": self.api_key, "units": "metric"})
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error("OWM HTTP %s for %s", e.response.status_code, url)
+        except Exception as e:
+            logger.error("OWM request error for %s: %s", url, e)
+        return None
 
-        attempt = 0
-        while True:
-            self._record_call()
-            try:
-                client = await self._get_http_client()
-                response = await client.get(url, params=params)
-
-                if response.status_code == 429:
-                    if attempt >= self.MAX_429_RETRIES:
-                        logger.error(
-                            "OWM 429 after %d retries; serving stale data. Body: %s",
-                            attempt,
-                            response.text[:200],
-                        )
-                        return None
-                    # Exponential backoff with jitter: 2s, 4s, 8s (+/- 25%).
-                    delay = (2 ** (attempt + 1)) * (0.75 + random.random() * 0.5)
-                    logger.warning(
-                        "OWM 429 (attempt %d/%d); sleeping %.1fs",
-                        attempt + 1,
-                        self.MAX_429_RETRIES,
-                        delay,
-                    )
-                    await asyncio.sleep(delay)
-                    attempt += 1
-                    continue
-
-                response.raise_for_status()
-                return response.json()
-
-            except httpx.HTTPStatusError as e:
-                logger.error(
-                    "OWM HTTP %s for %s: %s",
-                    e.response.status_code,
-                    url,
-                    e.response.text[:200],
-                )
-                return None
-            except Exception as e:
-                logger.error("OWM request error for %s: %s", url, e)
-                return None
-
-    async def get_one_call(
-        self,
-        lat: float,
-        lon: float,
-        exclude: Optional[list] = None,
-        units: str = "metric"
-    ) -> dict:
-        """
-        Fetch comprehensive weather data using One Call API 3.0.
-
-        Returns current weather, minutely (1h), hourly (48h), daily (8 days),
-        and government weather alerts. Returns an empty dict if the upstream
-        call fails or the daily budget is exhausted (callers should treat this
-        as "no data" rather than raising).
-        """
-        cache_key = f"{lat}_{lon}"
-
-        # Check cache
-        if cache_key in self._cache:
-            cache_age = (datetime.utcnow() - self._cache_time[cache_key]).total_seconds() / 60
-            if cache_age < self.CACHE_DURATION_MINUTES:
-                logger.debug(f"Returning cached OWM data for {lat},{lon}")
-                return self._cache[cache_key]
-
-        params = {
-            "lat": lat,
-            "lon": lon,
-            "appid": self.api_key,
-            "units": units,
-        }
-        if exclude:
-            params["exclude"] = ",".join(exclude)
-
-        data = await self._request_with_retry(self.BASE_URL, params)
-        if data is None:
-            # Fall back to whatever stale data we have (better than 500ing).
-            return self._cache.get(cache_key, {})
-
-        self._cache[cache_key] = data
-        self._cache_time[cache_key] = datetime.utcnow()
-        return data
-
-    async def get_weather_overview(self, lat: float, lon: float) -> dict:
-        """
-        Get AI-generated human-readable weather summary.
-
-        Cached with the same TTL as get_one_call to halve the OWM call rate.
-        """
-        cache_key = f"{lat}_{lon}"
-
-        if cache_key in self._overview_cache:
-            cache_age = (datetime.utcnow() - self._overview_cache_time[cache_key]).total_seconds() / 60
-            if cache_age < self.CACHE_DURATION_MINUTES:
-                return self._overview_cache[cache_key]
-
-        url = f"{self.BASE_URL}/overview"
-        params = {
-            "lat": lat,
-            "lon": lon,
-            "appid": self.api_key,
-            "units": "metric",
-        }
-
-        data = await self._request_with_retry(url, params)
-        if data is None:
-            return self._overview_cache.get(cache_key, {})
-
-        self._overview_cache[cache_key] = data
-        self._overview_cache_time[cache_key] = datetime.utcnow()
-        return data
-
-    async def get_district_early_warning(self, district: str) -> dict:
-        """
-        Get comprehensive early warning data for a specific district.
-        """
-        if district not in self.DISTRICTS:
-            raise ValueError(f"Unknown district: {district}")
-
-        coords = self.DISTRICTS[district]
-        data = await self.get_one_call(coords["lat"], coords["lon"])
-        overview = await self.get_weather_overview(coords["lat"], coords["lon"])
-
-        return self._process_early_warning(district, data, overview)
-
-    async def get_all_districts_early_warning(self) -> list:
-        """
-        Get early warning data for all Sri Lankan districts.
-
-        Uses single-flight: concurrent callers all await the same refresh task
-        instead of each kicking off their own 25-district fan-out (which on a
-        cold cache could blow the daily budget in seconds).
-        """
-        # Fast path: cache still warm.
-        if self._all_districts_cache and self._all_districts_cache_time:
-            cache_age = (datetime.utcnow() - self._all_districts_cache_time).total_seconds() / 60
-            if cache_age < self.ALL_DISTRICTS_CACHE_MINUTES:
-                logger.info(f"Returning cached all-districts data ({cache_age:.1f} min old)")
-                return self._all_districts_cache
-
+    async def refresh_all(self, force: bool = False) -> bool:
+        """Fetch all districts (50 calls). Skipped while the snapshot is younger than MIN_REFRESH_AGE_MINUTES."""
         async with self._refresh_lock:
-            # Re-check cache after acquiring the lock: another coroutine may have
-            # just finished a refresh while we were waiting.
-            if self._all_districts_cache and self._all_districts_cache_time:
-                cache_age = (datetime.utcnow() - self._all_districts_cache_time).total_seconds() / 60
-                if cache_age < self.ALL_DISTRICTS_CACHE_MINUTES:
-                    return self._all_districts_cache
+            self._load()
+            if not force and self.age_minutes() is not None and self.age_minutes() < self.MIN_REFRESH_AGE_MINUTES:
+                return True
 
-            logger.info(
-                "Fetching fresh early warning data for all districts (budget remaining: %d/%d, concurrency=%d)",
-                self._budget_remaining(),
-                self.DAILY_CALL_BUDGET,
-                self.REFRESH_CONCURRENCY,
-            )
-
-            # Parallel fetch with a semaphore to cap concurrent OWM requests.
-            # This brings a cold refresh from ~75s (serial) down to ~15s while
-            # staying well under any per-second API limits and our daily budget
-            # (single-flight lock above guarantees only one refresh runs at a time).
+            previous = {d["district"]: d for d in self._results}
             sem = asyncio.Semaphore(self.REFRESH_CONCURRENCY)
+            failed = 0
 
             async def fetch_one(district: str, coords: dict) -> dict:
+                nonlocal failed
                 async with sem:
+                    params = {"lat": coords["lat"], "lon": coords["lon"]}
+                    data = await self._request(self.BASE_URL, params)
+                    overview = await self._request(f"{self.BASE_URL}/overview", params) if data else None
+                    if not data:
+                        failed += 1
+                        return previous.get(district) or {
+                            "district": district, "coordinates": coords, "error": "upstream unavailable",
+                            "alerts": [], "alert_count": 0, "risk_level": "unknown",
+                        }
                     try:
-                        data = await self.get_one_call(coords["lat"], coords["lon"])
-                        overview = await self.get_weather_overview(coords["lat"], coords["lon"])
-
-                        if not data:
-                            return {
-                                "district": district,
-                                "coordinates": coords,
-                                "error": "upstream unavailable",
-                                "alerts": [],
-                                "alert_count": 0,
-                                "risk_level": "unknown",
-                            }
-
-                        return self._process_early_warning(district, data, overview)
+                        return self._process_early_warning(district, data, overview or {})
                     except Exception as e:
+                        failed += 1
                         logger.error(f"Failed to process early warning for {district}: {e}")
-                        return {
-                            "district": district,
-                            "coordinates": coords,
-                            "error": str(e),
-                            "alerts": [],
-                            "alert_count": 0,
-                            "risk_level": "unknown",
+                        return previous.get(district) or {
+                            "district": district, "coordinates": coords, "error": str(e),
+                            "alerts": [], "alert_count": 0, "risk_level": "unknown",
                         }
 
-            results = await asyncio.gather(
-                *(fetch_one(d, c) for d, c in self.DISTRICTS.items())
-            )
-
-            # Sort by risk level (high first)
+            results = await asyncio.gather(*(fetch_one(d, c) for d, c in self.DISTRICTS.items()))
             risk_order = {"extreme": 0, "high": 1, "medium": 2, "low": 3, "unknown": 4}
             results.sort(key=lambda x: risk_order.get(x.get("risk_level", "unknown"), 4))
 
-            self._all_districts_cache = results
-            self._all_districts_cache_time = datetime.utcnow()
-            logger.info(
-                "Cached all-districts data for %d minutes (calls used today: %d/%d)",
-                self.ALL_DISTRICTS_CACHE_MINUTES,
-                self._calls_today,
-                self.DAILY_CALL_BUDGET,
-            )
+            if failed == len(self.DISTRICTS):
+                # Nothing new: keep the old snapshot and its timestamp so age-based staleness stays honest.
+                self._incomplete = True
+                logger.warning("OWM refresh got no data; keeping previous snapshot")
+                return False
 
-            return results
+            self._results = results
+            self._fetched_at = datetime.now(timezone.utc)
+            self._incomplete = failed > 0
+            self._save()
+            logger.info("OWM refresh: %d/%d districts updated, calls today %d/%d",
+                        len(self.DISTRICTS) - failed, len(self.DISTRICTS),
+                        calls_used(self._engine, self._fetched_at.date()), self.DAILY_CALL_BUDGET)
+            return failed == 0
+
+    # ------------------------------------------------------------------
+    # Snapshot persistence
+    # ------------------------------------------------------------------
+
+    def _load(self) -> None:
+        if self._loaded:
+            return
+        self._loaded = True
+        db = SessionLocal(bind=self._engine)
+        try:
+            row = db.get(OwmCache, self.CACHE_KEY)
+            if row:
+                self._results = row.payload
+                self._fetched_at = row.fetched_at if row.fetched_at.tzinfo else row.fetched_at.replace(tzinfo=timezone.utc)
+                self._incomplete = row.stale
+        except Exception as e:
+            logger.warning(f"Could not load OWM snapshot: {e}")
+        finally:
+            db.close()
+
+    def _save(self) -> None:
+        db = SessionLocal(bind=self._engine)
+        try:
+            db.merge(OwmCache(key=self.CACHE_KEY, fetched_at=self._fetched_at,
+                              stale=self._incomplete, payload=self._results))
+            db.commit()
+        except Exception as e:
+            logger.error(f"Could not persist OWM snapshot: {e}")
+        finally:
+            db.close()
+
+    # ------------------------------------------------------------------
+    # Read path (HTTP endpoints): cache only, never calls OWM
+    # ------------------------------------------------------------------
+
+    def age_minutes(self) -> Optional[float]:
+        if not self._fetched_at:
+            return None
+        return (datetime.now(timezone.utc) - self._fetched_at).total_seconds() / 60
+
+    def is_stale(self) -> bool:
+        self._load()
+        age = self.age_minutes()
+        return age is None or age > self.STALE_AFTER_MINUTES or self._incomplete
+
+    def last_updated(self) -> Optional[str]:
+        self._load()
+        return self._fetched_at.isoformat() if self._fetched_at else None
+
+    async def get_all_districts_early_warning(self) -> list:
+        self._load()
+        return self._results
+
+    async def get_district_early_warning(self, district: str) -> dict:
+        if district not in self.DISTRICTS:
+            raise ValueError(f"Unknown district: {district}")
+        self._load()
+        for d in self._results:
+            if d.get("district") == district:
+                return d
+        return {"district": district, "coordinates": self.DISTRICTS[district], "error": "no data yet",
+                "alerts": [], "alert_count": 0, "risk_level": "unknown"}
 
     def _process_early_warning(self, district: str, data: dict, overview: dict) -> dict:
         """

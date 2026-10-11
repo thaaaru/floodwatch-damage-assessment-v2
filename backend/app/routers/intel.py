@@ -34,9 +34,11 @@ from ..services.flood_threat_cache import flood_threat_cache
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/intel", tags=["intelligence"])
+# SOS feed (floodsupport.org) routes; registered only when SOS_ENABLED=true.
+sos_router = APIRouter(prefix="/api/intel", tags=["intelligence-sos"])
 
 
-@router.get("/priorities")
+@sos_router.get("/priorities")
 async def get_priorities(
     limit: int = Query(50, le=200, description="Max number of reports"),
     district: Optional[str] = Query(None, description="Filter by district"),
@@ -75,7 +77,7 @@ async def get_priorities(
     }
 
 
-@router.get("/clusters")
+@sos_router.get("/clusters")
 async def get_clusters(
     district: Optional[str] = Query(None, description="Filter by district"),
 ):
@@ -106,7 +108,7 @@ async def get_clusters(
     }
 
 
-@router.get("/summary")
+@sos_router.get("/summary")
 async def get_summary():
     """
     Get overall intelligence summary.
@@ -125,7 +127,7 @@ async def get_summary():
     return intel_engine.get_summary()
 
 
-@router.get("/district/{district}")
+@sos_router.get("/district/{district}")
 async def get_district_intel(district: str):
     """
     Get detailed intelligence for a specific district.
@@ -138,7 +140,7 @@ async def get_district_intel(district: str):
     return intel_engine.get_district_intel(district)
 
 
-@router.post("/refresh")
+@sos_router.post("/refresh")
 async def refresh_analysis(background_tasks: BackgroundTasks):
     """
     Trigger immediate analysis refresh.
@@ -154,7 +156,7 @@ async def refresh_analysis(background_tasks: BackgroundTasks):
     }
 
 
-@router.get("/raw-sos")
+@sos_router.get("/raw-sos")
 async def get_raw_sos(
     limit: int = Query(100, le=200),
 ):
@@ -168,7 +170,7 @@ async def get_raw_sos(
     }
 
 
-@router.get("/actions")
+@sos_router.get("/actions")
 async def get_recommended_actions():
     """
     Get automated action recommendations based on current intelligence.

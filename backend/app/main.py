@@ -142,6 +142,10 @@ if settings.alerts_enabled:
     app.include_router(subscribers.router)
     app.include_router(whatsapp.router)
 
+# SOS feed (third-party reports incl. phone numbers): off unless SOS_ENABLED=true.
+if settings.sos_enabled:
+    app.include_router(intel.sos_router)
+
 
 @app.get("/api/health", response_model=HealthResponse)
 async def health_check():

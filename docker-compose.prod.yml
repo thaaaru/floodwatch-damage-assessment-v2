@@ -48,6 +48,7 @@ services:
       DB_PASSWORD_FILE: /run/secrets/db_password
       DB_HOST: db
       ALERTS_ENABLED: "false"
+      SOS_ENABLED: "false"
       # Optional third-party keys; empty = that feature degrades. Core data
       # (Open-Meteo, GDACS, Met Dept) needs no key.
       OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY:-}

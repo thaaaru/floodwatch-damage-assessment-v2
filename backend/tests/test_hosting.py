@@ -26,3 +26,14 @@ def test_alerts_disabled_routes_absent():
     assert not any(p.startswith("/api/whatsapp") for p in paths)
     # No lifespan (no scheduler / DB) - routing only.
     assert TestClient(app).post("/api/subscribe", json={}).status_code == 404
+
+
+def test_sos_disabled_routes_absent():
+    from app.main import app, settings
+
+    assert settings.sos_enabled is False
+    client = TestClient(app)
+    for path in ["/api/intel/priorities", "/api/intel/clusters", "/api/intel/summary",
+                 "/api/intel/actions", "/api/intel/raw-sos", "/api/intel/district/Colombo"]:
+        assert client.get(path).status_code == 404, path
+    assert client.post("/api/intel/refresh").status_code == 404

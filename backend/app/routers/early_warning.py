@@ -6,11 +6,11 @@ Provides endpoints for flood early warning data using OpenWeatherMap One Call AP
 """
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 
 from ..config import get_settings
-from ..services.openweathermap import get_openweathermap_service, OpenWeatherMapService
+from ..services.openweathermap import get_openweathermap_service, OpenWeatherMapService, calls_used
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/early-warning", tags=["Early Warning"])
@@ -55,6 +55,8 @@ async def get_early_warning_overview():
                 "risk_distribution": risk_counts,
                 "total_government_alerts": total_alerts,
                 "districts_at_risk": risk_counts["extreme"] + risk_counts["high"],
+                "last_updated": service.last_updated(),
+                "stale": service.is_stale(),
             },
             "districts": data
         }
@@ -218,32 +220,23 @@ async def get_hourly_forecast(
 @router.get("/status")
 async def get_service_status():
     """
-    Operational status of the OpenWeatherMap-backed early warning service.
-
-    Returns cache freshness and today's API call usage so we can monitor for
-    rate-limit pressure without scraping logs.
+    Cache freshness and today's OWM call usage (persistent counter).
+    Reads only; never calls OpenWeatherMap.
     """
     service = get_service()
-    # Trigger budget rollover check.
-    remaining = service._budget_remaining()
-    cache_age_min: Optional[float] = None
-    if service._all_districts_cache_time:
-        cache_age_min = round(
-            (datetime.utcnow() - service._all_districts_cache_time).total_seconds() / 60,
-            1,
-        )
+    today = datetime.now(timezone.utc).date()
+    used = calls_used(service._engine, today)
     return {
         "cache": {
-            "all_districts_cached": bool(service._all_districts_cache),
-            "all_districts_age_minutes": cache_age_min,
-            "all_districts_ttl_minutes": service.ALL_DISTRICTS_CACHE_MINUTES,
-            "per_coord_entries": len(service._cache),
-            "per_coord_ttl_minutes": service.CACHE_DURATION_MINUTES,
+            "last_updated": service.last_updated(),
+            "age_minutes": round(service.age_minutes(), 1) if service.age_minutes() is not None else None,
+            "stale": service.is_stale(),
+            "refresh_interval_minutes": service.REFRESH_INTERVAL_MINUTES,
         },
         "rate_limit": {
-            "calls_today": service._calls_today,
+            "calls_today": used,
             "daily_budget": service.DAILY_CALL_BUDGET,
-            "remaining": remaining,
-            "day_utc": service._calls_day.isoformat(),
+            "remaining": max(0, service.DAILY_CALL_BUDGET - used),
+            "day_utc": today.isoformat(),
         },
     }

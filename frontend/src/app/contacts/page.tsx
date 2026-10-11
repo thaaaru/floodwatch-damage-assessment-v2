@@ -163,22 +163,6 @@ export default function EmergencyContacts() {
           ]}
         />
 
-        {/* Report Emergency CTA */}
-        <section className="card p-8 bg-gradient-to-br from-brand-600 to-brand-700 text-white text-center">
-          <h2 className="text-2xl font-bold mb-2">Report an Emergency</h2>
-          <p className="text-brand-100 mb-6">Submit SOS requests for immediate rescue assistance</p>
-          <a
-            href="https://floodsupport.org"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-slate-800 text-brand-700 px-6 py-3 rounded-xl font-bold text-lg hover:bg-brand-50 transition-colors"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            FloodSupport.org
-          </a>
-        </section>
       </main>
     </div>
   );

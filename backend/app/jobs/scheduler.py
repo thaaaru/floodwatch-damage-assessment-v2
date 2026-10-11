@@ -109,6 +109,15 @@ async def refresh_flood_threat():
         logger.error(f"Error refreshing flood threat cache: {e}")
 
 
+async def refresh_owm_early_warning():
+    """Background job: the only caller of OpenWeatherMap One Call (see services/openweathermap.py)."""
+    from ..services.openweathermap import get_openweathermap_service
+    try:
+        await get_openweathermap_service(settings.openweathermap_api_key).refresh_all()
+    except Exception as e:
+        logger.error(f"Error refreshing OWM early warning: {e}")
+
+
 def start_scheduler():
     """Initialize and start the background scheduler."""
     interval_minutes = settings.alert_check_interval_minutes
@@ -131,14 +140,15 @@ def start_scheduler():
         replace_existing=True
     )
 
-    # Intel analysis job - every 15 minutes
-    scheduler.add_job(
-        refresh_intel_analysis,
-        trigger=IntervalTrigger(minutes=INTEL_ANALYSIS_INTERVAL_MINUTES),
-        id="intel_analysis_refresh",
-        name="Refresh SOS intelligence analysis",
-        replace_existing=True
-    )
+    # Intel analysis job (SOS feed) - only when SOS_ENABLED=true
+    if settings.sos_enabled:
+        scheduler.add_job(
+            refresh_intel_analysis,
+            trigger=IntervalTrigger(minutes=INTEL_ANALYSIS_INTERVAL_MINUTES),
+            id="intel_analysis_refresh",
+            name="Refresh SOS intelligence analysis",
+            replace_existing=True
+        )
 
     # OSM facilities refresh - every 24 hours
     scheduler.add_job(
@@ -158,6 +168,17 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # OpenWeatherMap early warning - every 180 min (400 calls/day), only with a key
+    if settings.openweathermap_api_key:
+        from ..services.openweathermap import OpenWeatherMapService
+        scheduler.add_job(
+            refresh_owm_early_warning,
+            trigger=IntervalTrigger(minutes=OpenWeatherMapService.REFRESH_INTERVAL_MINUTES),
+            id="owm_early_warning_refresh",
+            name="Refresh OpenWeatherMap early warning cache",
+            replace_existing=True
+        )
+
     scheduler.start()
     logger.info(
         f"Scheduler started. Cache: {WEATHER_CACHE_INTERVAL_MINUTES}min, "
@@ -168,9 +189,13 @@ def start_scheduler():
 
     # Initial tasks on startup
     asyncio.get_event_loop().create_task(refresh_weather_cache())
-    asyncio.get_event_loop().create_task(refresh_intel_analysis())
+    if settings.sos_enabled:
+        asyncio.get_event_loop().create_task(refresh_intel_analysis())
     asyncio.get_event_loop().create_task(refresh_osm_facilities())
     asyncio.get_event_loop().create_task(refresh_flood_threat())
+    if settings.openweathermap_api_key:
+        # Skipped automatically if the persisted snapshot is still fresh.
+        asyncio.get_event_loop().create_task(refresh_owm_early_warning())
 
 
 def stop_scheduler():

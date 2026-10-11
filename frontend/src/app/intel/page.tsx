@@ -4,7 +4,6 @@
 
 import { useState } from 'react';
 import {
-  IntelSummary, SOSReport, IntelCluster, IntelAction, NearbyFacilitiesResponse,
   FloodThreatResponse, IrrigationResponse, TrafficFlowResponse, TrafficIncident,
   AllFacilitiesResponse, FloodPatternsResponse, EnvironmentalDataResponse, YesterdayStats,
 } from '@/lib/api';
@@ -26,10 +25,6 @@ export default function IntelDashboard() {
   // Cast via `unknown` because the captured JSON is a structural subset of the
   // TS interfaces (some optional fields the API doesn't always emit). We trust
   // the JSX to handle missing-field cases via the `fmt` helper and `?.` guards.
-  const [summary] = useState<IntelSummary | null>(snapshot.summary as unknown as IntelSummary);
-  const [priorities] = useState<SOSReport[]>(snapshot.priorities as unknown as SOSReport[]);
-  const [clusters] = useState<IntelCluster[]>(snapshot.clusters as unknown as IntelCluster[]);
-  const [actions] = useState<IntelAction[]>(snapshot.actions as unknown as IntelAction[]);
   const [floodThreat] = useState<FloodThreatResponse | null>(snapshot.floodThreat as unknown as FloodThreatResponse);
   const [riverData] = useState<IrrigationResponse | null>(snapshot.irrigation as unknown as IrrigationResponse);
   const [trafficFlow] = useState<TrafficFlowResponse | null>(snapshot.trafficFlow as unknown as TrafficFlowResponse);
@@ -50,21 +45,7 @@ export default function IntelDashboard() {
   const loadingEnvironmental = false;
   const loadingYesterdayStats = false;
 
-  // Filter state is preserved as pure client-side UI; the backing data never changes.
-  const [filterUrgency, setFilterUrgency] = useState<string>('');
-  const [expandedReport, setExpandedReport] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'threat' | 'infrastructure'>('threat');
-
-  // Snapshot has no SOS reports (the live priorities feed was empty at capture
-  // time), so nearby-facility lookups are never triggered. Kept as static empty
-  // values so the existing JSX bindings stay valid.
-  const nearbyFacilities: NearbyFacilitiesResponse | null = null;
-  const loadingFacilities = false;
-
-  const handleExpandReport = (report: SOSReport) => {
-    // Toggle expand/collapse only. No facility fetch — the snapshot is frozen.
-    setExpandedReport(expandedReport === report.id ? null : report.id);
-  };
 
   const getFacilityIcon = (type: string) => {
     switch (type) {
@@ -192,18 +173,7 @@ export default function IntelDashboard() {
               </svg>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-white">Emergency Intel Dashboard</h1>
-              <p className="text-sm text-slate-400">
-                Data from{' '}
-                <a
-                  href="https://floodsupport.org"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-brand-400 hover:text-brand-300"
-                >
-                  FloodSupport.org
-                </a>
-              </p>
+              <h1 className="text-xl font-bold text-white">Flood Intel Dashboard</h1>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -211,14 +181,6 @@ export default function IntelDashboard() {
               <div className="text-xs text-slate-500">Auto-refresh: 30s</div>
               <div className="text-sm text-slate-400">Updated: {lastUpdated}</div>
             </div>
-            <a
-              href="https://floodsupport.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-gradient-to-r from-red-600 to-red-500 hover:shadow-lg text-white px-4 py-2 rounded-xl text-sm font-medium transition-all shadow-md"
-            >
-              Report Emergency
-            </a>
           </div>
         </div>
       </header>

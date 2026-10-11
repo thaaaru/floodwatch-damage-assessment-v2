@@ -19,10 +19,6 @@ trap 'rm -rf "$TMPDIR"' EXIT
 # Endpoints the /intel page consumed before it was made static.
 # Keys here MUST match the keys read in frontend/src/app/intel/page.tsx.
 declare -A endpoints=(
-  [summary]="/api/intel/summary"
-  [priorities]="/api/intel/priorities?limit=100"
-  [clusters]="/api/intel/clusters"
-  [actions]="/api/intel/actions"
   [floodThreat]="/api/intel/flood-threat"
   [irrigation]="/api/intel/irrigation"
   [trafficFlow]="/api/intel/traffic-flow"
@@ -51,7 +47,6 @@ from pathlib import Path
 
 tmpdir, out_path = Path(sys.argv[1]), Path(sys.argv[2])
 raw = {k: json.loads((tmpdir / f"{k}.json").read_text()) for k in [
-    "summary", "priorities", "clusters", "actions",
     "floodThreat", "irrigation", "trafficFlow", "trafficIncidents",
     "allFacilities", "floodPatterns", "environmental", "yesterdayStats",
 ]}
@@ -59,10 +54,6 @@ raw = {k: json.loads((tmpdir / f"{k}.json").read_text()) for k in [
 # Flatten responses to match what the page actually destructured.
 snapshot = {
     "captured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-    "summary": raw["summary"],
-    "priorities": raw["priorities"].get("reports", []),
-    "clusters": raw["clusters"].get("clusters", []),
-    "actions": raw["actions"].get("actions", []),
     "floodThreat": raw["floodThreat"],
     "irrigation": raw["irrigation"],
     "trafficFlow": raw["trafficFlow"],

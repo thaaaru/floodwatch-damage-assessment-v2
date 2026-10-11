@@ -142,6 +142,12 @@ Never use `docker system prune` / `docker volume prune` on this shared host.
 - SMS/WhatsApp alerts are off (`ALERTS_ENABLED=false`): `/api/subscribe`,
   `/api/unsubscribe`, `/api/subscribers/*`, `/api/whatsapp/*` return 404 and the alert
   engine records alerts but never sends messages. No Twilio config is deployed.
+- SOS feed is off (`SOS_ENABLED=false`): `/api/intel/{priorities,clusters,summary,district,actions,raw-sos}`
+  and `POST /api/intel/refresh` return 404 and floodsupport.org is never fetched.
+- OpenWeatherMap One Call (only if `OPENWEATHERMAP_API_KEY` is set): fetched only by the scheduler,
+  every 180 min, 50 calls per run = 400/day. HTTP endpoints read the cache only. Hard cap 900
+  calls per UTC day in table `owm_usage`; check with `curl .../early-warning/status` or
+  `dc exec -T db psql -U floodwatch -tAc "select * from owm_usage order by day desc limit 3"`.
 - Freshness: the banner reads `/api/weather/cache-status` (`last_update`,
   `last_attempt_ok`) and flags data older than 3 h or a failed latest fetch.
 - Limits: db 512m/0.5 CPU, backend 768m/1 CPU, frontend 512m/0.5 CPU; logs json-file

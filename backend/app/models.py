@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-from sqlalchemy import Column, Integer, String, Boolean, DECIMAL, TIMESTAMP, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DECIMAL, TIMESTAMP, Text, ForeignKey, Date, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import json
@@ -98,3 +98,21 @@ class WeatherLog(Base):
     temperature_c = Column(DECIMAL(5, 2))
     humidity_percent = Column(Integer)
     recorded_at = Column(TIMESTAMP, server_default=func.current_timestamp(), index=True)
+
+
+class OwmUsage(Base):
+    """OpenWeatherMap One Call calls per UTC day (survives restarts)."""
+    __tablename__ = "owm_usage"
+
+    day = Column(Date, primary_key=True)
+    calls = Column(Integer, nullable=False, default=0)
+
+
+class OwmCache(Base):
+    """Last processed OpenWeatherMap early-warning snapshot (survives restarts)."""
+    __tablename__ = "owm_cache"
+
+    key = Column(String(50), primary_key=True)
+    fetched_at = Column(TIMESTAMP(timezone=True), nullable=False)
+    stale = Column(Boolean, nullable=False, default=False)
+    payload = Column(JSON, nullable=False)
