@@ -3,6 +3,7 @@
 import asyncio
 import logging
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
 from sqlalchemy.orm import Session
 
@@ -24,6 +25,9 @@ INTEL_ANALYSIS_INTERVAL_MINUTES = 30  # Reduced to minimize API load
 FACILITIES_REFRESH_INTERVAL_HOURS = 24  # Daily refresh for OSM facilities
 FLOOD_THREAT_INTERVAL_MINUTES = 15  # Refresh every 15 minutes for real-time threat assessment
 GAUGE_SYNC_INTERVAL_MINUTES = 15  # Irrigation Dept river gauges -> gauge_readings
+# Open-Meteo archive calls per day for the ERA5 backfill (~4 districts/day); the weather
+# cache already uses ~5k of the 10k free daily calls.
+RAIN_HISTORY_DAILY_BUDGET = 3000
 
 
 async def refresh_weather_cache():
@@ -119,6 +123,18 @@ async def refresh_news():
         logger.error(f"News refresh failed: {e}")
 
 
+async def update_rain_history():
+    """Daily job: the only runtime caller of the Open-Meteo archive API (ERA5).
+    Re-fetches the last 14 days (ERA5 lags ~5 days), then continues any unfinished
+    1996+ backfill within a daily call budget (see scripts/backfill_rain_history.py)."""
+    from ..services.rain_history import rain_history
+    try:
+        await rain_history.update_recent()
+        await rain_history.backfill(budget_calls=RAIN_HISTORY_DAILY_BUDGET)
+    except Exception as e:
+        logger.error(f"Rain history update failed: {e}")
+
+
 async def sync_river_gauges():
     """Background job: the only caller of the Irrigation Dept gauge layers."""
     from ..services.irrigation_fetcher import irrigation_fetcher
@@ -193,6 +209,15 @@ def start_scheduler():
         trigger=IntervalTrigger(minutes=GAUGE_SYNC_INTERVAL_MINUTES),
         id="river_gauge_sync",
         name="Sync Irrigation Dept river gauges",
+        replace_existing=True
+    )
+
+    # 30-year rainfall context (ERA5) - daily, early morning Colombo time
+    scheduler.add_job(
+        update_rain_history,
+        trigger=CronTrigger(hour=3, minute=15, timezone="Asia/Colombo"),
+        id="rain_history_update",
+        name="Update ERA5 rainfall history",
         replace_existing=True
     )
 

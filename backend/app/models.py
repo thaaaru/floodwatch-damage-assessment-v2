@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-from sqlalchemy import Column, Integer, String, Boolean, DECIMAL, TIMESTAMP, Text, ForeignKey, Float, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Boolean, DECIMAL, TIMESTAMP, Text, ForeignKey, Float, UniqueConstraint, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import json
@@ -129,3 +129,12 @@ class GaugeStation(Base):
     alert_m = Column(Float)
     minor_m = Column(Float)
     major_m = Column(Float)
+
+
+class RainDaily(Base):
+    """Daily precipitation per district capital: ERA5 reanalysis via the Open-Meteo archive API (model data)."""
+    __tablename__ = "rain_daily"
+
+    district = Column(String(40), primary_key=True)
+    date = Column(Date, primary_key=True)
+    precip_mm = Column(Float, nullable=False)
