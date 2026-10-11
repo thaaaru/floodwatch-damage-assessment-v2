@@ -202,5 +202,5 @@ class OpenMeteoFloodService:
         return dict(zip(coordinates, results))
 
 
-# Singleton instance (mirrors openweathermap_service / google_floods_service patterns).
+# Singleton instance (mirrors the google_floods_service pattern).
 open_meteo_flood_service = OpenMeteoFloodService()

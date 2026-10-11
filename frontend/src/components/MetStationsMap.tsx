@@ -7,6 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { IrrigationStation, MetStation } from '@/lib/api';
 import { addBasemap, addSatelliteOption } from '@/lib/basemap';
+import { createForecastLayer } from '@/lib/forecast';
 import { BASIN_CREDIT, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey } from '@/lib/gauges';
 
 interface MetStationsMapProps {
@@ -163,6 +164,8 @@ export default function MetStationsMap({
       .addTo(map);
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
     addSatelliteOption(L, controlRef.current);
+    // Open-Meteo rain forecast for the ~100 weather locations, off by default.
+    controlRef.current.addOverlay(createForecastLayer(map), 'Rain forecast');
     mapRef.current = map;
     // Basins + rivers: on by default; only flooding basins are filled, with a legend.
     createWaterLayer(map, () => gaugesRef.current, 'alertsOnly')

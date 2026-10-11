@@ -8,7 +8,7 @@ Host: Ubuntu 24.04, shared with Synapses. FloodWatch is compose project `floodwa
 |---|---|
 | Code | `/opt/floodwatch` (git clone, branch `teklab-hosting` / `main`) |
 | Non-secret config | `/opt/floodwatch/.env` (from `.env.production.example`) |
-| Encrypted secrets | `/etc/floodwatch/secrets/db_password.age`, optional `owm_api_key.age` |
+| Encrypted secrets | `/etc/floodwatch/secrets/db_password.age` |
 | age identity | `/etc/age/tencent.key` (root, 0400) |
 | Decrypted (tmpfs) | `/run/floodwatch/db_password` — dir 0700 root, file 0440 root:1000 |
 | DB volume | `floodwatch_postgres_data` |
@@ -29,10 +29,6 @@ cp .env.production.example .env && chmod 600 .env   # all optional; see comments
 install -d -m 0700 /etc/floodwatch/secrets
 AGE_RECIPIENT=$(age-keygen -y /etc/age/tencent.key)
 openssl rand -hex 32 | age -r "$AGE_RECIPIENT" -o /etc/floodwatch/secrets/db_password.age
-# Optional OpenWeatherMap One Call key (file secret only, never in .env).
-# Without it the script creates an empty /run/floodwatch/owm_api_key and early warning returns 503.
-read -rs OWM_KEY && printf '%s' "$OWM_KEY" | age -r "$AGE_RECIPIENT" \
-  -o /etc/floodwatch/secrets/owm_api_key.age && unset OWM_KEY
 
 # 3. Decrypt-at-boot unit
 install -m 0755 deploy/teklab/floodwatch-secrets.sh /usr/local/sbin/floodwatch-secrets
@@ -103,9 +99,6 @@ systemctl restart floodwatch-secrets.service
 dc up -d --force-recreate db floodwatch-backend
 ```
 
-OpenWeatherMap key: re-encrypt `owm_api_key.age` as in §1, then
-`systemctl restart floodwatch-secrets.service && dc up -d --force-recreate floodwatch-backend`.
-
 Rotating the age key: re-encrypt every `*.age` to the new recipient, replace
 `/etc/age/tencent.key`, `systemctl restart floodwatch-secrets.service`.
 
@@ -173,10 +166,10 @@ Never use `docker system prune` / `docker volume prune` on this shared host.
   engine records alerts but never sends messages. No Twilio config is deployed.
 - SOS feed is off (`SOS_ENABLED=false`): `/api/intel/{priorities,clusters,summary,district,actions,raw-sos}`
   and `POST /api/intel/refresh` return 404 and floodsupport.org is never fetched.
-- OpenWeatherMap One Call (only if `/run/floodwatch/owm_api_key` is non-empty): fetched only by the scheduler,
-  25 district points x one call every `OWM_REFRESH_MINUTES` (120) = 25 x 12 = 300/day. HTTP endpoints read the cache only. Hard cap 900
-  calls per UTC day in table `owm_usage`; check with `curl .../early-warning/status` or
-  `dc exec -T db psql -U floodwatch -tAc "select * from owm_usage order by day desc limit 3"`.
+- The OpenWeatherMap integration and /early-warning were removed (/early-warning now
+  permanently redirects (308) to /). Its tables `owm_usage` and `owm_cache` are left in the DB, unused;
+  drop them manually when convenient:
+  `dc exec -T db psql -U floodwatch -d floodwatch -c 'DROP TABLE IF EXISTS owm_usage, owm_cache;'`
 - Freshness: the banner reads `/api/weather/cache-status` (`last_update`,
   `last_attempt_ok`) and flags data older than 3 h or a failed latest fetch.
 - News (/news): the backend refreshes SL Met, NewsFirst, GDACS (Sri Lanka region),

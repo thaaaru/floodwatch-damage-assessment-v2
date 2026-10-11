@@ -120,18 +120,6 @@ export interface ForecastAlert {
 }
 
 class ApiClient {
-  private emptyEarlyWarningResponse(): EarlyWarningResponse {
-    return {
-      summary: {
-        total_districts: 0,
-        risk_distribution: { extreme: 0, high: 0, medium: 0, low: 0 },
-        total_government_alerts: 0,
-        districts_at_risk: 0,
-      },
-      districts: [],
-    };
-  }
-
   private getUrl(endpoint: string): string {
     if (USE_PROXY) {
       // Use the Next.js proxy to avoid CORS issues with remote backends
@@ -163,21 +151,6 @@ class ApiClient {
         if (response.status >= 500) {
           console.error(`Backend server error (${response.status}) for ${endpoint}. Backend may be temporarily unavailable.`);
           // Return empty array/object based on expected type to prevent UI crashes
-          if (endpoint === '/early-warning/') {
-            return this.emptyEarlyWarningResponse() as T;
-          }
-          if (endpoint === '/early-warning/alerts') {
-            return { total_alerts: 0, alerts: [] } as T;
-          }
-          if (endpoint === '/early-warning/high-risk') {
-            return { count: 0, districts: [] } as T;
-          }
-          if (endpoint.includes('/early-warning/forecast/daily')) {
-            return { days: 0, forecast: [] } as T;
-          }
-          if (endpoint.includes('/early-warning/forecast/hourly')) {
-            return { district: '', hours: 0, forecast: [] } as T;
-          }
           if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast') || endpoint.includes('/weather')) {
             return [] as T;
           }
@@ -197,8 +170,7 @@ class ApiClient {
       const data = await response.json();
 
       // Additional safety check: ensure forecast endpoints return arrays
-      // Note: /early-warning/alerts returns {total_alerts, alerts} not an array
-      if ((endpoint.includes('/forecast') || endpoint.includes('/history') || (endpoint.includes('/alerts') && !endpoint.includes('/early-warning')))) {
+      if (endpoint.includes('/forecast') || endpoint.includes('/history') || endpoint.includes('/alerts')) {
         if (!Array.isArray(data)) {
           console.warn(`Expected array but got ${typeof data} for ${endpoint}, returning empty array`);
           return [] as T;
@@ -211,9 +183,6 @@ class ApiClient {
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         console.error(`Request timeout for ${endpoint}`);
         // Return empty result to prevent UI crashes
-        if (endpoint === '/early-warning/') {
-          return this.emptyEarlyWarningResponse() as T;
-        }
         if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
         }
@@ -229,9 +198,6 @@ class ApiClient {
       if (error instanceof TypeError && error.message.includes('fetch')) {
         console.error(`Network error for ${endpoint}:`, error.message);
         // Return empty result based on endpoint type
-        if (endpoint === '/early-warning/') {
-          return this.emptyEarlyWarningResponse() as T;
-        }
         if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
         }
@@ -432,31 +398,6 @@ class ApiClient {
 
   async getFloodCorrelation(): Promise<FloodCorrelationResponse> {
     return this.fetch<FloodCorrelationResponse>('/api/intel/environmental/flood-correlation');
-  }
-
-  // Early Warning System endpoints (OpenWeatherMap One Call API 3.0)
-  async getEarlyWarning(): Promise<EarlyWarningResponse> {
-    return this.fetch<EarlyWarningResponse>('/early-warning/');
-  }
-
-  async getEarlyWarningDistrict(district: string): Promise<EarlyWarningDistrict> {
-    return this.fetch<EarlyWarningDistrict>(`/early-warning/district/${encodeURIComponent(district)}`);
-  }
-
-  async getEarlyWarningAlerts(): Promise<EarlyWarningAlertsResponse> {
-    return this.fetch<EarlyWarningAlertsResponse>('/early-warning/alerts');
-  }
-
-  async getEarlyWarningHighRisk(): Promise<EarlyWarningHighRiskResponse> {
-    return this.fetch<EarlyWarningHighRiskResponse>('/early-warning/high-risk');
-  }
-
-  async getEarlyWarningDailyForecast(days: number = 8): Promise<EarlyWarningDailyForecastResponse> {
-    return this.fetch<EarlyWarningDailyForecastResponse>(`/early-warning/forecast/daily?days=${days}`);
-  }
-
-  async getEarlyWarningHourlyForecast(district: string, hours: number = 48): Promise<EarlyWarningHourlyForecastResponse> {
-    return this.fetch<EarlyWarningHourlyForecastResponse>(`/early-warning/forecast/hourly/${encodeURIComponent(district)}?hours=${hours}`);
   }
 
   async getCacheStatus(): Promise<CacheStatus> {
@@ -1038,163 +979,6 @@ export interface FloodCorrelationResponse {
     environmental: string;
     flood_patterns: string;
   };
-}
-
-// Early Warning System types (OpenWeatherMap One Call API 3.0)
-export interface EarlyWarningRiskFactor {
-  factor: string;
-  detail: string;
-  severity: 'low' | 'medium' | 'high';
-}
-
-export interface EarlyWarningCurrent {
-  temp_c: number | null;
-  feels_like_c: number | null;
-  humidity: number | null;
-  pressure: number | null;
-  wind_speed_ms: number | null;
-  wind_gust_ms: number | null;
-  wind_deg: number | null;
-  clouds: number | null;
-  visibility: number | null;
-  uvi: number | null;
-  rain_1h_mm: number;
-  weather: string;
-  weather_icon: string;
-}
-
-export interface EarlyWarningHourly {
-  time: string;
-  temp_c: number | null;
-  feels_like_c: number | null;
-  humidity: number | null;
-  pressure: number | null;
-  wind_speed_ms: number | null;
-  wind_gust_ms: number | null;
-  wind_deg: number | null;
-  clouds: number | null;
-  pop: number;
-  rain_mm: number;
-  snow_mm: number;
-  uvi: number | null;
-  visibility: number | null;
-  weather: string;
-  weather_icon: string;
-}
-
-export interface EarlyWarningDaily {
-  date: string;
-  day_name: string;
-  sunrise: string;
-  sunset: string;
-  summary: string;
-  temp_day_c: number | null;
-  temp_night_c: number | null;
-  temp_min_c: number | null;
-  temp_max_c: number | null;
-  feels_like_day_c: number | null;
-  humidity: number | null;
-  pressure: number | null;
-  wind_speed_ms: number | null;
-  wind_gust_ms: number | null;
-  wind_deg: number | null;
-  clouds: number | null;
-  pop: number;
-  rain_mm: number;
-  snow_mm: number;
-  uvi: number | null;
-  weather: string;
-  weather_icon: string;
-  moon_phase: number | null;
-  alert_level: 'green' | 'yellow' | 'orange' | 'red';
-}
-
-export interface GovernmentAlert {
-  sender: string;
-  event: string;
-  start: string;
-  end: string;
-  description: string;
-  tags: string[];
-  district?: string;
-}
-
-export interface EarlyWarningDistrict {
-  district: string;
-  coordinates: { lat: number; lon: number };
-  fetched_at: string;
-  timezone: string;
-  risk_level: 'low' | 'medium' | 'high' | 'extreme' | 'unknown';
-  risk_score: number;
-  risk_factors: EarlyWarningRiskFactor[];
-  current: EarlyWarningCurrent;
-  precipitation: {
-    next_1h_mm: number;
-    next_24h_mm: number;
-    next_48h_mm: number;
-  };
-  alerts: GovernmentAlert[];
-  alert_count: number;
-  overview: string;
-  hourly_forecast: EarlyWarningHourly[];
-  daily_forecast: EarlyWarningDaily[];
-  error?: string;
-}
-
-export interface EarlyWarningSummary {
-  total_districts: number;
-  risk_distribution: {
-    extreme: number;
-    high: number;
-    medium: number;
-    low: number;
-  };
-  total_government_alerts: number;
-  /** Time of the cached OWM snapshot (ISO); stale = old or incomplete. */
-  last_updated?: string | null;
-  stale?: boolean;
-  districts_at_risk: number;
-}
-
-export interface EarlyWarningResponse {
-  summary: EarlyWarningSummary;
-  districts: EarlyWarningDistrict[];
-}
-
-export interface EarlyWarningAlertsResponse {
-  total_alerts: number;
-  alerts: GovernmentAlert[];
-}
-
-export interface EarlyWarningHighRiskResponse {
-  count: number;
-  districts: EarlyWarningDistrict[];
-}
-
-export interface DailyForecastByDay {
-  date: string;
-  day_name: string;
-  districts: Array<{
-    district: string;
-    temp_max_c: number | null;
-    temp_min_c: number | null;
-    rain_mm: number;
-    pop: number;
-    weather: string;
-    alert_level: string;
-    summary: string;
-  }>;
-}
-
-export interface EarlyWarningDailyForecastResponse {
-  days: number;
-  forecast: DailyForecastByDay[];
-}
-
-export interface EarlyWarningHourlyForecastResponse {
-  district: string;
-  hours: number;
-  forecast: EarlyWarningHourly[];
 }
 
 export const api = new ApiClient();

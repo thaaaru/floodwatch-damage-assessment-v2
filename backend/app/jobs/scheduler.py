@@ -128,15 +128,6 @@ async def sync_river_gauges():
         logger.error(f"River gauge sync failed (serving stored data): {e}")
 
 
-async def refresh_owm_early_warning():
-    """Background job: the only caller of OpenWeatherMap One Call (see services/openweathermap.py)."""
-    from ..services.openweathermap import get_openweathermap_service
-    try:
-        await get_openweathermap_service(settings.openweathermap_api_key).refresh_all()
-    except Exception as e:
-        logger.error(f"Error refreshing OWM early warning: {e}")
-
-
 def start_scheduler():
     """Initialize and start the background scheduler."""
     interval_minutes = settings.alert_check_interval_minutes
@@ -205,17 +196,6 @@ def start_scheduler():
         replace_existing=True
     )
 
-    # OpenWeatherMap early warning - every OWM_REFRESH_MINUTES (120 -> 25 x 12 = 300 calls/day), only with a key
-    if settings.openweathermap_api_key:
-        from ..services.openweathermap import OpenWeatherMapService
-        scheduler.add_job(
-            refresh_owm_early_warning,
-            trigger=IntervalTrigger(minutes=OpenWeatherMapService.REFRESH_INTERVAL_MINUTES),
-            id="owm_early_warning_refresh",
-            name="Refresh OpenWeatherMap early warning cache",
-            replace_existing=True
-        )
-
     scheduler.start()
     logger.info(
         f"Scheduler started. Cache: {WEATHER_CACHE_INTERVAL_MINUTES}min, "
@@ -232,9 +212,6 @@ def start_scheduler():
     asyncio.get_event_loop().create_task(sync_river_gauges())
     asyncio.get_event_loop().create_task(refresh_news())
     asyncio.get_event_loop().create_task(refresh_flood_threat())
-    if settings.openweathermap_api_key:
-        # Skipped automatically if the persisted snapshot is still fresh.
-        asyncio.get_event_loop().create_task(refresh_owm_early_warning())
 
 
 def stop_scheduler():

@@ -7,7 +7,7 @@ Wraps https://floodforecasting.googleapis.com/v1 and exposes a small surface
 for the FloodWatch frontend: list of gauges over Sri Lanka with current status,
 and a per-gauge forecast trend.
 
-Rate-limit / cost discipline (same pattern as openweathermap.py):
+Rate-limit / cost discipline:
   - Shared httpx.AsyncClient with connection pooling (no per-call TLS handshake).
   - Single-flight lock on the area-wide refresh so concurrent users share one
     fan-out instead of each triggering parallel queries.
@@ -415,7 +415,7 @@ def _merge(status: dict, meta: dict) -> dict:
 
 
 # ----------------------------------------------------------------------
-# Singleton helper (matches the pattern used by openweathermap_service)
+# Singleton helper
 # ----------------------------------------------------------------------
 
 google_floods_service: Optional[GoogleFloodsService] = None

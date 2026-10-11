@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 
 from .config import get_settings
 from .database import engine, Base
-from .routers import weather, alerts, subscribers, districts, intel, whatsapp, early_warning, flood_map, wind, rivers, google_floods, news
+from .routers import weather, alerts, subscribers, districts, intel, whatsapp, flood_map, wind, rivers, google_floods, news
 from .jobs.scheduler import start_scheduler, stop_scheduler
 from .schemas import HealthResponse
 
@@ -49,14 +49,6 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down FloodWatch LK Backend...")
     stop_scheduler()
 
-    # Close the shared OpenWeatherMap HTTP client (if it was ever initialized).
-    try:
-        from .services.openweathermap import openweathermap_service
-        if openweathermap_service is not None:
-            await openweathermap_service.aclose()
-    except Exception as e:
-        logger.warning(f"Error closing OWM HTTP client: {e}")
-
     # Close the shared Google Floods HTTP client (if it was ever initialized).
     try:
         from .services.google_floods import google_floods_service
@@ -83,7 +75,7 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="FloodWatch LK API",
-    description="Flood monitoring and early warning system for Sri Lanka",
+    description="Flood monitoring for Sri Lanka (unofficial; not a warning service)",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -131,7 +123,6 @@ app.include_router(news.router)
 app.include_router(alerts.router)
 app.include_router(districts.router)
 app.include_router(intel.router)
-app.include_router(early_warning.router)
 app.include_router(flood_map.router)
 app.include_router(wind.router)
 app.include_router(rivers.router)

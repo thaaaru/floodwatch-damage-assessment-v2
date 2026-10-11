@@ -72,11 +72,6 @@ export default function DataSourcesPage() {
                   <td className="py-3 px-3"><span className="px-2 py-1 bg-blue-600/20 text-blue-400 rounded text-xs">30 minutes</span></td>
                   <td className="py-3 px-3 text-xs">7-day forecast for all districts</td>
                 </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">OpenWeatherMap One Call API 3.0</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-blue-600/20 text-blue-400 rounded text-xs">30 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Early warning system with hourly/daily forecasts</td>
-                </tr>
               </tbody>
             </table>
           </div>
@@ -85,7 +80,6 @@ export default function DataSourcesPage() {
             <div className="text-sm font-semibold mb-2">Frontend Refresh Intervals:</div>
             <ul className="text-sm text-slate-300 space-y-1">
               <li>• <strong>Dashboard:</strong> No auto-refresh (backend cache: 60 min)</li>
-              <li>• <strong>Early Warning Page:</strong> 30 minutes</li>
               <li>• <strong>Flood Info Page:</strong> 30 minutes</li>
               <li>• <strong>Rivers Page:</strong> 5 minutes</li>
             </ul>
@@ -381,7 +375,6 @@ export default function DataSourcesPage() {
                 <li>• Weather data</li>
                 <li>• News feeds</li>
                 <li>• Marine conditions</li>
-                <li>• Early warnings</li>
               </ul>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-4">
@@ -416,7 +409,6 @@ export default function DataSourcesPage() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div className="bg-slate-700/30 rounded p-3">✅ OpenWeatherMap One Call API 3.0</div>
             <div className="bg-slate-700/30 rounded p-3">✅ WeatherAPI.com</div>
             <div className="bg-slate-700/30 rounded p-3">✅ TomTom Traffic API</div>
             <div className="bg-slate-700/30 rounded p-3">✅ HERE Traffic API</div>

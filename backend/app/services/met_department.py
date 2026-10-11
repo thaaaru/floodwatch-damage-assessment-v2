@@ -8,7 +8,7 @@ Data source:
 
 This is the *authoritative* rainfall source for Sri Lanka: 24 WMO-compliant
 weather stations reporting measured precipitation every 3 hours. Compared
-against forecasts from Open-Meteo / OpenWeatherMap, this is ground truth
+against model forecasts (Open-Meteo), this is ground truth
 (not modeled, not interpolated) and is the value Sri Lanka officially
 uses for flood declarations.
 
@@ -320,5 +320,5 @@ class MetDepartmentService:
         }
 
 
-# Module-level singleton, mirroring the openweathermap_service / google_floods_service pattern.
+# Module-level singleton, mirroring the google_floods_service pattern.
 met_department_service = MetDepartmentService()

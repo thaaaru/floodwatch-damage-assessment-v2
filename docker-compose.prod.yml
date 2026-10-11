@@ -51,20 +51,16 @@ services:
       SOS_ENABLED: "false"
       # Optional third-party keys; empty = that feature degrades. Core data
       # (Open-Meteo, GDACS, Met Dept) needs no key.
-      # OpenWeatherMap key: file secret only (empty file = early warning off, 503)
-      OPENWEATHERMAP_API_KEY_FILE: /run/secrets/owm_api_key
       WEATHERAPI_KEY: ${WEATHERAPI_KEY:-}
       TOMTOM_API_KEY: ${TOMTOM_API_KEY:-}
       HERE_API_KEY: ${HERE_API_KEY:-}
       WEATHER_SOURCE: ${WEATHER_SOURCE:-open_meteo}
       # ReliefWeb API v2 appname (pre-approved by ReliefWeb); empty = source off
       RELIEFWEB_APPNAME: ${RELIEFWEB_APPNAME:-}
-      OWM_REFRESH_MINUTES: ${OWM_REFRESH_MINUTES:-120}
       FRONTEND_URL: https://floodwatch.teklab.dev
       DEBUG: "false"
     secrets:
       - db_password
-      - owm_api_key
     networks:
       - internal
       - edge
@@ -129,10 +125,6 @@ secrets:
   db_password:
     # Decrypted at boot into tmpfs by deploy/teklab/floodwatch-secrets.service.
     file: /run/floodwatch/db_password
-  owm_api_key:
-    # Optional. floodwatch-secrets.service always creates this file (empty when
-    # there is no owm_api_key.age) because compose refuses a missing source file.
-    file: /run/floodwatch/owm_api_key
 
 networks:
   internal:

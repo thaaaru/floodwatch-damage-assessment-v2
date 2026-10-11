@@ -6,7 +6,7 @@
  */
 
 // Wind data sources
-export type WindSource = 'icon' | 'gfs' | 'era5' | 'openweather' | 'mock' | 'auto';
+export type WindSource = 'icon' | 'gfs' | 'era5' | 'mock' | 'auto';
 
 // Visualization modes
 export type WindVisualizationMode = 'vectors' | 'particles' | 'heatmap' | 'low-bandwidth';
