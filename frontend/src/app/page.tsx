@@ -5,6 +5,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
 import { api, IrrigationStation, MetStation, MetStationsResponse } from '@/lib/api';
+import { ui } from '@/lib/ui';
 
 const MetStationsMap = dynamic(() => import('@/components/MetStationsMap'), {
   ssr: false,
@@ -86,24 +87,27 @@ export default function Dashboard() {
       })
     : null;
 
+  const onAlert = gauges.filter((g) => g.status === 'alert' || g.status === 'minor' || g.status === 'major').length;
+  const updated = lastFetched?.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit' });
+
   return (
-    <div className="min-h-[calc(100vh-64px)] flex flex-col bg-slate-900">
+    <div className={ui.page}>
       {/* Header strip */}
       <div className="bg-slate-800 border-b border-slate-700">
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold flex items-center gap-2">
+              <h1 className={`${ui.h1} flex items-center gap-2`}>
                 <span>🌧️</span>
                 <span>Rainfall</span>
               </h1>
-              <p className="text-[11px] sm:text-xs text-slate-300 mt-0.5">
+              <p className={`${ui.intro} mt-0.5`}>
                 Measured at {summary?.station_count ?? 0} official weather stations.{' '}
                 <a
                   href="https://meteo.gov.lk"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="underline text-blue-600 hover:text-blue-300"
+                  className={ui.link}
                 >
                   Sri Lanka Department of Meteorology
                 </a>
@@ -123,9 +127,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Map area */}
-      <div className="relative flex-1">
-        <div className="h-[calc(100vh-200px)] min-h-[480px] sm:min-h-[600px]">
+      <div className={`max-w-7xl ${ui.container} space-y-4`}>
+      {/* Map box: part of the page flow, not full-screen. */}
+      <div className={`relative ${ui.card} overflow-hidden`}>
+        <div className="h-[max(360px,55vh)] sm:h-[clamp(420px,60vh,640px)]">
           {loading && stations.length === 0 ? (
             <div className="h-full w-full bg-slate-900 flex items-center justify-center">
               <div className="flex flex-col items-center gap-3">
@@ -206,17 +211,29 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Footer attribution */}
-      <div className="bg-slate-800 border-t border-slate-700">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-2 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
-          <span>
-            Source: Sri Lanka Department of Meteorology - measured rainfall from 24 WMO stations.
-            We publish only directly-measured data; no models or forecasts on this page.
-          </span>
-          {lastFetched && (
-            <span>Fetched {lastFetched.toLocaleTimeString()}</span>
+      {/* Status strip */}
+      <div className={`${ui.card} ${ui.cardPad} flex flex-wrap items-center gap-x-4 gap-y-1 ${ui.body}`}>
+        <span>
+          <span className="font-semibold text-white">{gauges.length} gauges</span>
+          {gauges.length > 0 && (
+            <>
+              {' · '}
+              {onAlert === 0 ? (
+                <span className="text-emerald-300">all normal</span>
+              ) : (
+                <span className="text-amber-300">{onAlert} on alert</span>
+              )}
+            </>
           )}
-        </div>
+        </span>
+        {reportTimeLocal && <span>Met rainfall {reportTimeLocal}</span>}
+        {updated && <span className="sm:ml-auto">Updated {updated}</span>}
+      </div>
+
+      <p className={ui.muted}>
+        Source: Sri Lanka Department of Meteorology - measured rainfall from 24 WMO stations. We publish only
+        directly-measured data; no models or forecasts on this page.
+      </p>
       </div>
     </div>
   );

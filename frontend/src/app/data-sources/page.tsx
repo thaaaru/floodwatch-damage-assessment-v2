@@ -2,28 +2,19 @@
 
 'use client';
 
+import PageHeader from '@/components/ui/PageHeader';
+import { ui } from '@/lib/ui';
+
 export default function DataSourcesPage() {
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      {/* Header */}
-      <div className="bg-slate-800/50 backdrop-blur-md border-b border-slate-700/50 sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center gap-3">
-            <a href="/" className="text-slate-400 hover:text-white transition-colors">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </a>
-            <div>
-              <h1 className="text-2xl font-bold">Data Sources & Refresh Frequencies</h1>
-              <p className="text-sm text-slate-400 mt-1">Comprehensive overview of all data sources powering FloodWatch LK</p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className={ui.page}>
+      <PageHeader
+        title="Data Sources & Refresh Frequencies"
+        subtitle="Comprehensive overview of all data sources powering FloodWatch LK"
+      />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <div className={`max-w-7xl ${ui.container} space-y-8`}>
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

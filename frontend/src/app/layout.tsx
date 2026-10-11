@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import Header from '@/components/Header';
+import { ui } from '@/lib/ui';
 import StatusBanner from '@/components/StatusBanner';
 import '@/styles/globals.css';
 
@@ -58,12 +59,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <p className="text-xs text-slate-400">Flood Monitoring System for Sri Lanka</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-6 text-sm text-slate-400">
+                <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-300">
                   <span className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     All systems operational
                   </span>
-                  <span>Data: Open-Meteo, GDACS</span>
+                  <span>
+                    Data: Irrigation Dept · Met Dept · Open-Meteo · OSM ·{' '}
+                    <a href="/data-sources" className={ui.link}>
+                      All sources
+                    </a>
+                  </span>
                 </div>
               </div>
             </div>

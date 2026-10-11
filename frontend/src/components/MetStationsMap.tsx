@@ -128,6 +128,43 @@ function buildPopupHtml(s: MetStation): string {
   `;
 }
 
+// Full-screen toggle using the browser Fullscreen API (no plugin). Hidden where
+// element full-screen is unsupported (e.g. iPhone Safari).
+function addFullscreenControl(map: L.Map) {
+  const el = map.getContainer();
+  if (!document.fullscreenEnabled || !el.requestFullscreen) return;
+  const Control = L.Control.extend({
+    onAdd() {
+      const bar = L.DomUtil.create('div', 'leaflet-bar');
+      const btn = L.DomUtil.create('a', 'fw-fullscreen', bar) as HTMLAnchorElement;
+      btn.href = '#';
+      btn.setAttribute('role', 'button');
+      const label = () => {
+        const on = document.fullscreenElement === el;
+        btn.title = on ? 'Exit full screen' : 'View larger map';
+        btn.setAttribute('aria-label', btn.title);
+        btn.innerHTML = on ? '&#x2715;' : '&#x26F6;';
+      };
+      label();
+      L.DomEvent.disableClickPropagation(bar);
+      L.DomEvent.on(btn, 'click', (e) => {
+        L.DomEvent.preventDefault(e);
+        if (document.fullscreenElement === el) document.exitFullscreen();
+        else el.requestFullscreen().catch(() => {});
+      });
+      const onChange = () => {
+        label();
+        map.invalidateSize();
+        if (document.fullscreenElement === el) map.scrollWheelZoom.enable();
+      };
+      document.addEventListener('fullscreenchange', onChange);
+      map.on('unload', () => document.removeEventListener('fullscreenchange', onChange));
+      return bar;
+    },
+  });
+  new Control({ position: 'topright' }).addTo(map);
+}
+
 export default function MetStationsMap({
   stations,
   selectedWmoId,
@@ -152,8 +189,18 @@ export default function MetStationsMap({
       zoom: 8,
       zoomControl: false,
       attributionControl: false,
+      // The map sits in the page flow: wheel zoom only after a click or focus,
+      // so scrolling the page is not trapped by the map.
+      scrollWheelZoom: false,
+      zoomSnap: 0.25, // lets fitBounds fill the box instead of rounding down a whole level
     });
+    const wheelOn = () => map.scrollWheelZoom.enable();
+    map.on('click focus', wheelOn);
+    map.on('mouseout blur', () => map.scrollWheelZoom.disable());
+    // Fit the whole island whatever the box size.
+    map.fitBounds([[5.9, 79.6], [9.85, 81.9]]);
     L.control.zoom({ position: 'topright' }).addTo(map);
+    addFullscreenControl(map);
     addBasemap(map); // carries its own OSM/Protomaps attribution
     L.control
       .attribution({ position: 'bottomright' })
@@ -238,6 +285,11 @@ export default function MetStationsMap({
         }
         .met-station-popup .leaflet-popup-tip {
           background: #ffffff;
+        }
+        .fw-fullscreen {
+          font-size: 18px;
+          line-height: 30px;
+          text-align: center;
         }
       `}</style>
       <div ref={containerRef} className="w-full h-full" />

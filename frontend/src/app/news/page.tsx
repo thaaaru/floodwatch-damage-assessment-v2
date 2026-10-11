@@ -13,6 +13,8 @@ const CHIP_LABEL: Record<string, string> = { 'IMD RSMC': 'IMD' };
 // Official warning sources whose warnings/advisories get a coloured left edge.
 const OFFICIAL = new Set(['SL Met', 'IMD RSMC', 'GDACS']);
 
+const RECENT_DAYS = 7;
+
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const colomboDay = (d: Date) =>
   d.toLocaleDateString('en-CA', { timeZone: 'Asia/Colombo' }); // YYYY-MM-DD, Colombo
@@ -50,6 +52,7 @@ export default function NewsPage() {
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<string>('all');
+  const [showOlder, setShowOlder] = useState(false);
   const stickyTop = useStickyOffset();
 
   useEffect(() => {
@@ -71,7 +74,11 @@ export default function NewsPage() {
     return () => clearInterval(id);
   }, []);
 
-  const filtered = useMemo(() => (source === 'all' ? news : news.filter((i) => i.source === source)), [news, source]);
+  const bySource = useMemo(() => (source === 'all' ? news : news.filter((i) => i.source === source)), [news, source]);
+  // Last 7 days by default; undated items stay visible so no warning is hidden.
+  const cutoff = Date.now() - RECENT_DAYS * 86_400_000;
+  const olderCount = bySource.filter((i) => i.publishedAt && Date.parse(i.publishedAt) < cutoff).length;
+  const filtered = showOlder ? bySource : bySource.filter((i) => !i.publishedAt || Date.parse(i.publishedAt) >= cutoff);
 
   // Items arrive newest first, undated last; group by Colombo day.
   const groups = useMemo(() => {
@@ -124,7 +131,7 @@ export default function NewsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <p className="mt-10 text-slate-300">
-            {failed ? 'News could not be loaded right now.' : 'No items from the last 30 days.'} Please check back later.
+            {failed ? 'News could not be loaded right now.' : `No items from the last ${showOlder ? 30 : RECENT_DAYS} days.`} Please check back later.
           </p>
         ) : (
           <div className={`mt-4 ${ui.card} ${ui.cardPad} pt-0 sm:pt-0`}>
@@ -143,6 +150,12 @@ export default function NewsPage() {
             </section>
           ))}
           </div>
+        )}
+
+        {!loading && olderCount > 0 && (
+          <button type="button" onClick={() => setShowOlder((v) => !v)} className="chip mt-4 w-full">
+            {showOlder ? `Show last ${RECENT_DAYS} days only` : `Show older (${olderCount})`}
+          </button>
         )}
 
         {/* Source status, collapsed */}
