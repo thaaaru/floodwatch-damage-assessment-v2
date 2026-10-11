@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     tomtom_api_key: str = ""
     here_api_key: str = ""
     openweathermap_api_key: str = ""
+    # Production: key comes from a Docker secret file; missing/empty file -> no key
+    # (early warning stays off, 503). Unset -> OPENWEATHERMAP_API_KEY env (local dev).
+    openweathermap_api_key_file: str = ""
     # One Call refresh interval. 25 points x 1440/120 = 300 calls/day. ge=40 keeps the
     # nominal rate <= 25 x 1440/40 = 900 (the hard daily guard) whatever is configured.
     owm_refresh_minutes: int = Field(120, ge=40)
@@ -107,6 +110,10 @@ class Settings(BaseSettings):
                 f"postgresql://{quote(self.db_user, safe='')}:{quote(password, safe='')}"
                 f"@{self.db_host}:{self.db_port}/{self.db_name}"
             )
+        if self.openweathermap_api_key_file:
+            key_file = Path(self.openweathermap_api_key_file)
+            if key_file.is_file():
+                self.openweathermap_api_key = key_file.read_text().strip()
         return self
 
     def get_region_data(self) -> Dict[str, Any]:

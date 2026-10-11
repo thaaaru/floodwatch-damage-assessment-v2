@@ -37,3 +37,21 @@ def test_sos_disabled_routes_absent():
                  "/api/intel/actions", "/api/intel/raw-sos", "/api/intel/district/Colombo"]:
         assert client.get(path).status_code == 404, path
     assert client.post("/api/intel/refresh").status_code == 404
+
+
+def test_owm_key_from_secret_file(tmp_path):
+    key = tmp_path / "owm_api_key"
+    key.write_text("abc123\n")
+    assert Settings(openweathermap_api_key_file=str(key), openweathermap_api_key="").openweathermap_api_key == "abc123"
+
+
+def test_owm_key_missing_or_empty_file_means_off(tmp_path):
+    missing = Settings(openweathermap_api_key_file=str(tmp_path / "nope"), openweathermap_api_key="")
+    assert missing.openweathermap_api_key == ""
+    empty = tmp_path / "owm_api_key"
+    empty.write_text("")
+    assert Settings(openweathermap_api_key_file=str(empty), openweathermap_api_key="").openweathermap_api_key == ""
+
+
+def test_owm_key_env_fallback():
+    assert Settings(openweathermap_api_key_file="", openweathermap_api_key="envkey").openweathermap_api_key == "envkey"

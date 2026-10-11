@@ -29,3 +29,11 @@ for f in "$SRC"/*.age; do
 	chmod 0440 "$tmp"
 	mv -f "$tmp" "$DST/$name"
 done
+
+# Optional secrets: compose needs the source file to exist, so create an empty
+# one when there is no .age for it (the app treats empty as "not configured").
+for name in owm_api_key; do
+	if [ ! -e "$DST/$name" ]; then
+		install -m 0440 -o root -g "$READER_GID" /dev/null "$DST/$name"
+	fi
+done
