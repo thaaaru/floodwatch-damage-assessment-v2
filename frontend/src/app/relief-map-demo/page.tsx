@@ -148,9 +148,9 @@ export default function ReliefMapDemo() {
   // Get status badge
   const getStatusBadge = (status: string) => {
     const styles = {
-      open: 'bg-red-100 text-red-300 border-red-700/50',
-      in_progress: 'bg-yellow-100 text-yellow-300 border-yellow-700/50',
-      fulfilled: 'bg-green-100 text-green-300 border-green-700/50',
+      open: 'bg-red-500/20 text-red-300 border-red-700/50',
+      in_progress: 'bg-yellow-500/20 text-yellow-300 border-yellow-700/50',
+      fulfilled: 'bg-green-500/20 text-green-300 border-green-700/50',
     };
     return styles[status as keyof typeof styles] || styles.open;
   };
@@ -335,9 +335,9 @@ export default function ReliefMapDemo() {
                   {selectedRequest.status.replace('_', ' ').toUpperCase()}
                 </span>
                 <span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                  selectedRequest.urgency === 'critical' ? 'bg-red-100 text-red-300' :
-                  selectedRequest.urgency === 'high' ? 'bg-orange-100 text-orange-300' :
-                  'bg-yellow-100 text-yellow-300'
+                  selectedRequest.urgency === 'critical' ? 'bg-red-500/20 text-red-300' :
+                  selectedRequest.urgency === 'high' ? 'bg-orange-500/20 text-orange-300' :
+                  'bg-yellow-500/20 text-yellow-300'
                 }`}>
                   {selectedRequest.urgency.toUpperCase()}
                 </span>

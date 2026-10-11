@@ -19,7 +19,7 @@ export default function Error({ error, reset }: ErrorProps) {
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 p-8 max-w-md w-full text-center">
         {/* Error Icon */}
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
           <svg
             className="w-8 h-8 text-red-600"
             fill="none"

@@ -47,7 +47,7 @@ export function MapControls({
             className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
               comparisonMode === 'split'
                 ? 'bg-blue-600 text-white'
-                : 'bg-slate-900 text-slate-200 hover:bg-slate-200'
+                : 'bg-slate-900 text-slate-200 hover:bg-slate-700'
             }`}
           >
             <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -60,7 +60,7 @@ export function MapControls({
             className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
               comparisonMode === 'before'
                 ? 'bg-blue-600 text-white'
-                : 'bg-slate-900 text-slate-200 hover:bg-slate-200'
+                : 'bg-slate-900 text-slate-200 hover:bg-slate-700'
             }`}
           >
             <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +73,7 @@ export function MapControls({
             className={`px-3 py-2 rounded text-sm font-medium transition-colors ${
               comparisonMode === 'after'
                 ? 'bg-blue-600 text-white'
-                : 'bg-slate-900 text-slate-200 hover:bg-slate-200'
+                : 'bg-slate-900 text-slate-200 hover:bg-slate-700'
             }`}
           >
             <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,7 +88,7 @@ export function MapControls({
       <div className="bg-slate-800 rounded-lg shadow-lg p-2">
         <button
           onClick={onResetView}
-          className="w-full px-3 py-2 rounded text-sm font-medium bg-slate-900 text-slate-200 hover:bg-slate-200 transition-colors"
+          className="w-full px-3 py-2 rounded text-sm font-medium bg-slate-900 text-slate-200 hover:bg-slate-700 transition-colors"
           title="Reset to initial view"
         >
           <svg className="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -227,9 +227,9 @@ export default function DamageGalleryPage() {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'high': return 'bg-red-100 text-red-300 border-red-700/50';
-      case 'medium': return 'bg-orange-100 text-orange-300 border-orange-700/50';
-      case 'low': return 'bg-yellow-100 text-yellow-300 border-yellow-700/50';
+      case 'high': return 'bg-red-500/20 text-red-300 border-red-700/50';
+      case 'medium': return 'bg-orange-500/20 text-orange-300 border-orange-700/50';
+      case 'low': return 'bg-yellow-500/20 text-yellow-300 border-yellow-700/50';
       default: return 'bg-slate-900 text-slate-200 border-slate-700';
     }
   };
@@ -270,7 +270,7 @@ export default function DamageGalleryPage() {
                 </svg>
                 Live Viewer
               </button>
-              <a href="/damage-map" className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-blue-200 text-blue-300 text-sm font-medium transition-colors">
+              <a href="/damage-map" className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-blue-500/30 text-blue-300 text-sm font-medium transition-colors">
                 Detection Map
               </a>
               <a href="/" className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
@@ -536,7 +536,7 @@ export default function DamageGalleryPage() {
                   href={`https://apps.sentinel-hub.com/eo-browser/?zoom=12&lat=${selectedEvent.coordinates.lat}&lng=${selectedEvent.coordinates.lon}&themeId=DEFAULT-THEME&datasetId=S2L2A&layerId=1_TRUE_COLOR`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col items-center gap-2 p-3 rounded-lg bg-emerald-600/20 hover:bg-emerald-100 border border-emerald-700/50 transition-colors"
+                  className="flex flex-col items-center gap-2 p-3 rounded-lg bg-emerald-600/20 hover:bg-emerald-500/30 border border-emerald-700/50 transition-colors"
                 >
                   <span className="text-2xl">🛰️</span>
                   <span className="text-xs font-medium text-emerald-300">Sentinel-2</span>
@@ -545,7 +545,7 @@ export default function DamageGalleryPage() {
                   href={`https://apps.sentinel-hub.com/eo-browser/?zoom=12&lat=${selectedEvent.coordinates.lat}&lng=${selectedEvent.coordinates.lon}&themeId=DEFAULT-THEME&datasetId=S1_AWS_IW_VVVH&layerId=VV_DECIBEL_GAMMA0`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex flex-col items-center gap-2 p-3 rounded-lg bg-orange-600/20 hover:bg-orange-100 border border-orange-700/50 transition-colors"
+                  className="flex flex-col items-center gap-2 p-3 rounded-lg bg-orange-600/20 hover:bg-orange-500/30 border border-orange-700/50 transition-colors"
                 >
                   <span className="text-2xl">📡</span>
                   <span className="text-xs font-medium text-orange-300">Sentinel-1 SAR</span>

@@ -224,7 +224,7 @@ export default function DamageMap({
           Real Sentinel-2 satellite imagery (10m resolution) - Compare 2020 vs 2021
         </p>
         <div className="mt-2 flex items-center gap-2 text-xs">
-          <span className="bg-green-100 text-green-800 px-2 py-1 rounded">✓ Live Sentinel-2</span>
+          <span className="bg-green-500/20 text-green-300 px-2 py-1 rounded">✓ Live Sentinel-2</span>
           <span className="text-slate-500">Cloudless composite by EOX/ESA</span>
         </div>
       </div>

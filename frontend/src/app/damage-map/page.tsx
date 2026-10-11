@@ -534,7 +534,7 @@ export default function DamageMapPage() {
               {/* Processing Parameters */}
               <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
                 <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center text-xs">⚙️</span>
+                  <span className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center text-xs">⚙️</span>
                   Processing Parameters
                 </h3>
                 <div className="space-y-3">
@@ -604,7 +604,7 @@ export default function DamageMapPage() {
 
               {/* Bounding Box Info */}
               <div className="bg-blue-600/20 rounded-xl p-3 border border-blue-700/50">
-                <div className="text-xs font-semibold text-blue-800 mb-1">Analysis Region</div>
+                <div className="text-xs font-semibold text-blue-300 mb-1">Analysis Region</div>
                 <div className="text-xs text-blue-300 font-mono">
                   Sri Lanka: {BBOX[0]}°E to {BBOX[2]}°E, {BBOX[1]}°N to {BBOX[3]}°N
                 </div>
@@ -748,7 +748,7 @@ export default function DamageMapPage() {
             <div className="space-y-4">
               <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
                 <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center text-xs">⚡</span>
+                  <span className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center text-xs">⚡</span>
                   Processing Pipeline
                 </h3>
                 <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
@@ -798,9 +798,9 @@ export default function DamageMapPage() {
                         <div key={district} className="flex items-center justify-between p-2 rounded-lg bg-slate-900">
                           <span className="text-sm text-slate-200">{district}</span>
                           <span className={`text-xs font-medium px-2 py-0.5 rounded ${
-                            districtData?.risk === 'high' ? 'bg-red-100 text-red-300' :
-                            districtData?.risk === 'medium' ? 'bg-orange-100 text-orange-300' :
-                            'bg-yellow-100 text-yellow-300'
+                            districtData?.risk === 'high' ? 'bg-red-500/20 text-red-300' :
+                            districtData?.risk === 'medium' ? 'bg-orange-500/20 text-orange-300' :
+                            'bg-yellow-500/20 text-yellow-300'
                           }`}>
                             {districtData?.risk?.toUpperCase()}
                           </span>
@@ -915,9 +915,9 @@ export default function DamageMapPage() {
                         <td className="py-3 px-4 font-medium text-white">{d.name}</td>
                         <td className="py-3 px-4">
                           <span className={`text-xs font-medium px-2 py-1 rounded ${
-                            d.risk === 'high' ? 'bg-red-100 text-red-300' :
-                            d.risk === 'medium' ? 'bg-orange-100 text-orange-300' :
-                            'bg-yellow-100 text-yellow-300'
+                            d.risk === 'high' ? 'bg-red-500/20 text-red-300' :
+                            d.risk === 'medium' ? 'bg-orange-500/20 text-orange-300' :
+                            'bg-yellow-500/20 text-yellow-300'
                           }`}>
                             {d.risk.toUpperCase()}
                           </span>
@@ -945,7 +945,7 @@ export default function DamageMapPage() {
             {/* SAR Processing */}
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                   <span className="text-xl">📡</span>
                 </div>
                 <div>
@@ -974,7 +974,7 @@ export default function DamageMapPage() {
             {/* Optical Processing */}
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-cyan-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                   <span className="text-xl">🛰️</span>
                 </div>
                 <div>
@@ -1002,7 +1002,7 @@ export default function DamageMapPage() {
             {/* Data Fusion */}
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
                   <span className="text-xl">🔗</span>
                 </div>
                 <div>
@@ -1018,7 +1018,7 @@ export default function DamageMapPage() {
                   <li><strong>Permanent water:</strong> Baseline comparison to distinguish rivers/lakes from flood</li>
                 </ul>
                 <div className="p-3 bg-blue-600/20 rounded-lg border border-blue-700/50">
-                  <div className="text-xs font-semibold text-blue-800 mb-1">Fusion Formula</div>
+                  <div className="text-xs font-semibold text-blue-300 mb-1">Fusion Formula</div>
                   <code className="text-xs font-mono text-blue-300">
                     merged = SAR_mask | (optical_mask & ~cloud_mask)
                   </code>
@@ -1029,7 +1029,7 @@ export default function DamageMapPage() {
             {/* Output Generation */}
             <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                   <span className="text-xl">📊</span>
                 </div>
                 <div>

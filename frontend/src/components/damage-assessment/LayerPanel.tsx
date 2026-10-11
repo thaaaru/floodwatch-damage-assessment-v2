@@ -79,7 +79,7 @@ export function LayerPanel({
                     step="0.1"
                     value={beforeOpacity}
                     onChange={(e) => onBeforeOpacityChange(parseFloat(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-slate-500 mt-0.5">
                     <span>0%</span>
@@ -100,7 +100,7 @@ export function LayerPanel({
                     step="0.1"
                     value={afterOpacity}
                     onChange={(e) => onAfterOpacityChange(parseFloat(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                    className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                   />
                   <div className="flex justify-between text-xs text-slate-500 mt-0.5">
                     <span>0%</span>
@@ -113,8 +113,8 @@ export function LayerPanel({
 
             <div className="border-t pt-4">
               <h3 className="text-sm font-semibold text-white mb-3">Overlay Layers</h3>
-              <div className="bg-blue-50 border border-blue-200 rounded p-2 mb-3">
-                <p className="text-xs text-blue-800">
+              <div className="bg-blue-500/10 border border-blue-700/50 rounded p-2 mb-3">
+                <p className="text-xs text-blue-300">
                   <strong>Phase 2:</strong> Damage and flood overlays require satellite imagery processing and AI models (not yet implemented).
                 </p>
               </div>
@@ -142,7 +142,7 @@ export function LayerPanel({
                       step="0.1"
                       value={damageOpacity}
                       onChange={(e) => onDamageOpacityChange(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                     />
                     <div className="text-xs text-slate-500 text-right mt-0.5">
                       {Math.round(damageOpacity * 100)}%
@@ -174,7 +174,7 @@ export function LayerPanel({
                       step="0.1"
                       value={floodOpacity}
                       onChange={(e) => onFloodOpacityChange(parseFloat(e.target.value))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer"
                     />
                     <div className="text-xs text-slate-500 text-right mt-0.5">
                       {Math.round(floodOpacity * 100)}%

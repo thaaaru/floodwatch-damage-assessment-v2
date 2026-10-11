@@ -1096,7 +1096,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
         {/* Configuration Panel */}
         <div className="mb-6 bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
           <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
-            <span className="w-6 h-6 rounded-lg bg-orange-100 flex items-center justify-center text-xs">⚙️</span>
+            <span className="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center text-xs">⚙️</span>
             Processing Configuration
           </h3>
 
@@ -1156,7 +1156,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
           {/* Date Ranges */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             <div className="bg-emerald-600/20 rounded-lg p-3 border border-emerald-700/50">
-              <div className="text-xs font-semibold text-emerald-800 mb-2">BEFORE Period</div>
+              <div className="text-xs font-semibold text-emerald-300 mb-2">BEFORE Period</div>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="date"
@@ -1173,7 +1173,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
               </div>
             </div>
             <div className="bg-red-600/20 rounded-lg p-3 border border-red-700/50">
-              <div className="text-xs font-semibold text-red-800 mb-2">AFTER Period</div>
+              <div className="text-xs font-semibold text-red-300 mb-2">AFTER Period</div>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="date"
@@ -1210,7 +1210,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                   { step: 8, name: 'Export', desc: 'GeoTIFF + KMZ for Google Earth', icon: '💾' },
                 ].map((item) => (
                   <div key={item.step} className="flex items-center gap-3 p-2 rounded-lg bg-slate-900">
-                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center text-sm font-bold text-orange-300">
+                    <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center text-sm font-bold text-orange-300">
                       {item.step}
                     </div>
                     <div className="flex-1">
@@ -1229,14 +1229,14 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                 <h3 className="text-lg font-semibold text-white mb-4">Output Files</h3>
                 <div className="space-y-3">
                   {[
-                    { name: 'sri_lanka_before.tif', desc: 'RGB GeoTIFF composite (before event)', color: 'emerald' },
-                    { name: 'sri_lanka_after.tif', desc: 'RGB GeoTIFF composite (after event)', color: 'red' },
-                    { name: 'sri_lanka_change.tif', desc: 'Change detection (AFTER - BEFORE)', color: 'purple' },
-                    { name: 'sri_lanka_before.kmz', desc: 'Google Earth overlay (70% opacity)', color: 'blue' },
-                    { name: 'sri_lanka_after.kmz', desc: 'Google Earth overlay (70% opacity)', color: 'blue' },
-                    { name: 'sri_lanka_change.kmz', desc: 'Change detection overlay', color: 'blue' },
+                    { name: 'sri_lanka_before.tif', desc: 'RGB GeoTIFF composite (before event)' },
+                    { name: 'sri_lanka_after.tif', desc: 'RGB GeoTIFF composite (after event)' },
+                    { name: 'sri_lanka_change.tif', desc: 'Change detection (AFTER - BEFORE)' },
+                    { name: 'sri_lanka_before.kmz', desc: 'Google Earth overlay (70% opacity)' },
+                    { name: 'sri_lanka_after.kmz', desc: 'Google Earth overlay (70% opacity)' },
+                    { name: 'sri_lanka_change.kmz', desc: 'Change detection overlay' },
                   ].map((file) => (
-                    <div key={file.name} className={`flex items-center gap-3 p-3 rounded-lg bg-${file.color}-50 border border-${file.color}-200`}>
+                    <div key={file.name} className="flex items-center gap-3 p-3 rounded-lg bg-slate-900/60 border border-slate-700">
                       <span className="text-xl">📄</span>
                       <div>
                         <div className="text-sm font-mono font-medium text-white">{file.name}</div>
@@ -1273,7 +1273,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 p-3 bg-amber-600/20 rounded-lg border border-amber-700/50 text-xs text-amber-800">
+                <div className="mt-4 p-3 bg-amber-600/20 rounded-lg border border-amber-700/50 text-xs text-amber-300">
                   <strong>Interpretation:</strong> Water appears dark blue (low backscatter).
                   Urban areas appear bright. Vegetation shows green tones.
                   Flooded areas show distinct color change from before to after.
@@ -1295,8 +1295,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                   onClick={() => copyToClipboard(generateSnapCode(), 'snap')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     copiedCode === 'snap'
-                      ? 'bg-emerald-100 text-emerald-300'
-                      : 'bg-orange-100 hover:bg-orange-200 text-orange-300'
+                      ? 'bg-emerald-500/20 text-emerald-300'
+                      : 'bg-orange-500/20 hover:bg-orange-500/30 text-orange-300'
                   }`}
                 >
                   {copiedCode === 'snap' ? '✓ Copied!' : 'Copy Code'}
@@ -1309,11 +1309,11 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* SNAP Requirements */}
             <div className="bg-amber-600/20 rounded-xl p-4 border border-amber-700/50">
-              <h4 className="font-semibold text-amber-800 mb-2">Requirements for SNAP Workflow</h4>
+              <h4 className="font-semibold text-amber-300 mb-2">Requirements for SNAP Workflow</h4>
               <div className="text-sm text-amber-300 space-y-1">
                 <p>1. Install ESA SNAP Desktop: <a href="https://step.esa.int/main/download/snap-download/" target="_blank" className="underline">step.esa.int</a></p>
-                <p>2. Configure snappy: <code className="bg-amber-100 px-1 rounded">cd &lt;snap&gt;/bin && ./snappy-conf python3</code></p>
-                <p>3. Install dependencies: <code className="bg-amber-100 px-1 rounded">pip install gdal numpy matplotlib simplekml</code></p>
+                <p>2. Configure snappy: <code className="bg-amber-500/20 px-1 rounded">cd &lt;snap&gt;/bin && ./snappy-conf python3</code></p>
+                <p>3. Install dependencies: <code className="bg-amber-500/20 px-1 rounded">pip install gdal numpy matplotlib simplekml</code></p>
                 <p>4. Download Sentinel-1 data from Copernicus Open Access Hub</p>
               </div>
             </div>
@@ -1333,7 +1333,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                     href="https://code.earthengine.google.com/"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-blue-200 text-blue-300 text-sm font-medium transition-colors"
+                    className="px-4 py-2 rounded-lg bg-slate-900 hover:bg-blue-500/30 text-blue-300 text-sm font-medium transition-colors"
                   >
                     Open GEE Editor
                   </a>
@@ -1341,8 +1341,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                     onClick={() => copyToClipboard(generateGEECode(), 'gee')}
                     className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                       copiedCode === 'gee'
-                        ? 'bg-emerald-100 text-emerald-300'
-                        : 'bg-orange-100 hover:bg-orange-200 text-orange-300'
+                        ? 'bg-emerald-500/20 text-emerald-300'
+                        : 'bg-orange-500/20 hover:bg-orange-500/30 text-orange-300'
                     }`}
                   >
                     {copiedCode === 'gee' ? '✓ Copied!' : 'Copy Code'}
@@ -1356,7 +1356,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* GEE Instructions */}
             <div className="bg-emerald-600/20 rounded-xl p-4 border border-emerald-700/50">
-              <h4 className="font-semibold text-emerald-800 mb-2">How to Use Google Earth Engine</h4>
+              <h4 className="font-semibold text-emerald-300 mb-2">How to Use Google Earth Engine</h4>
               <ol className="text-sm text-emerald-300 space-y-1 list-decimal list-inside">
                 <li>Sign up for GEE at <a href="https://earthengine.google.com/" target="_blank" className="underline">earthengine.google.com</a></li>
                 <li>Open Code Editor: <a href="https://code.earthengine.google.com/" target="_blank" className="underline">code.earthengine.google.com</a></li>
@@ -1382,8 +1382,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                   onClick={() => copyToClipboard(generateKMZCode(), 'kmz')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     copiedCode === 'kmz'
-                      ? 'bg-emerald-100 text-emerald-300'
-                      : 'bg-orange-100 hover:bg-orange-200 text-orange-300'
+                      ? 'bg-emerald-500/20 text-emerald-300'
+                      : 'bg-orange-500/20 hover:bg-orange-500/30 text-orange-300'
                   }`}
                 >
                   {copiedCode === 'kmz' ? '✓ Copied!' : 'Copy Code'}
@@ -1484,15 +1484,15 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                 <h3 className="text-lg font-semibold text-white mb-4">Troubleshooting</h3>
                 <div className="space-y-3 text-sm">
                   <div className="p-3 bg-red-600/20 rounded-lg border border-red-700/50">
-                    <div className="font-medium text-red-800">No images found in GEE</div>
+                    <div className="font-medium text-red-300">No images found in GEE</div>
                     <div className="text-red-600">Try expanding date range or check orbit pass filter</div>
                   </div>
                   <div className="p-3 bg-amber-600/20 rounded-lg border border-amber-700/50">
-                    <div className="font-medium text-amber-800">KMZ misaligned in Google Earth</div>
+                    <div className="font-medium text-amber-300">KMZ misaligned in Google Earth</div>
                     <div className="text-amber-600">Check CRS is EPSG:4326 and bounds are correct</div>
                   </div>
                   <div className="p-3 bg-blue-600/20 rounded-lg border border-blue-700/50">
-                    <div className="font-medium text-blue-800">SNAP snappy import error</div>
+                    <div className="font-medium text-blue-300">SNAP snappy import error</div>
                     <div className="text-blue-600">Run snappy-conf again with correct Python path</div>
                   </div>
                 </div>
