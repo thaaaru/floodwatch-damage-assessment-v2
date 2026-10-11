@@ -1,414 +1,125 @@
 // SPDX-License-Identifier: Apache-2.0
 
-'use client';
-
 import PageHeader from '@/components/ui/PageHeader';
+import Section from '@/components/ui/Section';
 import { ui } from '@/lib/ui';
+
+// Checked against the code: backend/app/jobs/scheduler.py intervals, backend/app/services/*
+// fetchers, and frontend/src/lib/{basemap,gauges,forecast}.ts. Keep it in step with them.
+type Row = { source: React.ReactNode; feeds: string; how: string; credit: React.ReactNode };
+
+const ext = (href: string, text: string) => (
+  <a href={href} target="_blank" rel="noopener noreferrer" className={ui.link}>{text}</a>
+);
+
+const ROWS: Row[] = [
+  {
+    source: 'Irrigation Department of Sri Lanka: river gauges and hydrostations',
+    feeds: 'Home map gauges, basin colours, "River status by basin"',
+    how: 'Every 15 minutes',
+    credit: 'Water levels: Irrigation Department of Sri Lanka',
+  },
+  {
+    source: 'Irrigation Department of Sri Lanka: river basin outlines',
+    feeds: 'Basin shapes on the home map',
+    how: 'Static file, built 11 Oct 2026',
+    credit: 'River basins: Irrigation Department of Sri Lanka',
+  },
+  {
+    source: <>{ext('https://meteo.gov.lk', 'Sri Lanka Department of Meteorology')}: 3-hourly station rainfall</>,
+    feeds: 'Measured rainfall at 24 stations on the home map',
+    how: 'At most every 15 minutes, when someone opens the map (the bulletin is issued every 3 hours)',
+    credit: 'Sri Lanka Department of Meteorology',
+  },
+  {
+    source: <>{ext('https://open-meteo.com', 'Open-Meteo')}: weather and forecast</>,
+    feeds: 'Optional "Rain forecast" map layer (a model, not measured)',
+    how: 'Every 30 minutes',
+    credit: <>CC BY 4.0. {ext('https://open-meteo.com', 'Weather data by Open-Meteo.com')}</>,
+  },
+  {
+    source: <>Humanitarian OpenStreetMap Team via {ext('https://data.humdata.org', 'HDX')}: waterways</>,
+    feeds: 'River lines on the home map',
+    how: 'Static file, built 11 Oct 2026',
+    credit: 'ODbL. © OpenStreetMap contributors',
+  },
+  {
+    source: <>{ext('https://protomaps.com', 'Protomaps')} / OpenStreetMap basemap</>,
+    feeds: 'Background of every map',
+    how: 'Self-hosted, rebuilt monthly. Your browser makes no third-party map requests.',
+    credit: 'ODbL. © OpenStreetMap contributors',
+  },
+  {
+    source: 'News: SL Met, NewsFirst, IMD RSMC New Delhi, GDACS',
+    feeds: 'News page',
+    how: 'Every 15 minutes. NewsFirst items are kept only if they are about Sri Lanka.',
+    credit: 'Each item links to its publisher',
+  },
+  {
+    source: 'ReliefWeb',
+    feeds: 'News page',
+    how: 'Off: waiting for API approval',
+    credit: 'UN OCHA ReliefWeb',
+  },
+  {
+    source: 'Esri World Imagery (optional)',
+    feeds: '"Satellite" map option',
+    how: 'Only when you switch it on',
+    credit: 'Imagery: Esri, Maxar, Earthstar Geographics',
+  },
+  {
+    source: 'OpenStreetMap Overpass API',
+    feeds: 'Emergency facility locations for an older page that is not in the menu',
+    how: 'Daily',
+    credit: 'ODbL. © OpenStreetMap contributors',
+  },
+];
 
 export default function DataSourcesPage() {
   return (
     <div className={ui.page}>
-      <PageHeader
-        title="Data Sources & Refresh Frequencies"
-        subtitle="Comprehensive overview of all data sources powering FloodWatch LK"
-      />
+      <PageHeader title="Data sources" subtitle="Where FloodWatch's data comes from and how often it is checked" />
 
-      {/* Main Content */}
-      <div className={`max-w-7xl ${ui.container} space-y-8`}>
-
-        {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className={`${ui.card} ${ui.cardPad}`}>
-            <div className="text-3xl font-bold text-blue-400">46+</div>
-            <div className="text-sm text-slate-400 mt-1">Total Data Sources</div>
-          </div>
-          <div className={`${ui.card} ${ui.cardPad}`}>
-            <div className="text-3xl font-bold text-green-400">40+</div>
-            <div className="text-sm text-slate-400 mt-1">API Endpoints</div>
-          </div>
-          <div className={`${ui.card} ${ui.cardPad}`}>
-            <div className="text-3xl font-bold text-yellow-400">85-90%</div>
-            <div className="text-sm text-slate-400 mt-1">Cache Hit Rate</div>
-          </div>
-          <div className={`${ui.card} ${ui.cardPad}`}>
-            <div className="text-3xl font-bold text-purple-400">5 min</div>
-            <div className="text-sm text-slate-400 mt-1">Fastest Refresh</div>
-          </div>
-        </div>
-
-        {/* Weather & Climate Data */}
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">🌤️</span>
-            Weather & Climate Data
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+      <main className={`max-w-7xl ${ui.container} space-y-6`}>
+        <Section title="Sources">
+          <div className="overflow-x-auto -mx-3 sm:mx-0">
+            <table className="w-full text-xs sm:text-sm min-w-[720px]">
               <thead>
-                <tr className="text-left border-b border-slate-700">
-                  <th className="py-2 px-3">Source</th>
-                  <th className="py-2 px-3">Cache/Refresh</th>
-                  <th className="py-2 px-3">Description</th>
+                <tr className={ui.th}>
+                  <th scope="col" className="text-left py-2 px-2">Source</th>
+                  <th scope="col" className="text-left py-2 px-2">What it feeds</th>
+                  <th scope="col" className="text-left py-2 px-2">How often FloodWatch checks</th>
+                  <th scope="col" className="text-left py-2 px-2">Licence / credit</th>
                 </tr>
               </thead>
-              <tbody className="text-slate-300">
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Backend API - All Weather</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-blue-600/20 text-blue-400 rounded text-xs">30 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Weather data for all districts</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Backend API - Forecasts</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-blue-600/20 text-blue-400 rounded text-xs">30 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">7-day forecast for all districts</td>
-                </tr>
+              <tbody>
+                {ROWS.map((r, i) => (
+                  <tr key={i} className={`${ui.tr} align-top`}>
+                    <th scope="row" className="text-left py-2 px-2 font-medium text-white">{r.source}</th>
+                    <td className="py-2 px-2 text-slate-300">{r.feeds}</td>
+                    <td className="py-2 px-2 text-slate-300">{r.how}</td>
+                    <td className="py-2 px-2 text-slate-300">{r.credit}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
+        </Section>
 
-          <div className="mt-4 p-3 bg-slate-700/30 rounded-lg">
-            <div className="text-sm font-semibold mb-2">Frontend Refresh Intervals:</div>
-            <ul className="text-sm text-slate-300 space-y-1">
-              <li>• <strong>Dashboard:</strong> No auto-refresh (backend cache: 60 min)</li>
-              <li>• <strong>Flood Info Page:</strong> 30 minutes</li>
-              <li>• <strong>Rivers Page:</strong> 5 minutes</li>
-            </ul>
+        <Section title="What FloodWatch is not">
+          <div className={`${ui.body} space-y-2`}>
+            <p>
+              FloodWatch is a free, unofficial public service. It is not a warning service and does not replace
+              official advice. Data here can be late, missing or wrong.
+            </p>
+            <p>
+              For warnings and evacuation orders, follow the{' '}
+              {ext('https://www.dmc.gov.lk', 'Disaster Management Centre')} (call 117) and the{' '}
+              {ext('https://meteo.gov.lk', 'Department of Meteorology')}.
+            </p>
           </div>
-        </section>
-
-        {/* River & Flood Monitoring */}
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">🌊</span>
-            River & Flood Monitoring
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-slate-700">
-                  <th className="py-2 px-3">Source</th>
-                  <th className="py-2 px-3">Cache/Refresh</th>
-                  <th className="py-2 px-3">Description</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">SL Irrigation Department</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">15 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">River gauges (~40 stations, 7-day history) and river basin outlines</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">
-                    <a href="https://data.humdata.org/dataset/hotosm_lka_waterways" target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      Rivers: HOT/OSM via HDX (ODbL)
-                    </a>
-                  </td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-slate-600/20 text-slate-400 rounded text-xs">Static file</span></td>
-                  <td className="py-3 px-3 text-xs">River network lines (Waterways of Sri Lanka, OpenStreetMap contributors)</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">RiverNet.lk</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-slate-600/20 text-slate-400 rounded text-xs">Manual link</span></td>
-                  <td className="py-3 px-3 text-xs">Live river levels portal - External link</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">ArcGIS Dashboard</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-slate-600/20 text-slate-400 rounded text-xs">Manual link</span></td>
-                  <td className="py-3 px-3 text-xs">Interactive river monitoring dashboard - External link</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Backend Irrigation API</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">5 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Processed river data with flood thresholds and alerts</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Backend Flood Threat API</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">5 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">National flood threat assessment and district analysis</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* News Sources */}
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">📰</span>
-            News Sources
-          </h2>
-
-          <div className="mb-4 text-sm text-slate-400">
-            All news sources cached for <span className="text-blue-400 font-semibold">30 minutes</span> with rate limiting (max 1 request per 30 min per source)
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-slate-700/30 rounded-lg p-4">
-              <h3 className="font-semibold text-sm mb-3 text-slate-200">Local Sources</h3>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🇱🇰</span>
-                  <span>SL Met Department</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🇱🇰</span>
-                  <span>NewsFirst.lk</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🇱🇰</span>
-                  <span>Newswire.lk</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-slate-700/30 rounded-lg p-4">
-              <h3 className="font-semibold text-sm mb-3 text-slate-200">International Weather</h3>
-              <ul className="space-y-2 text-sm text-slate-300">
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🇮🇳</span>
-                  <span>India Meteorological Dept (IMD)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🌍</span>
-                  <span>BBC Weather</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🌍</span>
-                  <span>GDACS (Global Disaster Alert)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🌍</span>
-                  <span>ReliefWeb</span>
-                </li>
-              </ul>
-            </div>
-
-            <div className="bg-slate-700/30 rounded-lg p-4 md:col-span-2">
-              <h3 className="font-semibold text-sm mb-3 text-slate-200">Disaster & Emergency News</h3>
-              <ul className="grid grid-cols-2 gap-2 text-sm text-slate-300">
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🏥</span>
-                  <span>WHO (World Health Organization)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🇺🇳</span>
-                  <span>UN News</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🌍</span>
-                  <span>Al Jazeera</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-lg">🇺🇸</span>
-                  <span>U.S. Embassy Sri Lanka</span>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-4 text-center">
-            <div className="text-2xl font-bold text-blue-400">11</div>
-            <div className="text-sm text-slate-400">Total News Sources</div>
-          </div>
-        </section>
-
-        {/* Wind Data */}
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">🌬️</span>
-            Wind Data
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-slate-700">
-                  <th className="py-2 px-3">Source</th>
-                  <th className="py-2 px-3">Update Frequency</th>
-                  <th className="py-2 px-3">Description</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">ICON (DWD Germany)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs">Every 6 hours</span></td>
-                  <td className="py-3 px-3 text-xs">Weather model - Forecast up to 78 hours</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">GFS (NOAA USA)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-purple-600/20 text-purple-400 rounded text-xs">Every 6 hours</span></td>
-                  <td className="py-3 px-3 text-xs">Weather model - Forecast up to 384 hours (16 days)</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">ERA5 (ECMWF)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs">Daily</span></td>
-                  <td className="py-3 px-3 text-xs">Reanalysis model - Historical data (~5 day lag)</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">OpenWeather</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">Real-time</span></td>
-                  <td className="py-3 px-3 text-xs">Current wind conditions only</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Intelligence & Alerts */}
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">🚨</span>
-            Intelligence & Alerts
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left border-b border-slate-700">
-                  <th className="py-2 px-3">Source</th>
-                  <th className="py-2 px-3">Cache Duration</th>
-                  <th className="py-2 px-3">Description</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-300">
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Emergency Facilities (OpenStreetMap)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-orange-600/20 text-orange-400 rounded text-xs">24 hours</span></td>
-                  <td className="py-3 px-3 text-xs">Hospitals, police, fire stations, shelters - Daily refresh ✅</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Weather Alerts (WeatherAPI.com)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 rounded text-xs">15 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Official weather warnings and alerts - Auto-refresh ✅</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Marine Conditions (Open-Meteo)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-blue-600/20 text-blue-400 rounded text-xs">30 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Wave heights, sea temperatures, marine forecasts - Auto-refresh ✅</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Traffic Incidents (TomTom)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">5 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Road closures, accidents, flooding incidents - Auto-refresh ✅</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Traffic Flow (HERE & TomTom)</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">5 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Real-time traffic congestion and flow data - Auto-refresh ✅</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        {/* Emergency Services */}
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">📍</span>
-            Emergency Services
-          </h2>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-              <div className="text-3xl mb-2">🏥</div>
-              <div className="text-2xl font-bold text-red-400">1,500+</div>
-              <div className="text-xs text-slate-400 mt-1">Hospitals</div>
-            </div>
-            <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-              <div className="text-3xl mb-2">👮</div>
-              <div className="text-2xl font-bold text-blue-400">400+</div>
-              <div className="text-xs text-slate-400 mt-1">Police Stations</div>
-            </div>
-            <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-              <div className="text-3xl mb-2">🚒</div>
-              <div className="text-2xl font-bold text-orange-400">100+</div>
-              <div className="text-xs text-slate-400 mt-1">Fire Stations</div>
-            </div>
-            <div className="bg-slate-700/30 rounded-lg p-4 text-center">
-              <div className="text-3xl mb-2">🏠</div>
-              <div className="text-2xl font-bold text-green-400">200+</div>
-              <div className="text-xs text-slate-400 mt-1">Shelters</div>
-            </div>
-          </div>
-
-          <div className="mt-4 text-center text-sm text-slate-400">
-            Source: <span className="font-semibold">OpenStreetMap</span> • Cache: <span className="text-orange-400 font-semibold">24 hours</span>
-          </div>
-        </section>
-
-        {/* Refresh Frequency Summary */}
-        <section className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-6 border border-blue-700/30">
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">⚡</span>
-            Data Refresh Frequencies Summary
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="text-green-400 font-bold text-lg mb-2">⚡ 5 minutes</div>
-              <ul className="text-sm text-slate-300 space-y-1">
-                <li>• River levels</li>
-                <li>• Traffic incidents</li>
-                <li>• Irrigation data</li>
-              </ul>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="text-yellow-400 font-bold text-lg mb-2">🔄 15 minutes</div>
-              <ul className="text-sm text-slate-300 space-y-1">
-                <li>• Weather alerts</li>
-              </ul>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="text-blue-400 font-bold text-lg mb-2">⏱️ 30 minutes</div>
-              <ul className="text-sm text-slate-300 space-y-1">
-                <li>• Weather data</li>
-                <li>• News feeds</li>
-                <li>• Marine conditions</li>
-              </ul>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="text-purple-400 font-bold text-lg mb-2">🕐 6 hours</div>
-              <ul className="text-sm text-slate-300 space-y-1">
-                <li>• ICON wind model</li>
-                <li>• GFS wind model</li>
-              </ul>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="text-orange-400 font-bold text-lg mb-2">📅 24 hours</div>
-              <ul className="text-sm text-slate-300 space-y-1">
-                <li>• Emergency facilities</li>
-                <li>• Intel page (static snapshot, not refreshed)</li>
-              </ul>
-            </div>
-            <div className="bg-slate-800/50 rounded-lg p-4">
-              <div className="text-red-400 font-bold text-lg mb-2">🗓️ Daily/Weekly</div>
-              <ul className="text-sm text-slate-300 space-y-1">
-                <li>• ERA5 wind data</li>
-                <li>• Environmental data</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* API Keys Required */}
-        <section className={`${ui.card} ${ui.cardPad}`}>
-          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
-            <span className="text-2xl">🔑</span>
-            API Keys Required
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-            <div className="bg-slate-700/30 rounded p-3">✅ WeatherAPI.com</div>
-            <div className="bg-slate-700/30 rounded p-3">✅ TomTom Traffic API</div>
-            <div className="bg-slate-700/30 rounded p-3">✅ HERE Traffic API</div>
-            <div className="bg-slate-700/30 rounded p-3">✅ ECMWF ERA5 (CDS_API_KEY)</div>
-            <div className="bg-slate-700/30 rounded p-3">✅ Open-Meteo (no key required)</div>
-          </div>
-        </section>
-
-      </div>
+        </Section>
+      </main>
     </div>
   );
 }
