@@ -12,19 +12,75 @@ never written into the repo. Re-run any time:
   MultiLineString feature (case-insensitive); unnamed rivers shorter than
   --min-unnamed-km are dropped, the rest merged into one unnamed feature
 - Douglas-Peucker simplification (--tol degrees), EPSG:4326, 5 decimals
-- properties: name, name:si, name:ta, waterway
+- properties: name, name:si, name:ta, waterway, basin_ids
+- basin_ids: ids of gauged basins (frontend/public/data/river_basins.geojson,
+  build it first) whose name strictly matches the river name (see
+  river_key) AND whose polygon the river line enters. The browser colours a
+  river only from these ids; it does no name or geometry matching itself.
 """
 import argparse
 import io
 import json
 import math
+import re
 import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
 
 PACKAGE = "https://data.humdata.org/api/3/action/package_show?id=hotosm_lka_waterways"
-OUT = Path(__file__).resolve().parent.parent / "frontend" / "public" / "data" / "rivers.geojson"
+DATA = Path(__file__).resolve().parent.parent / "frontend" / "public" / "data"
+OUT = DATA / "rivers.geojson"
+BASINS = DATA / "river_basins.geojson"
+
+# Suffix classes. "river" (or no suffix) is a wildcard that matches any class;
+# otherwise classes must be equal, so "Gin Oya" != "Gin Ganga" and
+# "Gal Aaru" != "Gal Oya", while "Kelani River" == "Kelani Ganga".
+SUFFIX = {"ganga": "ganga", "oya": "oya", "aru": "aru", "aaru": "aru", "ela": "ela", "river": None}
+
+
+def river_key(name):
+    """(stem, suffix class) from a Latin-script name, e.g. 'Kaluganga' -> ('kalu', 'ganga')."""
+    words = re.findall(r"[a-z]+", (name or "").lower().replace("th", "t"))
+    if not words:
+        return None
+    cls = None
+    if words[-1] in SUFFIX:
+        cls = SUFFIX[words.pop()]
+    elif words[-1].endswith("ganga") and len(words[-1]) > 5:  # "Kaluganga"
+        words[-1], cls = words[-1][:-5], "ganga"
+    stem = "".join(words)
+    return (stem, cls) if stem else None
+
+
+def names_match(a, b) -> bool:
+    ka, kb = river_key(a), river_key(b)
+    return bool(ka and kb and ka[0] == kb[0] and (ka[1] is None or kb[1] is None or ka[1] == kb[1]))
+
+
+def in_ring(x, y, ring) -> bool:
+    inside = False
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:]):
+        if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+            inside = not inside
+    return inside
+
+
+def polygon_contains(geom, x, y) -> bool:
+    polys = [geom["coordinates"]] if geom["type"] == "Polygon" else geom["coordinates"]
+    return any(in_ring(x, y, p[0]) and not any(in_ring(x, y, h) for h in p[1:]) for p in polys)
+
+
+def line_enters(lines, basin_geom) -> bool:
+    """True if any river vertex lies inside the basin polygon."""
+    return any(polygon_contains(basin_geom, x, y) for line in lines for x, y in line)
+
+
+def match_basins(river_name, lines, basins) -> list:
+    return sorted(b["properties"]["id"] for b in basins
+                  if b["properties"]["name"] != "unnamed"
+                  and names_match(river_name, b["properties"]["name"])
+                  and line_enters(lines, b["geometry"]))
 
 
 def geojson_url() -> str:
@@ -105,10 +161,15 @@ def main():
         feat["properties"]["name:ta"] = feat["properties"]["name:ta"] or p.get("name_ta")
         feat["geometry"]["coordinates"].append(line)
 
+    basins = json.loads(BASINS.read_text())["features"]
+    by_id = {b["properties"]["id"]: b["properties"]["name"] for b in basins}
     features = sorted(named.values(), key=lambda f: f["properties"]["name"])
+    for f in features:
+        f["properties"]["basin_ids"] = match_basins(f["properties"]["name"], f["geometry"]["coordinates"], basins)
     if unnamed:
         features.append({"type": "Feature",
-                         "properties": {"name": None, "name:si": None, "name:ta": None, "waterway": "river"},
+                         "properties": {"name": None, "name:si": None, "name:ta": None, "waterway": "river",
+                                        "basin_ids": []},
                          "geometry": {"type": "MultiLineString", "coordinates": unnamed}})
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -116,6 +177,9 @@ def main():
                                    separators=(",", ":"), ensure_ascii=False))
     print(f"{args.out}: {len(features)} features ({len(named)} named rivers, {len(unnamed)} unnamed lines), "
           f"{args.out.stat().st_size / 1024:.0f} KB")
+    for f in features:
+        if f["properties"]["basin_ids"]:
+            print(f"  {f['properties']['name']} -> {', '.join(by_id[i] for i in f['properties']['basin_ids'])}")
 
 
 if __name__ == "__main__":

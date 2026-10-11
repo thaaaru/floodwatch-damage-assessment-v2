@@ -152,14 +152,6 @@ function loadRivers(): Promise<GeoJSON.FeatureCollection> {
   return riversPromise;
 }
 
-// Loose river-name key so gauge basins ("Kelani Ganga", "Aththanagalu Oya")
-// meet OSM names ("Kelani River", "Attanagalu Oya", "Kaluganga", "Mahaweli").
-export function riverKey(name?: string | null): string {
-  const words = (name ?? '').toLowerCase().replace(/th/g, 't').match(/[a-z]+/g) ?? [];
-  const key = words.filter((w) => !['ganga', 'oya', 'river', 'aru', 'aaru', 'ela'].includes(w)).join('');
-  return key.replace(/ganga$/, '');
-}
-
 function riverLabel(f: GeoJSON.Feature): string {
   const p = f.properties ?? {};
   return [p.name, p['name:si'], p['name:ta']].filter(Boolean).map(esc).join(' &middot; ');
@@ -172,12 +164,19 @@ function labelPoint(geom: GeoJSON.MultiLineString): L.LatLngExpression | null {
   return mid ? [mid[1], mid[0]] : null;
 }
 
-function createRiverLayer(map: L.Map, data: GeoJSON.FeatureCollection, getGauges: () => IrrigationStation[]) {
+function createRiverLayer(
+  map: L.Map,
+  data: GeoJSON.FeatureCollection,
+  basinGauges: Map<number, string[]>,
+  getGauges: () => IrrigationStation[],
+) {
   if (!map.getPane(RIVER_PANE)) map.createPane(RIVER_PANE).style.zIndex = '450';
-  // A river takes the worst alert-or-higher status of gauges on its basin; otherwise plain blue.
+  // A river takes the worst alert-or-higher status of the gauges in its basin_ids, which
+  // scripts/build_rivers.py sets only on a strict name match AND a line that enters the
+  // basin polygon. No name or geometry matching happens here; otherwise plain blue.
   const style = (f?: GeoJSON.Feature): L.PathOptions => {
-    const key = riverKey(f?.properties?.name);
-    const worst = key ? worstStatus(getGauges().filter((g) => riverKey(g.basin ?? g.river) === key)) : null;
+    const names = new Set(((f?.properties?.basin_ids ?? []) as number[]).flatMap((id) => basinGauges.get(id) ?? []));
+    const worst = names.size ? worstStatus(getGauges().filter((g) => names.has(g.station))) : null;
     const flagged = worst === 'alert' || worst === 'minor' || worst === 'major';
     return {
       pane: RIVER_PANE,
@@ -220,7 +219,10 @@ function createRiverLayer(map: L.Map, data: GeoJSON.FeatureCollection, getGauges
 export async function createWaterLayer(map: L.Map, getGauges: () => IrrigationStation[]) {
   const [basinData, riverData] = await Promise.all([loadBasins(), loadRivers()]);
   const basins = createBasinLayer(basinData, getGauges);
-  const rivers = createRiverLayer(map, riverData, getGauges);
+  const basinGauges = new Map<number, string[]>(
+    basinData.features.map((f) => [f.properties?.id as number, (f.properties?.gauges ?? []) as string[]]),
+  );
+  const rivers = createRiverLayer(map, riverData, basinGauges, getGauges);
   return {
     layer: L.layerGroup([basins, rivers.group]),
     restyle: () => {

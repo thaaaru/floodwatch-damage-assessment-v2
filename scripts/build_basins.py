@@ -11,7 +11,7 @@ river_basins layer (public ArcGIS, no key). Stdlib only; re-run any time:
 - EPSG:4326, 5 decimal places
 - names each basin from the hydrostations inside it (point-in-polygon on the
   station lat/lon, most common station `basin`), else "unnamed"
-- properties: name, area_km2, gauges (station names inside)
+- properties: id (layer FID, stable), name, area_km2, gauges (station names inside)
 """
 import argparse
 import json
@@ -90,6 +90,7 @@ def main():
         features.append({
             "type": "Feature",
             "properties": {
+                "id": f["attributes"]["FID"],
                 "name": names.most_common(1)[0][0] if names else "unnamed",
                 "area_km2": round(f["attributes"]["Shape__Area"] / 1e6, 1),
                 "gauges": sorted(s["station"].strip() for s in inside),
