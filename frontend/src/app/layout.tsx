@@ -42,7 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           `}
         </Script>
         <Script
-          src={`https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&libraries=places&loading=async`}
+          src={`https://maps.googleapis.com/maps/api/js?key=${mapsApiKey}&loading=async`}
           strategy="afterInteractive"
         />
       </head>
