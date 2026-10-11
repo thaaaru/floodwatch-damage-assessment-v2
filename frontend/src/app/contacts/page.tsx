@@ -2,6 +2,10 @@
 
 'use client';
 
+import PageHeader from '@/components/ui/PageHeader';
+import Section from '@/components/ui/Section';
+import { ui } from '@/lib/ui';
+
 type Contact = { number: string; title: string; titleSi: string; description: string };
 
 // 117 (DMC) is the primary number; the rest are national emergency services.
@@ -24,25 +28,18 @@ const callClasses =
 
 export default function EmergencyContacts() {
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <div className="bg-slate-800/50 border-b border-slate-700/50">
-        <div className="max-w-5xl mx-auto px-4 py-5">
-          <h1 className="text-2xl font-bold">Emergency contacts</h1>
-          <p className="text-sm text-slate-300 mt-1">ආපදා සහන ලබාගැනීමේ හදිසි ඇමතුම් අංක</p>
-        </div>
-      </div>
+    <div className={ui.page}>
+      <PageHeader title="Emergency contacts" subtitle="ආපදා සහන ලබාගැනීමේ හදිසි ඇමතුම් අංක" width="max-w-5xl" />
 
-      <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-        <section className="card p-5 sm:p-6" aria-labelledby="national">
-          <h2 id="national" className="text-xl font-bold text-white">National emergency numbers</h2>
-          <p className="text-sm text-slate-300 mb-5">ජාතික මට්ටමේ හදිසි ඇමතුම් අංක</p>
+      <main className={`max-w-5xl ${ui.container} space-y-6`}>
+        <Section title="National emergency numbers" subtitle="ජාතික මට්ටමේ හදිසි ඇමතුම් අංක">
 
           {/* Primary: DMC 117 */}
           <div className="rounded-xl border-2 border-red-500 bg-red-500/10 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-4">
             <div className="flex-1 min-w-0">
               <div className="text-lg font-bold text-white">{PRIMARY.title}</div>
-              <div className="text-sm text-slate-300">{PRIMARY.titleSi}</div>
-              <div className="text-slate-200 mt-1">{PRIMARY.description}</div>
+              <div className={ui.meta}>{PRIMARY.titleSi}</div>
+              <div className={`${ui.body} mt-1`}>{PRIMARY.description}</div>
             </div>
             <a
               href={`tel:${PRIMARY.number}`}
@@ -56,11 +53,11 @@ export default function EmergencyContacts() {
 
           <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
             {OTHERS.map((c) => (
-              <div key={c.number} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4 flex items-center gap-4">
+              <div key={c.number} className={`${ui.inset} p-3 sm:p-4 flex items-center gap-4`}>
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold text-white">{c.title}</div>
-                  <div className="text-xs text-slate-300">{c.titleSi}</div>
-                  <div className="text-sm text-slate-300 mt-0.5">{c.description}</div>
+                  <div className={ui.meta}>{c.titleSi}</div>
+                  <div className={`${ui.body} mt-0.5`}>{c.description}</div>
                 </div>
                 <a
                   href={`tel:${c.number}`}
@@ -72,9 +69,9 @@ export default function EmergencyContacts() {
               </div>
             ))}
           </div>
-        </section>
+        </Section>
 
-        <section className="card p-5 sm:p-6 text-slate-300 space-y-2">
+        <Section className={`${ui.body} space-y-2`}>
           <p>
             For district disaster management units, call{' '}
             <a href="tel:117" className="focus-ring rounded font-semibold text-white underline underline-offset-2">117</a> or
@@ -83,14 +80,14 @@ export default function EmergencyContacts() {
               href="https://www.dmc.gov.lk"
               target="_blank"
               rel="noopener noreferrer"
-              className="focus-ring rounded text-cyan-300 underline underline-offset-2 hover:text-cyan-200"
+              className={ui.link}
             >
               https://www.dmc.gov.lk
             </a>
             .
           </p>
-          <p className="text-sm text-slate-300">Numbers verified 11 Oct 2026 against public DMC/Police advisories.</p>
-        </section>
+          <p className={ui.meta}>Numbers verified 11 Oct 2026 against public DMC/Police advisories.</p>
+        </Section>
       </main>
     </div>
   );

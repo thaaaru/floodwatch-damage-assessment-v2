@@ -4,6 +4,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { api } from '@/lib/api';
+import PageHeader from '@/components/ui/PageHeader';
+import { ui } from '@/lib/ui';
 import { NewsItem, NewsSourceStatus, formatColombo, formatRelativeTime } from '@/lib/newsService';
 
 const SOURCE_CHIPS = ['SL Met', 'NewsFirst', 'IMD RSMC', 'GDACS'] as const;
@@ -87,17 +89,15 @@ export default function NewsPage() {
   }, [filtered]);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <div className="bg-slate-800/50 border-b border-slate-700/50">
-        <div className="max-w-prose mx-auto px-4 py-5">
-          <h1 className="text-2xl font-bold">News &amp; updates</h1>
-          <p className="text-sm text-slate-300 mt-1">
-            Weather, flood and cyclone updates for Sri Lanka from official sources and news outlets.
-          </p>
-        </div>
-      </div>
+    <div className={ui.page}>
+      <PageHeader
+        title="News & updates"
+        subtitle="Weather, flood and cyclone updates for Sri Lanka from official sources and news outlets."
+        width="max-w-2xl"
+      />
 
-      <main className="max-w-prose mx-auto px-4 py-6 text-base leading-[1.55]">
+      {/* max-w-2xl keeps summaries near 70 characters per line */}
+      <main className={`max-w-2xl ${ui.container} text-base leading-[1.55]`}>
         {/* Source filter */}
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by source">
           {['all', ...SOURCE_CHIPS].map((s) => (
@@ -112,7 +112,7 @@ export default function NewsPage() {
             </button>
           ))}
           {!loading && (
-            <span className="ml-auto text-sm text-slate-300" aria-live="polite">
+            <span className={`ml-auto ${ui.meta}`} aria-live="polite">
               {filtered.length} {filtered.length === 1 ? 'item' : 'items'}
             </span>
           )}
@@ -127,30 +127,32 @@ export default function NewsPage() {
             {failed ? 'News could not be loaded right now.' : 'No items from the last 30 days.'} Please check back later.
           </p>
         ) : (
-          groups.map((g) => (
-            <section key={g.key} aria-labelledby={`day-${g.key}`} className="mt-6">
+          <div className={`mt-4 ${ui.card} ${ui.cardPad} pt-0 sm:pt-0`}>
+          {groups.map((g) => (
+            <section key={g.key} aria-labelledby={`day-${g.key}`}>
               <h2
                 id={`day-${g.key}`}
                 style={{ top: stickyTop }}
-                className="sticky z-10 -mx-4 px-4 py-2 bg-slate-900/95 backdrop-blur text-sm font-semibold text-slate-200 border-b border-slate-700"
+                className={`sticky z-10 -mx-3 sm:-mx-4 px-3 sm:px-4 py-2 bg-slate-800/95 backdrop-blur border-b border-slate-700 ${ui.h2}`}
               >
                 {g.label}
               </h2>
-              <ul className="divide-y divide-slate-800">
+              <ul className="divide-y divide-slate-700">
                 {g.items.map((item) => <NewsRow key={item.id} item={item} />)}
               </ul>
             </section>
-          ))
+          ))}
+          </div>
         )}
 
         {/* Source status, collapsed */}
         {sources.length > 0 && (
-          <details className="mt-10 rounded-xl border border-slate-700 bg-slate-800">
-            <summary className="focus-ring cursor-pointer select-none min-h-[44px] flex items-center px-4 text-sm font-semibold text-slate-200 rounded-xl">
+          <details className={`mt-6 ${ui.card}`}>
+            <summary className="focus-ring cursor-pointer select-none min-h-[44px] flex items-center px-3 sm:px-4 text-sm font-semibold text-slate-200 rounded-2xl">
               Sources and last checked
             </summary>
-            <ul className="px-4 pb-4 text-sm text-slate-300 space-y-3">
-              <li className="text-slate-300">Checked every 15 minutes. Times are Colombo time. Items older than 30 days are hidden.</li>
+            <ul className={`px-3 sm:px-4 pb-4 ${ui.body} space-y-3`}>
+              <li>Checked every 15 minutes. Times are Colombo time. Items older than 30 days are hidden.</li>
               {sources.map((s) => (
                 <li key={s.source} className="border-t border-slate-700 pt-3">
                   <div className="flex flex-wrap justify-between gap-x-3">
@@ -190,7 +192,7 @@ function NewsRow({ item }: { item: NewsItem }) {
       >
         {item.title}
       </a>
-      <div className="flex flex-wrap items-center gap-x-2 text-sm text-slate-300">
+      <div className={`flex flex-wrap items-center gap-x-2 ${ui.meta}`}>
         <span>{item.source}</span>
         {item.publishedAt && (
           <>
@@ -203,7 +205,7 @@ function NewsRow({ item }: { item: NewsItem }) {
         {item.kind && (
           <>
             <span aria-hidden="true">·</span>
-            <span className="rounded border border-slate-600 px-1.5 text-xs font-medium uppercase tracking-wide text-slate-200">
+            <span className="rounded-md bg-slate-900 border border-slate-700 px-1.5 text-[11px] font-medium uppercase tracking-wide text-slate-200">
               {item.kind}
             </span>
           </>

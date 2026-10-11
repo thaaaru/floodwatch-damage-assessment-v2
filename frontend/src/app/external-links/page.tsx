@@ -3,6 +3,9 @@
 'use client';
 
 import { useState } from 'react';
+import PageHeader from '@/components/ui/PageHeader';
+import Section from '@/components/ui/Section';
+import { ui } from '@/lib/ui';
 
 type Category = 'government' | 'weather' | 'international';
 type LinkItem = { name: string; url: string; desc: string };
@@ -66,15 +69,10 @@ export default function ExternalLinks() {
   const sections = SECTIONS.filter((s) => active === 'all' || s.category === active);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      <div className="bg-slate-800/50 border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-4 py-5">
-          <h1 className="text-2xl font-bold">Flood information resources</h1>
-          <p className="text-sm text-slate-300 mt-1">Directory of Sri Lanka flood and weather monitoring websites</p>
-        </div>
-      </div>
+    <div className={ui.page}>
+      <PageHeader title="Flood information resources" subtitle="Directory of Sri Lanka flood and weather monitoring websites" />
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className={`max-w-7xl ${ui.container} space-y-6`}>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
           {FILTERS.map((f) => (
             <button
@@ -90,14 +88,11 @@ export default function ExternalLinks() {
         </div>
 
         {sections.map((s) => (
-          <section key={s.id} className="card p-5 sm:p-6" aria-labelledby={`sec-${s.id}`}>
-            <div className="flex items-start gap-3 mb-4">
-              <span className="text-2xl" aria-hidden="true">{s.icon}</span>
-              <div>
-                <h2 id={`sec-${s.id}`} className="text-xl font-bold text-white">{s.title}</h2>
-                <p className="text-sm text-slate-300 mt-1">{s.desc}</p>
-              </div>
-            </div>
+          <Section
+            key={s.id}
+            title={<><span aria-hidden="true" className="mr-2">{s.icon}</span>{s.title}</>}
+            subtitle={s.desc}
+          >
             <div className={`grid grid-cols-1 gap-3 ${s.links.length > 1 ? 'md:grid-cols-2 lg:grid-cols-3' : ''}`}>
               {s.links.map((l) => (
                 <a key={l.url} href={l.url} target="_blank" rel="noopener noreferrer" className="link-tile group">
@@ -105,14 +100,14 @@ export default function ExternalLinks() {
                     <span className="font-semibold text-white group-hover:text-cyan-300">{l.name}</span>
                     <ExternalIcon />
                   </div>
-                  <div className="mt-1 text-sm text-slate-300">{l.desc}</div>
+                  <div className={`mt-1 ${ui.body}`}>{l.desc}</div>
                 </a>
               ))}
             </div>
-          </section>
+          </Section>
         ))}
 
-        <div className="rounded-xl border border-slate-700 bg-slate-800/60 p-4 text-sm text-slate-300">
+        <div className={`${ui.card} ${ui.cardPad} ${ui.body}`}>
           <p className="font-semibold text-white mb-1">External resources</p>
           <p>
             These sites are run by external organisations and government agencies. FloodWatch links to them for

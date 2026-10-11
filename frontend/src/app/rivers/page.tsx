@@ -5,6 +5,9 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState, useCallback } from 'react';
 import { api, GaugeStatus, IrrigationStation } from '@/lib/api';
+import PageHeader from '@/components/ui/PageHeader';
+import Section from '@/components/ui/Section';
+import { ui } from '@/lib/ui';
 import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, colomboTime, worstStatus } from '@/lib/gaugeStatus';
 
 // Leaflet only runs in the browser; load lazily to avoid SSR `window is undefined`.
@@ -77,27 +80,10 @@ export default function RiversPage() {
     );
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white">
-      {/* Header */}
-      <div className="bg-slate-800 border-b border-slate-700">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <a href="/" className="text-slate-300 hover:text-white transition-colors flex-shrink-0" aria-label="Back">
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-            </a>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl md:text-2xl font-bold truncate">Rivers</h1>
-              <p className="text-xs sm:text-sm text-slate-300 mt-0.5 hidden sm:block">
-                Live river gauges and basins
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <div className={ui.page}>
+      <PageHeader title="Rivers" subtitle="Live river gauges and basins" />
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8">
+      <div className={`max-w-7xl ${ui.container}`}>
         {loading ? (
           <div className="flex items-center justify-center" style={{ minHeight: '400px' }}>
             <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
@@ -111,12 +97,12 @@ export default function RiversPage() {
             )}
 
             {stations.length > 0 && (
-              <div className="bg-slate-800 rounded-2xl shadow-lg border border-slate-700 overflow-hidden">
+              <div className={`${ui.card} overflow-hidden`}>
                 <div className="p-3 sm:p-4 border-b border-slate-700">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <h2 className="text-base sm:text-lg font-semibold">Live gauging stations</h2>
-                      <p className="text-[10px] sm:text-xs text-slate-300 mt-1">
+                      <h2 className={ui.h2}>Live gauging stations</h2>
+                      <p className={`${ui.meta} mt-1`}>
                         {stations.length} gauges, coloured by status with a trend arrow. Faded, dashed markers are stale (no
                         reading for over 6 h). Click a gauge or basin for details.
                       </p>
@@ -181,12 +167,11 @@ export default function RiversPage() {
 
             {/* Status by basin (replaces the retired Navy WLRS table) */}
             {stations.length > 0 && (
-              <div className="bg-slate-800 rounded-2xl p-3 sm:p-4 shadow-lg border border-slate-700">
-                <h2 className="text-base sm:text-lg font-semibold mb-3">Status by river basin</h2>
+              <Section title="Status by river basin">
                 <div className="overflow-x-auto -mx-3 sm:mx-0">
                   <table className="w-full text-xs sm:text-sm min-w-[600px]">
                     <thead>
-                      <tr className="bg-slate-900 text-slate-200 border-b border-slate-600 text-[10px] sm:text-xs">
+                      <tr className={ui.th}>
                         <th className="text-left py-2 px-2">Basin</th>
                         <th className="text-left py-2 px-2">Gauges (level, trend)</th>
                         <th className="text-center py-2 px-2">Rising</th>
@@ -196,7 +181,7 @@ export default function RiversPage() {
                     </thead>
                     <tbody>
                       {basins.map((b) => (
-                        <tr key={b.basin} className="border-b border-slate-700 align-top">
+                        <tr key={b.basin} className={`${ui.tr} align-top`}>
                           <td className="py-2 px-2 font-medium">{b.basin}</td>
                           <td className="py-2 px-2 text-slate-300">
                             {b.gauges.map((g) => (
@@ -215,14 +200,14 @@ export default function RiversPage() {
                     </tbody>
                   </table>
                 </div>
-                <p className="text-[10px] sm:text-xs text-slate-400 mt-3">
+                <p className={`${ui.muted} mt-3`}>
                   {GAUGE_CREDIT}. {BASIN_CREDIT}. Updated every 15 minutes.
                 </p>
-              </div>
+              </Section>
             )}
 
             {stations.length === 0 && !error && (
-              <div className="bg-slate-800 rounded-2xl p-8 shadow-lg border border-slate-700 text-center text-slate-400">
+              <div className={`${ui.card} p-8 text-center text-slate-400`}>
                 No river gauge data stored yet. The first sync runs a few minutes after start-up.
               </div>
             )}
