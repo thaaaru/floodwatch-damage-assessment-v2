@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { IrrigationStation } from '@/lib/api';
-import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
+import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 import { BASIN_CREDIT, GAUGE_CREDIT, createGaugeLayer, createWaterLayer, gaugesKey } from '@/lib/gauges';
 
 interface RiversMapProps {
@@ -35,11 +35,12 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
       attributionControl: false,
     });
     L.control.zoom({ position: 'topright' }).addTo(map);
-    L.tileLayer(BASEMAP_URL, { maxZoom: BASEMAP_MAX_ZOOM }).addTo(map);
+    addBasemap(map); // carries its own OSM/Protomaps attribution
     L.control.attribution({ position: 'bottomright' })
-      .addAttribution(`${BASEMAP_ATTRIBUTION} &middot; ${GAUGE_CREDIT} &middot; ${BASIN_CREDIT}`)
+      .addAttribution(`${GAUGE_CREDIT} &middot; ${BASIN_CREDIT}`)
       .addTo(map);
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft', collapsed: false }).addTo(map);
+    addSatelliteOption(L, controlRef.current);
     mapRef.current = map;
 
     // Basins + rivers: on by default on /rivers, drawn under the gauge markers.

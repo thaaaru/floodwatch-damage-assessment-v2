@@ -5,7 +5,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
+import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 
 interface DamageMapLeafletProps {
   hasResults: boolean;
@@ -90,31 +90,10 @@ export default function DamageMapLeaflet({ hasResults, activeLayer }: DamageMapL
     // Add zoom control to top-left
     L.control.zoom({ position: 'topleft' }).addTo(map);
 
-    // Light base layers
-    const osmLayer = L.tileLayer(BASEMAP_URL, {
-      attribution: BASEMAP_ATTRIBUTION,
-      maxZoom: BASEMAP_MAX_ZOOM,
-    });
-
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Esri Satellite',
-    });
-
-    const terrainLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenTopoMap',
-    });
-
-    // Add default light layer
-    osmLayer.addTo(map);
-
-    // Base layer control
-    const baseLayers = {
-      'OpenStreetMap (Default)': osmLayer,
-      'Terrain': terrainLayer,
-      'Satellite': satelliteLayer,
-    };
-
-    L.control.layers(baseLayers, {}, { position: 'topright' }).addTo(map);
+    // Self-hosted basemap; keyless third-party Terrain/Satellite layers were dropped.
+    addBasemap(map);
+    const layerControl = L.control.layers(undefined, undefined, { position: 'topright' });
+    if (addSatelliteOption(L, layerControl)) layerControl.addTo(map);
 
     // Create layer groups
     layersRef.current.flood = L.layerGroup().addTo(map);

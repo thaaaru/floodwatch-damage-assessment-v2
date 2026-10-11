@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { MapContainer, TileLayer, useMap } from 'react-leaflet';
+import { MapContainer, useMap } from 'react-leaflet';
 import type { Map as LeafletMap } from 'leaflet';
 import type { WindField, WindSource, BBox, WindVisualizationMode } from '@/lib/wind/types';
 import { SRI_LANKA_EXTENDED_BBOX } from '@/lib/wind/config';
@@ -17,7 +17,7 @@ import { WindParticlesLayer } from './WindParticlesLayer';
 import { WindHeatmapLayer } from './WindHeatmapLayer';
 import { WindLegend } from './WindLegend';
 import { WindControls } from './WindControls';
-import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM, DARK_BASEMAP_CLASS } from '@/lib/basemap';
+import Basemap from '@/components/map/Basemap';
 
 interface WindMapProps {
   initialCenter?: [number, number];
@@ -170,16 +170,12 @@ export function WindMap({
       <MapContainer
         center={initialCenter}
         zoom={initialZoom}
-        className={`w-full h-full z-0 ${DARK_BASEMAP_CLASS}`}
+        className="w-full h-full z-0"
         ref={mapRef}
         scrollWheelZoom={true}
         zoomControl={true}
       >
-        <TileLayer
-          attribution={BASEMAP_ATTRIBUTION}
-          url={BASEMAP_URL}
-          maxZoom={BASEMAP_MAX_ZOOM}
-        />
+        <Basemap flavor="dark" />
 
         <MapEventHandler onBoundsChange={handleBoundsChange} />
 

@@ -47,7 +47,8 @@ numbers are collected.
 - **Frontend**: Next.js 14 with Tailwind CSS
 - **Database**: PostgreSQL
 - **SMS**: Twilio
-- **Maps**: Leaflet.js with OpenStreetMap; Google Maps JavaScript API (browser key,
+- **Maps**: Leaflet.js on a self-hosted Protomaps basemap (OpenStreetMap data, `scripts/build_basemap.sh`,
+  served as `/tiles/lka.pmtiles`; OSM raster fallback); Google Maps JavaScript API (browser key,
   `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`, restricted to referrer `https://floodwatch.teklab.dev/*`
   and to the Maps JavaScript API only; Places is not used)
 

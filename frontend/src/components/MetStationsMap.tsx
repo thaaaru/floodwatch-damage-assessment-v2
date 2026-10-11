@@ -6,7 +6,7 @@ import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { IrrigationStation, MetStation } from '@/lib/api';
-import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
+import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 import { BASIN_CREDIT, GAUGE_CREDIT, createGaugeLayer, createWaterLayer, gaugesKey } from '@/lib/gauges';
 
 interface MetStationsMapProps {
@@ -153,18 +153,16 @@ export default function MetStationsMap({
       attributionControl: false,
     });
     L.control.zoom({ position: 'topright' }).addTo(map);
-    L.tileLayer(BASEMAP_URL, {
-      maxZoom: BASEMAP_MAX_ZOOM,
-    }).addTo(map);
+    addBasemap(map); // carries its own OSM/Protomaps attribution
     L.control
       .attribution({ position: 'bottomright' })
       .addAttribution(
-        BASEMAP_ATTRIBUTION + ' &middot; ' +
-          'Rainfall: <a href="https://meteo.gov.lk">Sri Lanka DoM</a>' +
+        'Rainfall: <a href="https://meteo.gov.lk">Sri Lanka DoM</a>' +
           ` &middot; ${GAUGE_CREDIT} &middot; ${BASIN_CREDIT}`,
       )
       .addTo(map);
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
+    addSatelliteOption(L, controlRef.current);
     mapRef.current = map;
     // Basins + rivers: in the layer control, off by default on the home map.
     createWaterLayer(map, () => gaugesRef.current)

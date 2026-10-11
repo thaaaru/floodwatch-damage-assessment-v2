@@ -7,7 +7,6 @@ import dynamic from 'next/dynamic';
 import MobileHeader, { AlertBanner } from '@/components/mobile/MobileHeader';
 import BottomSheet, { SheetState } from '@/components/mobile/BottomSheet';
 import FloatingControls, { PrimaryCTA } from '@/components/mobile/FloatingControls';
-import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
 
 // Lazy load map to reduce initial bundle
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), {
@@ -15,7 +14,7 @@ const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapCo
   loading: () => <div className="w-full h-full bg-slate-900 animate-pulse" />
 });
 
-const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false });
+const Basemap = dynamic(() => import('@/components/map/Basemap'), { ssr: false });
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false });
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false });
 
@@ -187,11 +186,7 @@ export default function ReliefMapDemo() {
           scrollWheelZoom={true}
           style={{ zIndex: 10 }}
         >
-          <TileLayer
-            attribution={BASEMAP_ATTRIBUTION}
-            url={BASEMAP_URL}
-            maxZoom={BASEMAP_MAX_ZOOM}
-          />
+          <Basemap />
 
           {/* Markers */}
           {filteredRequests.map((request) => (

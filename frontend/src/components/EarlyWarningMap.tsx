@@ -3,11 +3,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, CircleMarker, Popup, useMap } from 'react-leaflet';
 import { EarlyWarningDistrict } from '@/lib/api';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
+import Basemap from '@/components/map/Basemap';
 
 interface EarlyWarningMapProps {
   districts: EarlyWarningDistrict[];
@@ -103,11 +103,7 @@ export default function EarlyWarningMap({ districts, onDistrictSelect, selectedD
         scrollWheelZoom={true}
       >
         <MapController selectedDistrict={selectedDistrict} districts={districts} shouldZoom={shouldZoom} />
-        <TileLayer
-          attribution={BASEMAP_ATTRIBUTION}
-          url={BASEMAP_URL}
-          maxZoom={BASEMAP_MAX_ZOOM}
-        />
+        <Basemap />
 
         {districts.map((district) => {
           if (!district.coordinates || district.error) return null;

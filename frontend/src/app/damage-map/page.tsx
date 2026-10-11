@@ -4,7 +4,8 @@
 
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
-import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
+// The exported HTML runs standalone (no /tiles), so it uses OSM raster tiles.
+import { OSM_RASTER_URL, OSM_RASTER_ATTRIBUTION } from '@/lib/basemap';
 
 const DamageMapLeaflet = dynamic(() => import('@/components/DamageMapLeaflet'), {
   ssr: false,
@@ -307,9 +308,9 @@ export default function DamageMapPage() {
   <script>
     const map = L.map('map').setView([7.8731, 80.7718], 8);
 
-    L.tileLayer('${BASEMAP_URL}', {
-      attribution: '${BASEMAP_ATTRIBUTION}',
-      maxZoom: ${BASEMAP_MAX_ZOOM}
+    L.tileLayer('${OSM_RASTER_URL}', {
+      attribution: '${OSM_RASTER_ATTRIBUTION}',
+      maxZoom: 19
     }).addTo(map);
 
     const floodData = ${JSON.stringify(geojson)};
