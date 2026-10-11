@@ -1,24 +1,23 @@
 // SPDX-License-Identifier: Apache-2.0
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { api, CacheStatus } from '@/lib/api';
 
 const STALE_AFTER_MS = 3 * 60 * 60 * 1000;
 const POLL_MS = 5 * 60 * 1000;
 
-function formatColombo(iso: string): string {
-  return new Date(iso).toLocaleString('en-GB', {
-    timeZone: 'Asia/Colombo',
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }) + ' (Colombo)';
+const colomboDay = (d: Date) => d.toLocaleDateString('en-GB', { timeZone: 'Asia/Colombo' });
+
+// "13:17" in Colombo time, prefixed with "10 Oct " when it isn't today there.
+function colomboTime(iso: string): string {
+  const d = new Date(iso);
+  const time = d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit', hour12: false });
+  if (colomboDay(d) === colomboDay(new Date())) return time;
+  return `${d.toLocaleDateString('en-GB', { timeZone: 'Asia/Colombo', day: 'numeric', month: 'short' })} ${time}`;
 }
 
-// Always-visible, non-dismissible disclaimer + data freshness line.
+// Always-visible, non-dismissible one-line disclaimer + data freshness.
 export default function StatusBanner() {
   const [status, setStatus] = useState<CacheStatus | null>(null);
   const [failed, setFailed] = useState(false);
@@ -37,22 +36,32 @@ export default function StatusBanner() {
     return () => clearInterval(id);
   }, []);
 
-  const lastUpdate = status?.last_update ? new Date(status.last_update).getTime() : null;
-  const stale =
+  const last = status?.last_update ?? null;
+  const delayed =
     failed ||
-    (status !== null && (lastUpdate === null ||
-      Date.now() - lastUpdate > STALE_AFTER_MS ||
-      status.last_attempt_ok === false));
+    status?.last_attempt_ok === false ||
+    (last !== null && Date.now() - new Date(last).getTime() > STALE_AFTER_MS);
 
+  let freshness: ReactNode;
+  if (delayed) {
+    freshness = (
+      <span className="font-semibold text-red-700">
+        ⚠ Data delayed{last && `, last updated ${colomboTime(last)}`}
+      </span>
+    );
+  } else if (!last) {
+    freshness = <span>Updating…</span>; // first load, before any successful fetch
+  } else {
+    freshness = <span>Updated {colomboTime(last)}</span>;
+  }
+
+  const link = 'underline underline-offset-2 hover:text-amber-700';
   return (
-    <div role="note" className="bg-amber-100 text-amber-950 text-xs sm:text-sm px-4 py-1.5 flex flex-wrap items-center justify-center gap-x-4 gap-y-0.5 text-center">
-      <span>
-        <strong>Not an official warning service.</strong> For warnings, follow the Disaster Management Centre (DMC) and the Department of Meteorology.
-      </span>
-      <span data-testid="data-last-updated" className={stale ? 'font-semibold text-red-700' : 'text-amber-900'}>
-        Data last updated: {status?.last_update ? formatColombo(status.last_update) : failed ? 'unavailable' : status ? 'never' : '…'}
-        {stale && ' — data may be stale; latest fetch failed or is over 3 hours old.'}
-      </span>
+    <div role="note" className="bg-amber-100 text-amber-950 text-xs sm:text-sm px-4 py-1 text-center leading-snug">
+      <strong>Unofficial.</strong> For warnings follow the{' '}
+      <a href="https://www.dmc.gov.lk" target="_blank" rel="noopener noreferrer" className={link}>DMC</a> and the{' '}
+      <a href="https://meteo.gov.lk" target="_blank" rel="noopener noreferrer" className={link}>Met Department</a>{' '}
+      <span data-testid="data-last-updated" className="inline-block">· {freshness}</span>
     </div>
   );
 }

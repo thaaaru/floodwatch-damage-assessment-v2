@@ -395,7 +395,7 @@ export default function DataSourcesPage() {
               <div className="text-orange-400 font-bold text-lg mb-2">📅 24 hours</div>
               <ul className="text-sm text-slate-300 space-y-1">
                 <li>• Emergency facilities</li>
-                <li>• Intel dashboard</li>
+                <li>• Intel page (static snapshot, not refreshed)</li>
               </ul>
             </div>
             <div className="bg-slate-800/50 rounded-lg p-4">

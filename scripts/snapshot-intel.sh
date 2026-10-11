@@ -21,9 +21,6 @@ trap 'rm -rf "$TMPDIR"' EXIT
 declare -A endpoints=(
   [floodThreat]="/api/intel/flood-threat"
   [irrigation]="/api/intel/irrigation"
-  [trafficFlow]="/api/intel/traffic-flow"
-  [trafficIncidents]="/api/intel/traffic"
-  [allFacilities]="/api/intel/facilities"
   [floodPatterns]="/api/intel/flood-patterns?district=Colombo&years=30"
   [environmental]="/api/intel/environmental?start_year=1994&end_year=2024"
   [yesterdayStats]="/api/weather/yesterday/stats"
@@ -47,8 +44,7 @@ from pathlib import Path
 
 tmpdir, out_path = Path(sys.argv[1]), Path(sys.argv[2])
 raw = {k: json.loads((tmpdir / f"{k}.json").read_text()) for k in [
-    "floodThreat", "irrigation", "trafficFlow", "trafficIncidents",
-    "allFacilities", "floodPatterns", "environmental", "yesterdayStats",
+    "floodThreat", "irrigation", "floodPatterns", "environmental", "yesterdayStats",
 ]}
 
 # Flatten responses to match what the page actually destructured.
@@ -56,9 +52,6 @@ snapshot = {
     "captured_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     "floodThreat": raw["floodThreat"],
     "irrigation": raw["irrigation"],
-    "trafficFlow": raw["trafficFlow"],
-    "trafficIncidents": raw["trafficIncidents"].get("incidents", []),
-    "allFacilities": raw["allFacilities"],
     "floodPatterns": raw["floodPatterns"],
     "environmental": raw["environmental"],
     "yesterdayStats": raw["yesterdayStats"],

@@ -79,7 +79,12 @@ function setCachedData(data: EarlyWarningResponse): void {
   }
 }
 
-function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
+const asOfColombo = (iso: string) =>
+  new Date(iso).toLocaleString('en-GB', {
+    timeZone: 'Asia/Colombo', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
+  });
+
+function InfoPanelContent({ district, asOf }: { district: EarlyWarningDistrict; asOf?: string | null }) {
   const styles = getRiskStyles(district.risk_level);
 
   return (
@@ -105,25 +110,14 @@ function InfoPanelContent({ district }: { district: EarlyWarningDistrict }) {
             {district.risk_level.toUpperCase()} RISK
           </span>
         </div>
+        <p className="text-xs mt-2 opacity-90">
+          FloodWatch rain-risk estimate (not an official warning)
+          {asOf && <> · As of {asOfColombo(asOf)}</>}
+        </p>
       </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* AI Summary */}
-        {district.overview && (
-          <div className="glass p-3 rounded-xl shadow-md">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-5 h-5 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 flex items-center justify-center">
-                <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <span className="text-xs font-semibold text-slate-200">AI Summary</span>
-            </div>
-            <p className="text-sm text-slate-100 leading-relaxed">{district.overview}</p>
-          </div>
-        )}
-
         {/* Precipitation */}
         <div>
           <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Expected Rain</h4>
@@ -338,8 +332,7 @@ export default function EarlyWarningPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <p className="font-medium text-white">Early warning data is unavailable.</p>
-          <p className="text-sm text-slate-400 mt-2">Configure OpenWeatherMap API access to load this page.</p>
+          <p className="font-medium text-white">Rain outlook temporarily unavailable</p>
         </div>
       </div>
     );
@@ -433,7 +426,7 @@ export default function EarlyWarningPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
-              <InfoPanelContent district={selectedDistrictData} />
+              <InfoPanelContent district={selectedDistrictData} asOf={data.summary?.last_updated} />
             </div>
           </div>
         )}
@@ -443,7 +436,7 @@ export default function EarlyWarningPage() {
       {displayDistrict && (
         <div className="hidden md:block w-96 p-4 pl-4">
           <div className="h-full glass rounded-2xl overflow-hidden shadow-lg">
-            <InfoPanelContent district={displayDistrict} />
+            <InfoPanelContent district={displayDistrict} asOf={data.summary?.last_updated} />
           </div>
         </div>
       )}

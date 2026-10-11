@@ -1150,6 +1150,9 @@ export interface EarlyWarningSummary {
     low: number;
   };
   total_government_alerts: number;
+  /** Time of the cached OWM snapshot (ISO); stale = old or incomplete. */
+  last_updated?: string | null;
+  stale?: boolean;
   districts_at_risk: number;
 }
 

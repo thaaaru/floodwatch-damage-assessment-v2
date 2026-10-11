@@ -45,42 +45,14 @@ export default function EmergencyContacts() {
             />
             <ContactCard
               number="110"
-              title="Fire Brigade"
+              title="Fire and Rescue"
               titleSi="ගිනි නිවන හමුදාව"
               description="Fire incidents and victim rescue"
               color="amber"
             />
             <ContactCard
-              number="011 258 8946"
-              title="NBRO (Landslide Warnings)"
-              titleSi="ජාතික ගොඩනැගිලි පර්යේෂණ සංවිධානය"
-              description="Landslide risk reporting"
-              color="yellow"
-            />
-            <ContactCard
-              number="011 268 6686"
-              title="Meteorological Department"
-              titleSi="කාලගුණ විද්‍යා දෙපාර්තමේන්තුව"
-              description="Weather forecasts"
-              color="cyan"
-            />
-            <ContactCard
-              number="011 244 5368"
-              title="Navy Headquarters"
-              titleSi="නාවික හමුදා මූලස්ථානය"
-              description="Boat services and flood rescue"
-              color="blue"
-            />
-            <ContactCard
-              number="113"
-              title="Army Headquarters"
-              titleSi="යුධ හමුදා මූලස්ථානය"
-              description="Emergency disaster relief and rescue"
-              color="emerald"
-            />
-            <ContactCard
               number="116"
-              title="Air Force Headquarters"
+              title="Air Force"
               titleSi="ගුවන් හමුදා මූලස්ථානය"
               description="Helicopter rescue operations"
               color="violet"
@@ -88,81 +60,17 @@ export default function EmergencyContacts() {
           </div>
         </section>
 
-        {/* Western Province */}
-        <ProvinceSection
-          title="Western Province"
-          titleSi="බස්නාහිර පළාත"
-          note="High flood risk areas"
-          districts={[
-            { name: 'Colombo', nameSi: 'කොළඹ', phone1: '011 243 4028', phone2: '077 395 7893' },
-            { name: 'Gampaha', nameSi: 'ගම්පහ', phone1: '033 223 4676', phone2: '077 395 7888' },
-            { name: 'Kalutara', nameSi: 'කළුතර', phone1: '034 222 2344', phone2: '077 395 7887' },
-          ]}
-        />
-
-        {/* Southern Province */}
-        <ProvinceSection
-          title="Southern Province"
-          titleSi="දකුණු පළාත"
-          districts={[
-            { name: 'Galle', nameSi: 'ගාල්ල', phone1: '091 224 2355', phone2: '077 395 7889' },
-            { name: 'Matara', nameSi: 'මාතර', phone1: '041 223 4030', phone2: '077 395 7894' },
-            { name: 'Hambantota', nameSi: 'හම්බන්තොට', phone1: '047 225 8056', phone2: '077 395 7895' },
-          ]}
-        />
-
-        {/* Sabaragamuwa Province */}
-        <ProvinceSection
-          title="Sabaragamuwa Province"
-          titleSi="සබරගමුව පළාත"
-          note="Landslide and flood prone"
-          districts={[
-            { name: 'Ratnapura', nameSi: 'රත්නපුර', phone1: '045 222 5522', phone2: '077 395 7898' },
-            { name: 'Kegalle', nameSi: 'කෑගල්ල', phone1: '035 222 2843', phone2: '077 395 7891' },
-          ]}
-        />
-
-        {/* North Western Province */}
-        <ProvinceSection
-          title="North Western Province"
-          titleSi="වයඹ පළාත"
-          districts={[
-            { name: 'Kurunegala', nameSi: 'කුරුණෑගල', phone1: '037 222 0455', phone2: '077 395 7892' },
-            { name: 'Puttalam', nameSi: 'පුත්තලම', phone1: '032 226 5345', phone2: '077 395 7896' },
-          ]}
-        />
-
-        {/* Central Province */}
-        <ProvinceSection
-          title="Central Province"
-          titleSi="මධ්‍යම පළාත"
-          districts={[
-            { name: 'Kandy', nameSi: 'මහනුවර', phone1: '081 220 2875', phone2: '077 395 7890' },
-            { name: 'Nuwara Eliya', nameSi: 'නුවරඑළිය', phone1: '052 222 3448', phone2: '077 395 7897' },
-            { name: 'Matale', nameSi: 'මාතලේ', phone1: '066 223 0926', phone2: '077 395 7886' },
-          ]}
-        />
-
-        {/* North Central Province */}
-        <ProvinceSection
-          title="North Central Province"
-          titleSi="උතුරු මැද පළාත"
-          districts={[
-            { name: 'Anuradhapura', nameSi: 'අනුරාධපුරය', phone1: '025 222 5333', phone2: '077 395 7883' },
-            { name: 'Polonnaruwa', nameSi: 'පොළොන්නරුව', phone1: '027 222 6676', phone2: '077 395 7884' },
-          ]}
-        />
-
-        {/* Uva Province */}
-        <ProvinceSection
-          title="Uva Province"
-          titleSi="ඌව පළාත"
-          districts={[
-            { name: 'Badulla', nameSi: 'බදුල්ල', phone1: '055 222 4434', phone2: '077 395 7885' },
-            { name: 'Monaragala', nameSi: 'මොනරාගල', phone1: '055 227 6378', phone2: '077 395 7893' },
-          ]}
-        />
-
+        <section className="card p-6 text-sm text-slate-300 space-y-2">
+          <p>
+            For district disaster management units, call <a href="tel:117" className="font-semibold text-white underline">117</a> or
+            visit{' '}
+            <a href="https://www.dmc.gov.lk" target="_blank" rel="noopener noreferrer" className="text-cyan-400 underline">
+              https://www.dmc.gov.lk
+            </a>
+            .
+          </p>
+          <p className="text-xs text-slate-400">Numbers verified 11 Oct 2026 against public DMC/Police advisories.</p>
+        </section>
       </main>
     </div>
   );
@@ -209,53 +117,5 @@ function ContactCard({
         </a>
       </div>
     </div>
-  );
-}
-
-function ProvinceSection({
-  title,
-  titleSi,
-  note,
-  districts,
-}: {
-  title: string;
-  titleSi: string;
-  note?: string;
-  districts: Array<{ name: string; nameSi: string; phone1: string; phone2: string }>;
-}) {
-  return (
-    <section className="card p-6">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h2 className="text-lg font-bold text-white">{title}</h2>
-          <p className="text-sm text-slate-400">{titleSi}</p>
-        </div>
-        {note && (
-          <span className="badge-warning">{note}</span>
-        )}
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {districts.map((d) => (
-          <div key={d.name} className="bg-slate-900 rounded-xl p-4 border border-slate-700/60">
-            <div className="font-semibold text-white">{d.name}</div>
-            <div className="text-xs text-slate-400 mb-3">{d.nameSi}</div>
-            <div className="flex flex-col gap-2">
-              <a
-                href={`tel:${d.phone1.replace(/\s/g, '')}`}
-                className="text-sm bg-slate-900 hover:bg-brand-600 hover:text-white px-3 py-2 rounded-lg text-center font-medium transition-colors"
-              >
-                {d.phone1}
-              </a>
-              <a
-                href={`tel:${d.phone2.replace(/\s/g, '')}`}
-                className="text-sm bg-slate-900 hover:bg-emerald-600 hover:text-white px-3 py-2 rounded-lg text-center font-medium transition-colors"
-              >
-                {d.phone2}
-              </a>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
   );
 }

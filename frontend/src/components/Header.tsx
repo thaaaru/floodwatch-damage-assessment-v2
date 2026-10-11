@@ -14,7 +14,6 @@ const navigation = [
   { name: 'Rivers', href: '/rivers' },
   // 'Flood Hub' (/floods) is hidden per UX request 2026-05-22; the page
   // still exists but is no longer linked from the nav.
-  { name: 'Intel', href: '/intel' },
   { name: 'External Links', href: '/external-links' },
   { name: 'Data Sources', href: '/data-sources' },
   { name: 'Contacts', href: '/contacts' },

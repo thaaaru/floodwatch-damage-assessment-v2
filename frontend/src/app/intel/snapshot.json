@@ -1007,52 +1007,6 @@
       }
     ]
   },
-  "trafficFlow": {
-    "here": {
-      "count": 0,
-      "summary": {
-        "total_locations": 0,
-        "free_flow": 0,
-        "light": 0,
-        "moderate": 0,
-        "heavy": 0,
-        "severe": 0,
-        "avg_speed_kmh": 0,
-        "avg_jam_factor": 0
-      },
-      "locations": []
-    },
-    "tomtom": {
-      "count": 0,
-      "summary": {
-        "total_locations": 0,
-        "free_flow": 0,
-        "light": 0,
-        "moderate": 0,
-        "heavy": 0,
-        "severe": 0,
-        "closed": 0,
-        "avg_speed_kmh": 0,
-        "total_delay_minutes": 0
-      },
-      "locations": []
-    },
-    "combined_count": 0
-  },
-  "trafficIncidents": [],
-  "allFacilities": {
-    "hospitals": [],
-    "police": [],
-    "fire_stations": [],
-    "shelters": [],
-    "summary": {
-      "hospitals": 0,
-      "police": 0,
-      "fire_stations": 0,
-      "shelters": 0
-    },
-    "last_updated": "2026-05-20T09:26:49.941891"
-  },
   "floodPatterns": {
     "district": "Colombo",
     "coordinates": {

@@ -3,10 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  FloodThreatResponse, IrrigationResponse, TrafficFlowResponse, TrafficIncident,
-  AllFacilitiesResponse, FloodPatternsResponse, EnvironmentalDataResponse, YesterdayStats,
-} from '@/lib/api';
+import { FloodPatternsResponse, EnvironmentalDataResponse, YesterdayStats } from '@/lib/api';
 
 // Historical snapshot, captured at build time. The /intel page is intentionally
 // static: no runtime API calls, no auto-refresh, no localStorage cache. To
@@ -25,18 +22,15 @@ export default function IntelDashboard() {
   // Cast via `unknown` because the captured JSON is a structural subset of the
   // TS interfaces (some optional fields the API doesn't always emit). We trust
   // the JSX to handle missing-field cases via the `fmt` helper and `?.` guards.
-  const [floodThreat] = useState<FloodThreatResponse | null>(snapshot.floodThreat as unknown as FloodThreatResponse);
-  const [riverData] = useState<IrrigationResponse | null>(snapshot.irrigation as unknown as IrrigationResponse);
-  const [trafficFlow] = useState<TrafficFlowResponse | null>(snapshot.trafficFlow as unknown as TrafficFlowResponse);
-  const [trafficIncidents] = useState<TrafficIncident[]>(snapshot.trafficIncidents as unknown as TrafficIncident[]);
-  const [allFacilities] = useState<AllFacilitiesResponse | null>(snapshot.allFacilities as unknown as AllFacilitiesResponse);
   const [floodPatterns] = useState<FloodPatternsResponse | null>(snapshot.floodPatterns as unknown as FloodPatternsResponse);
   const [environmentalData] = useState<EnvironmentalDataResponse | null>(snapshot.environmental as unknown as EnvironmentalDataResponse);
   const [yesterdayStats] = useState<YesterdayStats | null>(snapshot.yesterdayStats as unknown as YesterdayStats);
 
-  // Snapshot capture time used as the "last updated" label.
+  // Snapshot capture date, shown as "Snapshot from <date>".
   const [lastUpdated] = useState<string>(
-    new Date(snapshot.captured_at).toLocaleString()
+    new Date(snapshot.captured_at).toLocaleDateString('en-GB', {
+      timeZone: 'Asia/Colombo', day: 'numeric', month: 'long', year: 'numeric',
+    })
   );
 
   // Always false: data is frozen, no loading spinners anywhere.
@@ -45,17 +39,7 @@ export default function IntelDashboard() {
   const loadingEnvironmental = false;
   const loadingYesterdayStats = false;
 
-  const [activeTab, setActiveTab] = useState<'threat' | 'infrastructure'>('threat');
 
-  const getFacilityIcon = (type: string) => {
-    switch (type) {
-      case 'hospitals': return '🏥';
-      case 'police': return '🚔';
-      case 'fire_stations': return '🚒';
-      case 'shelters': return '🏠';
-      default: return '📍';
-    }
-  };
 
   const getUrgencyColor = (tier: string) => {
     switch (tier) {
@@ -178,42 +162,15 @@ export default function IntelDashboard() {
           </div>
           <div className="flex items-center gap-4">
             <div className="text-right">
-              <div className="text-xs text-slate-500">Auto-refresh: 30s</div>
-              <div className="text-sm text-slate-400">Updated: {lastUpdated}</div>
+              <div className="text-sm text-slate-400">Snapshot from {lastUpdated}</div>
             </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Tab Navigation */}
-        <div className="flex gap-2 border-b border-slate-700/50 pb-3">
-          <button
-            onClick={() => setActiveTab('threat')}
-            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeTab === 'threat'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                : 'glass-dark text-slate-400 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            Flood Threat Intel
-          </button>
-          {/* Infrastructure Intel tab - hidden for now
-          <button
-            onClick={() => setActiveTab('infrastructure')}
-            className={`px-4 py-2 rounded-t-lg font-semibold transition-colors ${
-              activeTab === 'infrastructure'
-                ? 'bg-gradient-to-r from-purple-600 to-purple-500 text-white shadow-md'
-                : 'glass-dark text-gray-400 hover:text-white'
-            }`}
-          >
-            Infrastructure Intel
-          </button>
-          */}
-        </div>
-
         {/* FLOOD THREAT INTEL TAB */}
-        {activeTab === 'threat' && (
+        {(
           <>
             {/* Historical Flood Patterns Analysis */}
             <div className="glass-dark rounded-2xl p-4 shadow-lg">
@@ -1016,7 +973,8 @@ export default function IntelDashboard() {
             {/* Yesterday's Weather Stats */}
             <div className="glass-dark rounded-2xl p-4 shadow-lg">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span>📅</span> Yesterday&apos;s Weather Summary
+                <span>📅</span> Weather summary
+                {yesterdayStats?.date && `, ${new Date(yesterdayStats.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`}
                 {loadingYesterdayStats && <span className="text-sm text-gray-400 font-normal">(Loading...)</span>}
               </h2>
 
@@ -1030,7 +988,7 @@ export default function IntelDashboard() {
                     </div>
                     <div className="bg-cyan-900/50 border border-cyan-700 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-cyan-400">{fmt(yesterdayStats.avg_rainfall_mm, 1)}</div>
-                      <div className="text-xs text-cyan-300">Avg per District (mm)</div>
+                      <div className="text-xs text-cyan-300">Avg per location (mm)</div>
                     </div>
                     <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-orange-400">{fmt(yesterdayStats.max_rainfall_mm)}</div>
@@ -1038,7 +996,7 @@ export default function IntelDashboard() {
                     </div>
                     <div className="bg-green-900/50 border border-green-700 rounded-lg p-3 text-center">
                       <div className="text-2xl font-bold text-green-400">{yesterdayStats.districts_with_rain}</div>
-                      <div className="text-xs text-green-300">Districts with Rain</div>
+                      <div className="text-xs text-green-300">Locations with rain</div>
                     </div>
                   </div>
 
@@ -1113,7 +1071,7 @@ export default function IntelDashboard() {
                   {yesterdayStats.dry_districts.length > 0 && (
                     <div className="bg-gray-700/30 rounded-lg p-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-gray-400 font-medium">☀️ Dry Districts (No Rain)</span>
+                        <span className="text-gray-400 font-medium">☀️ Dry locations (no rain)</span>
                         <span className="bg-gray-700 text-gray-400 text-xs px-2 py-0.5 rounded-full">
                           {yesterdayStats.dry_districts.length}
                         </span>
@@ -1157,7 +1115,7 @@ export default function IntelDashboard() {
               ) : loadingYesterdayStats ? (
                 <div className="text-center py-8">
                   <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <div className="text-gray-400">Loading yesterday&apos;s weather data...</div>
+                  <div className="text-gray-400">Loading weather summary...</div>
                 </div>
               ) : (
                 <div className="text-center text-gray-500 py-8">
@@ -1456,348 +1414,6 @@ export default function IntelDashboard() {
           </>
         )}
 
-        {/* INFRASTRUCTURE INTEL TAB */}
-        {activeTab === 'infrastructure' && (
-          <>
-            {/* Traffic Flow Overview */}
-            {trafficFlow && (
-              <div className="glass-dark rounded-2xl p-4 shadow-lg">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <span>🚗</span> Road Network Status
-                  <span className="text-sm font-normal text-gray-400">({trafficFlow.total_locations} monitoring points)</span>
-                </h2>
-
-                {/* Congestion Summary Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
-                  <div className="bg-green-900/50 border border-green-700 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-green-500">{trafficFlow.combined_summary?.free_flow ?? 0}</div>
-                    <div className="text-xs text-green-300">Free Flow</div>
-                  </div>
-                  <div className="bg-green-800/50 border border-green-600 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-green-400">{trafficFlow.combined_summary?.light ?? 0}</div>
-                    <div className="text-xs text-green-300">Light</div>
-                  </div>
-                  <div className="bg-yellow-900/50 border border-yellow-700 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-yellow-500">{trafficFlow.combined_summary?.moderate ?? 0}</div>
-                    <div className="text-xs text-yellow-300">Moderate</div>
-                  </div>
-                  <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-orange-500">{trafficFlow.combined_summary?.heavy ?? 0}</div>
-                    <div className="text-xs text-orange-300">Heavy</div>
-                  </div>
-                  <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-red-500">{trafficFlow.combined_summary?.severe ?? 0}</div>
-                    <div className="text-xs text-red-300">Severe</div>
-                  </div>
-                  <div className="bg-gray-700 rounded-lg p-3 text-center">
-                    <div className="text-2xl font-bold text-white">{fmt(trafficFlow.combined_summary?.avg_speed_kmh ?? 0)}</div>
-                    <div className="text-xs text-gray-400">Avg km/h</div>
-                  </div>
-                </div>
-
-                {/* Congested Roads */}
-                {trafficFlow.congested_roads && trafficFlow.congested_roads.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="text-sm font-semibold text-orange-400 mb-2">Congested Roads</h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="text-gray-400 border-b border-gray-700">
-                            <th className="text-left py-2">Road</th>
-                            <th className="text-center py-2">Status</th>
-                            <th className="text-center py-2">Current Speed</th>
-                            <th className="text-center py-2">Normal Speed</th>
-                            <th className="text-center py-2">Delay</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {trafficFlow.congested_roads.map((road, idx) => (
-                            <tr key={idx} className="border-b border-gray-700 hover:bg-gray-700">
-                              <td className="py-2 font-medium">{road.name}</td>
-                              <td className="text-center py-2">
-                                <span className={`px-2 py-1 rounded text-xs font-bold ${getCongestionColor(road.congestion)}`}>
-                                  {road.congestion.toUpperCase()}
-                                </span>
-                              </td>
-                              <td className="text-center py-2 font-mono text-red-400">{fmt(road.current_speed_kmh)} km/h</td>
-                              <td className="text-center py-2 font-mono text-gray-500">{fmt(road.free_flow_speed_kmh)} km/h</td>
-                              <td className="text-center py-2 font-mono text-orange-400">
-                                {road.delay_minutes ? `+${fmt(road.delay_minutes)} min` : '-'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                )}
-
-                {(!trafficFlow.congested_roads || trafficFlow.congested_roads.length === 0) && (
-                  <div className="text-center text-green-400 py-4">
-                    All monitored roads have normal traffic flow
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Road Incidents & Closures */}
-            <div className="glass-dark rounded-2xl p-4 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span>⚠️</span> Road Incidents & Closures
-                <span className="text-sm font-normal text-gray-400">({trafficIncidents?.length ?? 0} active)</span>
-              </h2>
-
-              {/* Incident Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
-                <div className="bg-red-900/50 border border-red-700 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-red-500">
-                    {trafficIncidents?.filter(i => i.category?.toLowerCase().includes('closed')).length ?? 0}
-                  </div>
-                  <div className="text-xs text-red-300">Road Closures</div>
-                </div>
-                <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-orange-500">
-                    {trafficIncidents?.filter(i => i.category?.toLowerCase().includes('accident')).length ?? 0}
-                  </div>
-                  <div className="text-xs text-orange-300">Accidents</div>
-                </div>
-                <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-blue-500">
-                    {trafficIncidents?.filter(i => i.category?.toLowerCase().includes('flood')).length ?? 0}
-                  </div>
-                  <div className="text-xs text-blue-300">Flooding</div>
-                </div>
-                <div className="bg-yellow-900/50 border border-yellow-700 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-yellow-500">
-                    {trafficIncidents?.filter(i => i.category?.toLowerCase().includes('work')).length ?? 0}
-                  </div>
-                  <div className="text-xs text-yellow-300">Roadworks</div>
-                </div>
-                <div className="bg-purple-900/50 border border-purple-700 rounded-lg p-3 text-center">
-                  <div className="text-2xl font-bold text-purple-500">
-                    {trafficIncidents?.filter(i => i.category?.toLowerCase().includes('jam')).length ?? 0}
-                  </div>
-                  <div className="text-xs text-purple-300">Traffic Jams</div>
-                </div>
-              </div>
-
-              {/* Incident List */}
-              {trafficIncidents && trafficIncidents.length > 0 ? (
-                <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                  {trafficIncidents.slice(0, 20).map((incident, idx) => (
-                    <div key={idx} className="bg-gray-700 rounded-lg p-3 flex items-start gap-3">
-                      <span className="text-2xl">{getIncidentIcon(incident.category)}</span>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${getIncidentSeverityColor(incident.severity)}`}>
-                            {incident.severity.toUpperCase()}
-                          </span>
-                          <span className="text-sm font-medium">{incident.category}</span>
-                        </div>
-                        <div className="text-sm text-gray-300">{incident.road_name}</div>
-                        {incident.description && (
-                          <div className="text-xs text-gray-500 mt-1">{incident.description}</div>
-                        )}
-                        <div className="flex gap-4 mt-1 text-xs text-gray-500">
-                          {incident.delay_minutes > 0 && (
-                            <span className="text-orange-400">Delay: {incident.delay_minutes} min</span>
-                          )}
-                          {incident.length_km > 0 && (
-                            <span>Length: {fmt(incident.length_km, 1)} km</span>
-                          )}
-                        </div>
-                      </div>
-                      <a
-                        href={`https://www.google.com/maps?q=${incident.lat},${incident.lon}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 text-xs"
-                      >
-                        Map
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-green-400 py-4">
-                  No active road incidents
-                </div>
-              )}
-            </div>
-
-            {/* Emergency Facilities */}
-            {allFacilities && (
-              <div className="glass-dark rounded-2xl p-4 shadow-lg">
-                <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                  <span>🏥</span> Emergency Facilities
-                  <span className="text-sm font-normal text-gray-400">
-                    ({allFacilities.summary.hospitals + allFacilities.summary.police + allFacilities.summary.fire_stations + allFacilities.summary.shelters} total)
-                  </span>
-                </h2>
-
-                {/* Facility Summary Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                  <div className="bg-red-900/50 border border-red-700 rounded-lg p-4 text-center">
-                    <div className="text-4xl mb-2">🏥</div>
-                    <div className="text-3xl font-bold text-red-500">{allFacilities.summary.hospitals}</div>
-                    <div className="text-sm text-red-300">Hospitals</div>
-                  </div>
-                  <div className="bg-blue-900/50 border border-blue-700 rounded-lg p-4 text-center">
-                    <div className="text-4xl mb-2">🚔</div>
-                    <div className="text-3xl font-bold text-blue-500">{allFacilities.summary.police}</div>
-                    <div className="text-sm text-blue-300">Police Stations</div>
-                  </div>
-                  <div className="bg-orange-900/50 border border-orange-700 rounded-lg p-4 text-center">
-                    <div className="text-4xl mb-2">🚒</div>
-                    <div className="text-3xl font-bold text-orange-500">{allFacilities.summary.fire_stations}</div>
-                    <div className="text-sm text-orange-300">Fire Stations</div>
-                  </div>
-                  <div className="bg-green-900/50 border border-green-700 rounded-lg p-4 text-center">
-                    <div className="text-4xl mb-2">🏠</div>
-                    <div className="text-3xl font-bold text-green-500">{allFacilities.summary.shelters}</div>
-                    <div className="text-sm text-green-300">Shelters</div>
-                  </div>
-                </div>
-
-                {/* Facility Lists */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Hospitals */}
-                  <div className="bg-gray-700 rounded-lg p-3">
-                    <h3 className="text-sm font-semibold text-red-400 mb-2">Hospitals (showing 10)</h3>
-                    <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                      {allFacilities.hospitals.slice(0, 10).map((h) => (
-                        <div key={h.id} className="flex justify-between items-center text-xs py-1 border-b border-gray-600">
-                          <span className="truncate flex-1">{h.name}</span>
-                          <a
-                            href={`https://www.google.com/maps?q=${h.lat},${h.lon}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300 ml-2"
-                          >
-                            Map
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Police Stations */}
-                  <div className="bg-gray-700 rounded-lg p-3">
-                    <h3 className="text-sm font-semibold text-blue-400 mb-2">Police Stations (showing 10)</h3>
-                    <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                      {allFacilities.police.slice(0, 10).map((p) => (
-                        <div key={p.id} className="flex justify-between items-center text-xs py-1 border-b border-gray-600">
-                          <span className="truncate flex-1">{p.name}</span>
-                          <a
-                            href={`https://www.google.com/maps?q=${p.lat},${p.lon}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 hover:text-blue-300 ml-2"
-                          >
-                            Map
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Route Impact Assessment */}
-            <div className="glass-dark rounded-2xl p-4 shadow-lg">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <span>🛣️</span> Evacuation Route Assessment
-              </h2>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Affected Routes */}
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-red-400 mb-3">Potentially Affected Routes</h3>
-                  {(() => {
-                    const floodIncidents = (trafficIncidents || []).filter(i =>
-                      i.category?.toLowerCase().includes('flood') ||
-                      i.category?.toLowerCase().includes('closed')
-                    );
-                    const congestedRoads = trafficFlow?.congested_roads?.filter(r =>
-                      r.congestion === 'severe' || r.congestion === 'heavy'
-                    ) || [];
-
-                    if (floodIncidents.length === 0 && congestedRoads.length === 0) {
-                      return <div className="text-green-400 text-sm">All major routes appear clear</div>;
-                    }
-
-                    return (
-                      <div className="space-y-2">
-                        {floodIncidents.slice(0, 5).map((incident, idx) => (
-                          <div key={`flood-${idx}`} className="flex items-center gap-2 text-sm">
-                            <span className="text-red-500">🚫</span>
-                            <span>{incident.road_name || incident.category}</span>
-                            <span className="text-xs text-gray-500">({incident.category})</span>
-                          </div>
-                        ))}
-                        {congestedRoads.slice(0, 5).map((road, idx) => (
-                          <div key={`road-${idx}`} className="flex items-center gap-2 text-sm">
-                            <span className="text-orange-500">⚠️</span>
-                            <span>{road.name}</span>
-                            <span className="text-xs text-gray-500">(Heavy traffic)</span>
-                          </div>
-                        ))}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Quick Stats */}
-                <div className="bg-gray-700 rounded-lg p-4">
-                  <h3 className="text-sm font-semibold text-blue-400 mb-3">Network Health</h3>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Road Closures</span>
-                      <span className={`font-bold ${(trafficIncidents || []).filter(i => i.category?.toLowerCase().includes('closed')).length > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                        {(trafficIncidents || []).filter(i => i.category?.toLowerCase().includes('closed')).length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Flood-Related Incidents</span>
-                      <span className={`font-bold ${(trafficIncidents || []).filter(i => i.category?.toLowerCase().includes('flood')).length > 0 ? 'text-blue-500' : 'text-green-500'}`}>
-                        {(trafficIncidents || []).filter(i => i.category?.toLowerCase().includes('flood')).length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Severe Congestion Points</span>
-                      <span className={`font-bold ${(trafficFlow?.combined_summary?.severe || 0) > 0 ? 'text-red-500' : 'text-green-500'}`}>
-                        {trafficFlow?.combined_summary?.severe ?? 0}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Average Network Speed</span>
-                      <span className="font-bold text-white">
-                        {trafficFlow?.combined_summary?.avg_speed_kmh != null ? fmt(trafficFlow.combined_summary.avg_speed_kmh) : '-'} km/h
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400">Total Delay (monitored roads)</span>
-                      <span className={`font-bold ${(trafficFlow?.tomtom_summary?.total_delay_minutes || 0) > 30 ? 'text-orange-500' : 'text-green-500'}`}>
-                        {fmt(trafficFlow?.tomtom_summary?.total_delay_minutes ?? 0)} min
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Data Sources Info */}
-            <div className="glass-dark rounded-xl p-4 text-sm text-gray-400 shadow-md">
-              <div className="font-semibold text-gray-300 mb-2">Data Sources:</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <div>🚗 <span className="text-gray-300">Traffic Flow:</span> HERE & TomTom APIs (5min cache)</div>
-                <div>⚠️ <span className="text-gray-300">Incidents:</span> TomTom Traffic API (5min cache)</div>
-                <div>🏥 <span className="text-gray-300">Facilities:</span> OpenStreetMap (24hr cache)</div>
-              </div>
-            </div>
-          </>
-        )}
       </main>
     </div>
   );
