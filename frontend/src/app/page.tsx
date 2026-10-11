@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api, IrrigationStation, MetStation, MetStationsResponse } from '@/lib/api';
 import { ui } from '@/lib/ui';
 import BasinStatusTable from '@/components/BasinStatusTable';
+import LatestNews from '@/components/LatestNews';
 import RainContext from '@/components/RainContext';
 
 const MetStationsMap = dynamic(() => import('@/components/MetStationsMap'), {
@@ -131,7 +132,7 @@ export default function Dashboard() {
       </div>
 
       <div className={`max-w-screen-2xl ${ui.container} space-y-4`}>
-      {/* Sri Lanka is tall: on wide screens the map takes full height on the left and the river table sits beside it. */}
+      {/* Sri Lanka is tall: on wide screens the map takes full height on the left and news sits beside it. */}
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
       <div className={`relative ${ui.card} overflow-hidden`}>
         <div className="h-[max(360px,55vh)] sm:h-[clamp(420px,60vh,640px)] lg:h-[max(480px,calc(100dvh-15rem))]">
@@ -235,9 +236,11 @@ export default function Dashboard() {
         {updated && <span className="sm:ml-auto">Updated {updated}</span>}
       </div>
 
+      <LatestNews />
+      </div>
+      </div>
+
       <BasinStatusTable stations={gauges} />
-      </div>
-      </div>
 
       <RainContext />
 

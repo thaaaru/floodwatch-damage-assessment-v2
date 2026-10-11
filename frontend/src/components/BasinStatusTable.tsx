@@ -60,13 +60,13 @@ export default function BasinStatusTable({ stations }: { stations: IrrigationSta
           <p className={`${ui.body} mt-3`}>No river gauge data yet.</p>
         ) : (
           <div className="overflow-x-auto -mx-3 sm:mx-0 mt-3">
-            <table className="w-full text-xs sm:text-sm min-w-[600px] lg:min-w-0">
+            <table className="w-full text-xs sm:text-sm min-w-[600px]">
               <thead>
                 <tr className={ui.th}>
                   <th className="text-left py-2 px-2">Basin</th>
                   <th className="text-left py-2 px-2">Gauges (level, trend)</th>
-                  <th className="text-center lg:max-xl:hidden py-2 px-2">Rising</th>
-                  <th className="text-center lg:max-xl:hidden py-2 px-2">Stale</th>
+                  <th className="text-center py-2 px-2">Rising</th>
+                  <th className="text-center py-2 px-2">Stale</th>
                   <th className="text-center py-2 px-2">Status</th>
                 </tr>
               </thead>
@@ -83,8 +83,8 @@ export default function BasinStatusTable({ stations }: { stations: IrrigationSta
                         </span>
                       ))}
                     </td>
-                    <td className="text-center py-2 px-2 lg:max-xl:hidden">{b.gauges.filter((g) => g.trend === 'rising').length}</td>
-                    <td className="text-center py-2 px-2 lg:max-xl:hidden">{b.gauges.filter((g) => g.stale).length}</td>
+                    <td className="text-center py-2 px-2">{b.gauges.filter((g) => g.trend === 'rising').length}</td>
+                    <td className="text-center py-2 px-2">{b.gauges.filter((g) => g.stale).length}</td>
                     <td className="text-center py-2 px-2"><StatusPill status={b.worst} /></td>
                   </tr>
                 ))}
