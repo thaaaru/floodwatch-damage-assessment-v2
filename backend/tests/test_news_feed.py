@@ -51,3 +51,18 @@ def test_news_endpoint_serves_snapshot_without_fetching(monkeypatch):
     monkeypatch.setattr(httpx.AsyncClient, "send", boom)
     r = TestClient(app).get("/api/news")
     assert r.status_code == 200 and set(r.json()) == {"refreshedAt", "sources", "items"}
+
+
+def test_newsfirst_keeps_only_sri_lanka_items():
+    nepal = ("Flash Floods Sweep Away Several Houses in Nepal's Gorkha",
+             "A flash flood in the Budhi Gandaki River in Gorkha District of Nepal; the Department of "
+             "Hydrology and Meteorology said...")
+    assert not nf.about_sri_lanka(*nepal)
+    # The Colombo dateline alone is not enough
+    assert not nf.about_sri_lanka("Floods in India", "COLOMBO (News 1st): Heavy rain in Kerala displaced thousands.")
+    assert nf.about_sri_lanka("Two Spill Gates of Deduru Oya Opened", "COLOMBO (News 1st): The reservoir...")
+    assert nf.about_sri_lanka("Landslide alerts", "COLOMBO (News 1st): The NBRO has issued warnings for Kegalle.")
+    assert nf.about_sri_lanka("Heavy showers expected", "Thundershowers in the Sabaragamuwa and Western provinces.")
+    assert nf.about_sri_lanka("3,495 People Affected by Heavy Rains Across 15 Districts",
+                              "COLOMBO (News 1st) - The National Disaster Relief Services Centre says...")
+    assert nf.about_sri_lanka("Amber advisory", "The Department of Meteorology has issued an advisory.")

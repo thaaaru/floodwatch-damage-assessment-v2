@@ -44,6 +44,25 @@ MONTHS = {m: i for i, m in enumerate(
 RELEVANT = re.compile(
     r"rain|flood|storm|cyclone|lightning|weather|monsoon|landslide|wind|depression|"
     r"low[- ]pressure|drought|thunder|heat|advisory|warning|spill|tsunami|sea", re.I)
+# NewsFirst carries world weather news too; keep only items about Sri Lanka.
+SRI_LANKA = re.compile(
+    r"\b(?:sri lanka|lankan|island[- ]?wide|across the island|"
+    r"colombo|gampaha|kalutara|kandy|matale|nuwara eliya|galle|matara|hambantota|jaffna|kilinochchi|"
+    r"mannar|vavuniya|mullaitivu|batticaloa|ampara|trincomalee|kurunegala|puttalam|anuradhapura|"
+    r"polonnaruwa|badulla|mon[ae]ragala|ratnapura|kegalle|"
+    r"uva|sabaragamuwa|north[- ]central|north[- ]western|(?:western|central|southern|northern|eastern) province|"
+    r"kelani|kalu ganga|gin ganga|nilwala|mahaweli|walawe|attanagalu|[a-z]+ oya|"
+    r"dmc|disaster management centre|nbro|national building research|ndrsc|national disaster relief|"
+    r"divisional secretariat|grama niladhari|"
+    r"department of meteorology|met(?:eorology)? department|irrigation department|department of irrigation)\b",
+    re.I)
+NEWSFIRST_DATELINE = re.compile(r"^\s*colombo\s*\(news ?1st\)\s*[:;,-]?\s*", re.I)
+
+
+def about_sri_lanka(title: str, summary: str) -> bool:
+    """True when the text names Sri Lanka, a district/province, a river or a national agency.
+    NewsFirst's "COLOMBO (News 1st)" dateline alone does not count."""
+    return bool(SRI_LANKA.search(f"{title} {NEWSFIRST_DATELINE.sub('', summary)}"))
 
 
 def item(id, title, summary, source, icon, url, published_at: Optional[datetime], category, severity="info",
@@ -170,7 +189,7 @@ async def fetch_newsfirst(client: httpx.AsyncClient) -> list[dict]:
     for p in posts:
         title = _strip((p.get("title") or {}).get("rendered", ""))
         summary = _strip((p.get("excerpt") or {}).get("rendered", "")) or _strip((p.get("content") or {}).get("rendered", ""))
-        if not title or not RELEVANT.search(f"{title} {summary[:300]}"):
+        if not title or not RELEVANT.search(f"{title} {summary[:300]}") or not about_sri_lanka(title, summary):
             continue
         published = datetime.fromisoformat(p["date_gmt"].replace("Z", "+00:00")) if p.get("date_gmt") else None
         lower = title.lower()
