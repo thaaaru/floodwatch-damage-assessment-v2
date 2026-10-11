@@ -5,13 +5,16 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { MetStation } from '@/lib/api';
+import { IrrigationStation, MetStation } from '@/lib/api';
 import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
+import { BASIN_CREDIT, GAUGE_CREDIT, createBasinLayer, createGaugeLayer, gaugesKey, loadBasins } from '@/lib/gauges';
 
 interface MetStationsMapProps {
   stations: MetStation[];
   selectedWmoId: number | null;
   onStationSelect: (s: MetStation | null) => void;
+  /** Irrigation Dept river gauges (layer on by default; basins layer off). */
+  gauges?: IrrigationStation[];
 }
 
 /**
@@ -128,10 +131,17 @@ export default function MetStationsMap({
   stations,
   selectedWmoId,
   onStationSelect,
+  gauges = [],
 }: MetStationsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
+  const controlRef = useRef<L.Control.Layers | null>(null);
+  const gaugeLayerRef = useRef<L.LayerGroup | null>(null);
+  const basinLayerRef = useRef<L.GeoJSON | null>(null);
+  const gaugeKeyRef = useRef('');
+  const gaugesRef = useRef<IrrigationStation[]>(gauges);
+  gaugesRef.current = gauges;
 
   // --- one-time map init -------------------------------------------------
   useEffect(() => {
@@ -150,10 +160,20 @@ export default function MetStationsMap({
       .attribution({ position: 'bottomright' })
       .addAttribution(
         BASEMAP_ATTRIBUTION + ' &middot; ' +
-          'Rainfall: <a href="https://meteo.gov.lk">Sri Lanka DoM</a>',
+          'Rainfall: <a href="https://meteo.gov.lk">Sri Lanka DoM</a>' +
+          ` &middot; ${GAUGE_CREDIT} &middot; ${BASIN_CREDIT}`,
       )
       .addTo(map);
+    controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
     mapRef.current = map;
+    // Basins: available in the layer control, off by default on the home map.
+    loadBasins()
+      .then((data) => {
+        if (mapRef.current !== map) return;
+        basinLayerRef.current = createBasinLayer(data, () => gaugesRef.current);
+        controlRef.current?.addOverlay(basinLayerRef.current, 'River basins');
+      })
+      .catch((e) => console.error('Failed to load river basins:', e));
     return () => {
       map.remove();
       mapRef.current = null;
@@ -174,6 +194,24 @@ export default function MetStationsMap({
       markersRef.current.push(marker);
     });
   }, [stations, onStationSelect]);
+
+  // --- river gauges (on by default) -------------------------------------
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const key = gaugesKey(gauges);
+    if (gaugeLayerRef.current && key === gaugeKeyRef.current) return;
+    gaugeKeyRef.current = key;
+    const wasOn = !gaugeLayerRef.current || map.hasLayer(gaugeLayerRef.current);
+    if (gaugeLayerRef.current) {
+      controlRef.current?.removeLayer(gaugeLayerRef.current);
+      gaugeLayerRef.current.remove();
+    }
+    gaugeLayerRef.current = createGaugeLayer(gauges);
+    if (wasOn) gaugeLayerRef.current.addTo(map);
+    controlRef.current?.addOverlay(gaugeLayerRef.current, 'River gauges');
+    basinLayerRef.current?.resetStyle();
+  }, [gauges]);
 
   // --- pan to selected station ------------------------------------------
   useEffect(() => {

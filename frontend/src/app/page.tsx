@@ -4,7 +4,7 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
-import { api, MetStation, MetStationsResponse } from '@/lib/api';
+import { api, IrrigationStation, MetStation, MetStationsResponse } from '@/lib/api';
 
 const MetStationsMap = dynamic(() => import('@/components/MetStationsMap'), {
   ssr: false,
@@ -29,6 +29,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
+  const [gauges, setGauges] = useState<IrrigationStation[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -36,6 +37,10 @@ export default function Dashboard() {
       const res = await api.getMetStations();
       setData(res);
       setLastFetched(new Date());
+      // River gauges are a secondary layer: a failure must not blank the rainfall map.
+      api.getIrrigationData()
+        .then((g) => setGauges(g?.stations ?? []))
+        .catch((e) => console.error('Failed to fetch river gauges:', e));
     } catch (err) {
       console.error('Failed to fetch Met Dept data:', err);
       setError('Unable to load Met Dept data. Please try again in a moment.');
@@ -148,6 +153,7 @@ export default function Dashboard() {
               stations={stations}
               selectedWmoId={selected?.wmo_id ?? null}
               onStationSelect={setSelected}
+              gauges={gauges}
             />
           )}
         </div>

@@ -1,0 +1,136 @@
+// SPDX-License-Identifier: Apache-2.0
+
+// Shared Leaflet layers for Irrigation Dept river gauges and river basins
+// (used by RiversMap on /rivers and MetStationsMap on the home page).
+// Leaflet popups are HTML strings, so the 7-day chart is a small inline SVG
+// rather than one of the React chart components.
+
+import L from 'leaflet';
+import { api, GaugeReading, GaugeStatus, IrrigationStation } from '@/lib/api';
+import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
+
+export { BASIN_CREDIT, GAUGE_CREDIT };
+
+// Upstream strings go into popup HTML; escape them.
+const esc = (v: unknown) =>
+  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
+
+const m = (v: number | null) => (v === null || v === undefined ? '&mdash;' : `${v.toFixed(2)} m`);
+
+function gaugeIcon(g: IrrigationStation): L.DivIcon {
+  return L.divIcon({
+    className: '',
+    html: `<div class="fw-gauge${g.stale ? ' fw-gauge-stale' : ''}" style="background:${STATUS_COLOR[g.status]}"
+      title="${esc(g.station)}${g.stale ? ' (stale)' : ''}">${trendArrow(g.trend)}</div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
+  });
+}
+
+function gaugePopup(g: IrrigationStation): string {
+  const c = STATUS_COLOR[g.status];
+  return `
+    <div class="fw-gauge-popup">
+      <div style="font-weight:700;font-size:14px">${esc(g.station)}</div>
+      <div style="color:#6b7280;font-size:11px;margin-bottom:6px">${esc(g.basin ?? g.river)}</div>
+      <span style="background:${c};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">${STATUS_LABEL[g.status]}</span>
+      ${g.trend ? `<span style="margin-left:6px;font-size:11px;color:#374151">${trendArrow(g.trend)} ${g.trend}</span>` : ''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px;margin-top:8px">
+        <div style="color:#6b7280">Level</div><div style="font-weight:700;color:${c}">${m(g.water_level_m)}</div>
+        <div style="color:#6b7280">Alert</div><div>${m(g.alert_level_m)}</div>
+        <div style="color:#6b7280">Minor flood</div><div>${m(g.minor_flood_level_m)}</div>
+        <div style="color:#6b7280">Major flood</div><div>${m(g.major_flood_level_m)}</div>
+      </div>
+      <div style="font-size:10px;color:#6b7280;margin-top:6px">Reading: ${colomboTime(g.observed_at)} (Colombo)</div>
+      ${g.stale ? '<div style="font-size:10px;color:#b91c1c;font-weight:700">Stale: no reading for over 6 hours</div>' : ''}
+      <div class="fw-gauge-chart" style="margin-top:6px;font-size:10px;color:#9ca3af">Loading 7-day levels&hellip;</div>
+      <div style="font-size:9px;color:#9ca3af;margin-top:4px">${GAUGE_CREDIT}</div>
+    </div>`;
+}
+
+// 7-day level sparkline with dashed threshold lines.
+export function sparkline(readings: GaugeReading[], g: IrrigationStation, w = 220, h = 60): string {
+  const pts = readings.filter((r) => r.level_m !== null).map((r) => [Date.parse(r.observed_at), r.level_m as number]);
+  if (pts.length < 2) return 'No 7-day history yet';
+  const lines = ([['alert', g.alert_level_m], ['minor', g.minor_flood_level_m], ['major', g.major_flood_level_m]] as const)
+    .filter(([, v]) => v !== null) as [GaugeStatus, number][];
+  const ys = [...pts.map((p) => p[1]), ...lines.map(([, v]) => v)];
+  const [x0, x1] = [pts[0][0], pts[pts.length - 1][0]];
+  const [y0, y1] = [Math.min(...ys), Math.max(...ys)];
+  const sx = (x: number) => ((x - x0) / (x1 - x0 || 1)) * w;
+  const sy = (y: number) => h - 4 - ((y - y0) / (y1 - y0 || 1)) * (h - 8);
+  const path = pts.map(([x, y]) => `${sx(x).toFixed(1)},${sy(y).toFixed(1)}`).join(' ');
+  const th = lines
+    .map(([k, v]) => `<line x1="0" x2="${w}" y1="${sy(v).toFixed(1)}" y2="${sy(v).toFixed(1)}" stroke="${STATUS_COLOR[k]}" stroke-dasharray="3 3" stroke-width="1"/>`)
+    .join('');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" role="img" aria-label="7-day water level">
+    ${th}<polyline points="${path}" fill="none" stroke="#2563eb" stroke-width="1.5"/></svg>
+    <div style="display:flex;justify-content:space-between;color:#6b7280">
+      <span>${colomboTime(readings[0].observed_at)}</span><span>${y0.toFixed(2)}&ndash;${y1.toFixed(2)} m</span></div>`;
+}
+
+// Changes only when a reading, status or stale flag changes; used to skip
+// rebuilding markers (which would close an open popup) on identical polls.
+export const gaugesKey = (gauges: IrrigationStation[]) =>
+  gauges.map((g) => `${g.station}|${g.observed_at}|${g.status}|${g.stale}`).join(';');
+
+export function createGaugeLayer(gauges: IrrigationStation[], onSelect?: (g: IrrigationStation) => void): L.LayerGroup {
+  const group = L.layerGroup();
+  gauges.forEach((g) => {
+    if (g.lat === null || g.lon === null) return;
+    const marker = L.marker([g.lat, g.lon], { icon: gaugeIcon(g), zIndexOffset: 1000 });
+    marker.bindPopup(gaugePopup(g), { className: 'fw-light-popup', maxWidth: 260 });
+    marker.on('popupopen', (e) => {
+      const el = (e as L.PopupEvent).popup.getElement()?.querySelector('.fw-gauge-chart');
+      if (!el) return;
+      api.getGaugeHistory(g.station)
+        .then((rows) => { el.innerHTML = sparkline(Array.isArray(rows) ? rows : [], g); })
+        .catch(() => { el.textContent = '7-day history unavailable'; });
+    });
+    if (onSelect) marker.on('click', () => onSelect(g));
+    marker.addTo(group);
+  });
+  return group;
+}
+
+let basinsPromise: Promise<GeoJSON.FeatureCollection> | null = null;
+export function loadBasins(): Promise<GeoJSON.FeatureCollection> {
+  basinsPromise ??= fetch('/data/river_basins.geojson').then((r) => {
+    if (!r.ok) throw new Error(`basins ${r.status}`);
+    return r.json();
+  });
+  return basinsPromise;
+}
+
+// Basin outlines filled by the worst current gauge status inside; no gauge = outline only.
+// `getGauges` is read at style/popup time so the layer follows data refreshes via setStyle().
+export function createBasinLayer(data: GeoJSON.FeatureCollection, getGauges: () => IrrigationStation[]): L.GeoJSON {
+  const inside = (f?: GeoJSON.Feature) => {
+    const names: string[] = f?.properties?.gauges ?? [];
+    return getGauges().filter((g) => names.includes(g.station));
+  };
+  const style = (f?: GeoJSON.Feature): L.PathOptions => {
+    const worst = worstStatus(inside(f));
+    return worst
+      ? { color: STATUS_COLOR[worst], weight: 1.5, fillColor: STATUS_COLOR[worst], fillOpacity: 0.22 }
+      : { color: '#64748b', weight: 1, fillOpacity: 0, dashArray: '4 3' };
+  };
+  return L.geoJSON(data, {
+    style,
+    onEachFeature: (f, layer) => {
+      layer.bindPopup(() => {
+        const p = f.properties ?? {};
+        const rows = inside(f)
+          .map((g) => `<tr><td>${esc(g.station)}</td><td style="color:${STATUS_COLOR[g.status]};font-weight:700">${m(g.water_level_m)}</td>
+            <td>${trendArrow(g.trend)}${g.stale ? ' <span style="color:#b91c1c">stale</span>' : ''}</td></tr>`)
+          .join('');
+        return `<div class="fw-gauge-popup">
+          <div style="font-weight:700;font-size:14px">${p.name === 'unnamed' ? 'Unnamed basin' : esc(p.name)}</div>
+          <div style="color:#6b7280;font-size:11px">${Number(p.area_km2).toLocaleString()} km&sup2;</div>
+          ${rows ? `<table style="font-size:11px;margin-top:6px;border-spacing:8px 2px">${rows}</table>`
+                 : '<div style="font-size:11px;color:#6b7280;margin-top:6px">No river gauge in this basin</div>'}
+          <div style="font-size:9px;color:#9ca3af;margin-top:4px">${BASIN_CREDIT}</div></div>`;
+      }, { className: 'fw-light-popup', maxWidth: 260 });
+    },
+  });
+}

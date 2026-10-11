@@ -111,13 +111,8 @@ export default function DataSourcesPage() {
               <tbody className="text-slate-300">
                 <tr className="border-b border-slate-700/50">
                   <td className="py-3 px-3 font-medium">SL Irrigation Department</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">5 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">River water levels (18 rivers, 100+ stations)</td>
-                </tr>
-                <tr className="border-b border-slate-700/50">
-                  <td className="py-3 px-3 font-medium">Navy Flood Monitoring System</td>
-                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">5 minutes</span></td>
-                  <td className="py-3 px-3 text-xs">Real-time river levels and flood alerts</td>
+                  <td className="py-3 px-3"><span className="px-2 py-1 bg-green-600/20 text-green-400 rounded text-xs">15 minutes</span></td>
+                  <td className="py-3 px-3 text-xs">River gauges (~40 stations, 7-day history) and river basin outlines</td>
                 </tr>
                 <tr className="border-b border-slate-700/50">
                   <td className="py-3 px-3 font-medium">RiverNet.lk</td>

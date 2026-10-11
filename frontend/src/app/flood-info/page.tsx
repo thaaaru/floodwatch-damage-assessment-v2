@@ -187,7 +187,7 @@ export default function FloodInformationPage() {
                 {/* River Summary by River Name */}
                 <div className="mb-3 sm:mb-4">
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-400 mb-1 sm:mb-2">Status by River</h3>
-                  <p className="text-[10px] sm:text-xs text-slate-400 mb-2">Data source: Sri Lanka Department of Meteorology (updated every 5 mins)</p>
+                  <p className="text-[10px] sm:text-xs text-slate-400 mb-2">Water levels: Irrigation Department of Sri Lanka (updated every 15 mins)</p>
                   <div className="overflow-x-auto -mx-3 sm:mx-0">
                     <div className="inline-block min-w-full px-3 sm:px-0">
                     <table className="w-full text-xs sm:text-sm min-w-[640px]">

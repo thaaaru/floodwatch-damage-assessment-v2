@@ -432,3 +432,32 @@
 .fw-dark-basemap .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
 }
+
+/* River gauge markers (lib/gauges.ts): colour = status, glyph = trend */
+.fw-gauge {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font: 700 13px/1 system-ui, sans-serif;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.45);
+}
+/* Stale (> 6 h): faded with a dashed dark ring */
+.fw-gauge-stale {
+  opacity: 0.5;
+  border: 2px dashed #0f172a;
+}
+.fw-light-popup .leaflet-popup-content-wrapper,
+.fw-light-popup .leaflet-popup-tip {
+  background: #ffffff;
+  color: #1f2937;
+}
+.fw-gauge-popup {
+  font-family: system-ui, -apple-system, sans-serif;
+  min-width: 200px;
+  color: #1f2937;
+}

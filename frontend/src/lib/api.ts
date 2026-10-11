@@ -378,6 +378,10 @@ class ApiClient {
     return this.fetch<IrrigationResponse>('/api/intel/irrigation');
   }
 
+  async getGaugeHistory(gauge: string, days: number = 7): Promise<GaugeReading[]> {
+    return this.fetch<GaugeReading[]>(`/api/intel/irrigation/history/${encodeURIComponent(gauge)}?days=${days}`);
+  }
+
   async getIrrigationByDistrict(district: string): Promise<{
     district: string;
     risk_level: string;
@@ -697,22 +701,31 @@ export interface MetStationsResponse {
   stations: MetStation[];
 }
 
+export type GaugeStatus = 'normal' | 'alert' | 'minor' | 'major' | 'unknown';
+export type GaugeTrend = 'rising' | 'falling' | 'steady' | null;
+
+// Irrigation Dept river gauge (latest reading, served from the DB).
 export interface IrrigationStation {
   station: string;
+  basin: string | null;
   river: string;
-  lat: number;
-  lon: number;
+  lat: number | null;
+  lon: number | null;
   districts: string[];
   district_ids: string[];
-  water_level_m: number;
-  alert_level_m: number;
-  minor_flood_level_m: number;
-  major_flood_level_m: number;
-  status: 'normal' | 'alert' | 'minor_flood' | 'major_flood';
-  pct_to_alert: number;
-  pct_to_minor_flood: number;
-  pct_to_major_flood: number;
+  water_level_m: number | null;
+  rainfall_mm: number | null;
+  alert_level_m: number | null;
+  minor_flood_level_m: number | null;
+  major_flood_level_m: number | null;
+  status: GaugeStatus;
+  trend: GaugeTrend;
+  stale: boolean;
+  observed_at: string;
   last_updated: string;
+  pct_to_alert: number | null;
+  pct_to_minor_flood: number | null;
+  pct_to_major_flood: number | null;
 }
 
 export interface IrrigationResponse {
@@ -721,11 +734,18 @@ export interface IrrigationResponse {
     total_stations: number;
     normal: number;
     alert: number;
-    minor_flood: number;
-    major_flood: number;
+    minor: number;
+    major: number;
+    unknown: number;
+    stale: number;
     highest_risk_station: IrrigationStation | null;
   };
   stations: IrrigationStation[];
+}
+
+export interface GaugeReading {
+  observed_at: string;
+  level_m: number | null;
 }
 
 // Flood Threat types
