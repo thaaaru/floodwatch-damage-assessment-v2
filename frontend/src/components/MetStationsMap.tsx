@@ -7,7 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { IrrigationStation, MetStation } from '@/lib/api';
 import { addBasemap, addSatelliteOption } from '@/lib/basemap';
-import { BASIN_CREDIT, GAUGE_CREDIT, createGaugeLayer, createWaterLayer, gaugesKey } from '@/lib/gauges';
+import { BASIN_CREDIT, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey } from '@/lib/gauges';
 
 interface MetStationsMapProps {
   stations: MetStation[];
@@ -164,11 +164,15 @@ export default function MetStationsMap({
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
     addSatelliteOption(L, controlRef.current);
     mapRef.current = map;
-    // Basins + rivers: in the layer control, off by default on the home map.
-    createWaterLayer(map, () => gaugesRef.current)
+    // Basins + rivers: on by default; only flooding basins are filled, with a legend.
+    createWaterLayer(map, () => gaugesRef.current, 'alertsOnly')
       .then(({ layer, restyle }) => {
         if (mapRef.current !== map) return;
         restyleWaterRef.current = restyle;
+        const legend = createBasinLegend();
+        layer.on('add', () => legend.addTo(map));
+        layer.on('remove', () => legend.remove());
+        layer.addTo(map);
         controlRef.current?.addOverlay(layer, 'River basins &amp; rivers');
       })
       .catch((e) => console.error('Failed to load river basins/rivers:', e));

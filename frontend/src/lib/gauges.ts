@@ -102,15 +102,32 @@ export function loadBasins(): Promise<GeoJSON.FeatureCollection> {
   return basinsPromise;
 }
 
-// Basin outlines filled by the worst current gauge status inside; no gauge = outline only.
+/**
+ * How basins are filled by the worst current gauge status inside them:
+ *  - 'always'     (/rivers): every gauged basin is filled with its status colour.
+ *  - 'alertsOnly' (home map): only alert/minor/major basins are filled, a little
+ *                 stronger; normal/unknown/ungauged basins are thin grey outlines.
+ */
+export type BasinFillMode = 'always' | 'alertsOnly';
+const FLOODING: GaugeStatus[] = ['alert', 'minor', 'major'];
+
 // `getGauges` is read at style/popup time so the layer follows data refreshes via setStyle().
-export function createBasinLayer(data: GeoJSON.FeatureCollection, getGauges: () => IrrigationStation[]): L.GeoJSON {
+export function createBasinLayer(
+  data: GeoJSON.FeatureCollection,
+  getGauges: () => IrrigationStation[],
+  fillMode: BasinFillMode = 'always',
+): L.GeoJSON {
   const inside = (f?: GeoJSON.Feature) => {
     const names: string[] = f?.properties?.gauges ?? [];
     return getGauges().filter((g) => names.includes(g.station));
   };
   const style = (f?: GeoJSON.Feature): L.PathOptions => {
     const worst = worstStatus(inside(f));
+    if (fillMode === 'alertsOnly') {
+      return worst && FLOODING.includes(worst)
+        ? { color: STATUS_COLOR[worst], weight: 2, opacity: 0.9, fillColor: STATUS_COLOR[worst], fillOpacity: 0.35 }
+        : { color: '#64748b', weight: 1, opacity: 0.6, fillOpacity: 0 }; // fillOpacity 0 keeps the area clickable
+    }
     return worst
       ? { color: STATUS_COLOR[worst], weight: 1.5, fillColor: STATUS_COLOR[worst], fillOpacity: 0.22 }
       : { color: '#64748b', weight: 1, fillOpacity: 0, dashArray: '4 3' };
@@ -216,9 +233,13 @@ function createRiverLayer(
 }
 
 // Basins + rivers as one switchable overlay. restyle() re-applies gauge status colours.
-export async function createWaterLayer(map: L.Map, getGauges: () => IrrigationStation[]) {
+export async function createWaterLayer(
+  map: L.Map,
+  getGauges: () => IrrigationStation[],
+  fillMode: BasinFillMode = 'always',
+) {
   const [basinData, riverData] = await Promise.all([loadBasins(), loadRivers()]);
-  const basins = createBasinLayer(basinData, getGauges);
+  const basins = createBasinLayer(basinData, getGauges, fillMode);
   const basinGauges = new Map<number, string[]>(
     basinData.features.map((f) => [f.properties?.id as number, (f.properties?.gauges ?? []) as string[]]),
   );
@@ -230,4 +251,18 @@ export async function createWaterLayer(map: L.Map, getGauges: () => IrrigationSt
       rivers.lines.setStyle(rivers.style as L.StyleFunction);
     },
   };
+}
+
+/** Legend for 'alertsOnly' basins; collapsed by default on narrow screens. */
+export function createBasinLegend(): L.Control {
+  const legend = new L.Control({ position: 'bottomleft' });
+  legend.onAdd = () => {
+    const el = L.DomUtil.create('details', 'fw-basin-legend');
+    if (window.innerWidth >= 640) el.setAttribute('open', '');
+    el.innerHTML = `<summary>Basin colour = highest river gauge status</summary>` +
+      FLOODING.map((s) => `<div><span style="background:${STATUS_COLOR[s]}"></span>${STATUS_LABEL[s].charAt(0)}${STATUS_LABEL[s].slice(1).toLowerCase()}</div>`).join('');
+    L.DomEvent.disableClickPropagation(el);
+    return el;
+  };
+  return legend;
 }
