@@ -12,11 +12,19 @@
 import type * as Leaflet from 'leaflet';
 import type { PMTiles } from 'pmtiles';
 
-export const PMTILES_URL = '/tiles/lka.pmtiles';
+export const PMTILES_URL = '/tiles/lka.pmtiles'; // Sri Lanka, data to z15
+// Lower tiers fill the view outside the detailed extract. Bounds must match the
+// bboxes in scripts/build_basemap.sh ([[south, west], [north, east]]).
+type Bounds = [[number, number], [number, number]];
+const TIERS: { url: string; bounds?: Bounds }[] = [
+  { url: '/tiles/context.pmtiles' }, // 30,-25,140,40, data to z6
+  { url: '/tiles/region.pmtiles', bounds: [[0, 65], [25, 95]] }, // data to z8
+  { url: PMTILES_URL, bounds: [[5.8, 79.4], [10.0, 82.1]] }, // Sri Lanka, data to z15
+];
 export const BASEMAP_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &middot; ' +
   '<a href="https://protomaps.com">Protomaps</a>';
-export const BASEMAP_MAX_ZOOM = 18; // data is z15; protomaps-leaflet overzooms above that
+export const BASEMAP_MAX_ZOOM = 18; // protomaps-leaflet overzooms past the data's maxzoom
 
 // Fallback only (and the standalone HTML export, which cannot reach /tiles).
 export const OSM_RASTER_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -26,42 +34,64 @@ export const OSM_RASTER_ATTRIBUTION =
 export type BasemapFlavor = 'light' | 'dark';
 
 type Source = { pmtiles: PMTiles; maxDataZoom: number };
-let sourcePromise: Promise<Source | null> | null = null;
+const sources = new Map<string, Promise<Source | null>>();
 
-// One PMTiles instance per page, so all maps share its header/directory cache.
-function pmtilesSource(): Promise<Source | null> {
-  sourcePromise ??= import('pmtiles')
-    .then(async ({ PMTiles }) => {
-      const pmtiles = new PMTiles(PMTILES_URL);
-      const header = await pmtiles.getHeader();
-      return { pmtiles, maxDataZoom: header.maxZoom };
-    })
-    .catch((e) => {
-      console.warn(`Self-hosted basemap ${PMTILES_URL} unavailable; falling back to OSM raster tiles.`, e);
-      return null;
-    });
-  return sourcePromise;
+// One PMTiles instance per archive per page, so all maps share its header/directory cache.
+function pmtilesSource(url: string): Promise<Source | null> {
+  if (!sources.has(url)) {
+    sources.set(url, import('pmtiles')
+      .then(async ({ PMTiles }) => {
+        const pmtiles = new PMTiles(url);
+        const header = await pmtiles.getHeader();
+        return { pmtiles, maxDataZoom: header.maxZoom };
+      })
+      .catch((e) => {
+        console.warn(`Self-hosted basemap ${url} unavailable.`, e);
+        return null;
+      }));
+  }
+  return sources.get(url)!;
 }
 
-/** Add the basemap (self-hosted vector, or OSM raster fallback) to `map`. */
+/**
+ * Add the basemap to `map`: context (z<=6) under region (z<=8) under the
+ * detailed Sri Lanka archive, each upper tier restricted to its bbox. Tiles
+ * paint an opaque background, so a lower tier only shows where the tier above
+ * has no tiles, and low zooms have no edge where the Sri Lanka extract ends.
+ * Missing context/region archives are skipped; if the Sri Lanka archive cannot
+ * be read, falls back to OSM raster tiles.
+ */
 export async function addBasemap(map: Leaflet.Map, flavor: BasemapFlavor = 'light'): Promise<Leaflet.Layer | null> {
   const L = (await import('leaflet')).default;
-  const source = await pmtilesSource();
+  const srcs = await Promise.all(TIERS.map((t) => pmtilesSource(t.url)));
+  const lka = srcs[srcs.length - 1];
   let layer: Leaflet.Layer;
-  if (source) {
+  if (lka) {
     const { leafletLayer } = await import('protomaps-leaflet');
-    layer = leafletLayer({
-      url: source.pmtiles,
+    const vector = (src: Source, extra: object) => leafletLayer({
+      url: src.pmtiles,
       flavor,
       lang: 'en', // protomaps-leaflet renders one label language per layer
-      maxDataZoom: source.maxDataZoom,
+      maxDataZoom: src.maxDataZoom,
       maxZoom: BASEMAP_MAX_ZOOM,
-      attribution: BASEMAP_ATTRIBUTION,
+      ...extra,
     }) as unknown as Leaflet.Layer;
+    const layers = TIERS.flatMap((t, i) => {
+      const src = srcs[i];
+      if (!src) return [];
+      const top = i === TIERS.length - 1;
+      return [vector(src, {
+        zIndex: i,
+        ...(t.bounds && { bounds: L.latLngBounds(t.bounds) }),
+        attribution: top ? BASEMAP_ATTRIBUTION : '', // one credit for the whole stack
+      })];
+    });
+    layer = L.layerGroup(layers);
   } else {
+    console.warn('Falling back to OSM raster tiles.');
     layer = L.tileLayer(OSM_RASTER_URL, { maxZoom: 19, attribution: OSM_RASTER_ATTRIBUTION });
   }
-  // map.remove() deletes _mapPane; skip if the map went away while the header loaded.
+  // map.remove() deletes _mapPane; skip if the map went away while the headers loaded.
   if (!(map as unknown as { _mapPane?: HTMLElement })._mapPane) return null;
   layer.addTo(map);
   return layer;
@@ -78,7 +108,7 @@ export function addSatelliteOption(L: typeof Leaflet, control: Leaflet.Control.L
   const imagery = L.tileLayer(
     'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' +
       `?token=${encodeURIComponent(ARCGIS_API_KEY)}`,
-    { maxZoom: 19, zIndex: 2, attribution: SATELLITE_ATTRIBUTION },
+    { maxZoom: 19, zIndex: 10, attribution: SATELLITE_ATTRIBUTION },
   );
   control.addOverlay(imagery, 'Satellite (Esri)');
   return true;

@@ -12,7 +12,7 @@ Host: Ubuntu 24.04, shared with Synapses. FloodWatch is compose project `floodwa
 | age identity | `/etc/age/tencent.key` (root, 0400) |
 | Decrypted (tmpfs) | `/run/floodwatch/db_password` — dir 0700 root, file 0440 root:1000 |
 | DB volume | `floodwatch_postgres_data` |
-| Basemap tiles | `/opt/floodwatch-data/tiles/lka.pmtiles` (~175 MB, never in git) |
+| Basemap tiles | `/opt/floodwatch-data/tiles/{lka,region,context}.pmtiles` (~175 + 10 + 9 MB, never in git) |
 
 All commands below run from `/opt/floodwatch` as root (or sudo) and use
 `dc() { docker compose -f docker-compose.prod.yml "$@"; }`.
@@ -54,7 +54,10 @@ docker exec synapses-app-caddy-1 caddy reload   --config /etc/caddy/Caddyfile
 
 # 6. DNS: A record floodwatch.teklab.dev -> VM public IP (Caddy obtains the cert).
 
-# 6b. Self-hosted basemap (Protomaps extract, ~175 MB at z15; needs ~2x free disk while building)
+# 6b. Self-hosted basemap, three Protomaps extracts (~195 MB; needs ~2x free disk while building):
+#     lka.pmtiles     Sri Lanka 79.4,5.8,82.1,10.0 to z15 (detail)
+#     region.pmtiles  South Asia 65,0,95,25 to z8 (drawn under lka: no edge at low zoom)
+#     context.pmtiles Indian Ocean rim 30,-25,140,40 to z6 (under region: wind map z4-5)
 scripts/build_basemap.sh /opt/floodwatch-data/tiles 15
 #    Without it the tiles service returns 404 and every map falls back to
 #    tile.openstreetmap.org raster tiles (console warning), so this is not a blocker.
@@ -137,9 +140,9 @@ dc start floodwatch-backend floodwatch-frontend
 
 ## 5b. Basemap refresh (monthly)
 
-The Sri Lanka extract comes from the latest Protomaps daily planet build.
-`build_basemap.sh` writes a temp file, verifies it and renames it over
-`lka.pmtiles` atomically, so `floodwatch-tiles` needs no restart.
+All three extracts come from the latest Protomaps daily planet build in one
+`build_basemap.sh` run (about 2-8 min). Each is written to a temp file, verified
+and renamed into place atomically, so `floodwatch-tiles` needs no restart.
 
 ```bash
 # /etc/cron.d/floodwatch-basemap  (03:30 Colombo on the 1st of each month)
@@ -147,7 +150,7 @@ CRON_TZ=Asia/Colombo
 30 3 1 * * root cd /opt/floodwatch && scripts/build_basemap.sh /opt/floodwatch-data/tiles 15 >> /var/log/floodwatch-basemap.log 2>&1
 ```
 Check: `curl -sI -H 'Range: bytes=0-15' https://floodwatch.teklab.dev/tiles/lka.pmtiles`
-must return `206` with `Content-Range: bytes 0-15/<size>`. Browsers revalidate
+must return `206` with `Content-Range: bytes 0-15/<size>` (same for region/context). Browsers revalidate
 within a day (`Cache-Control: max-age=86400`, ETag); pmtiles-js refetches its
 header if the ETag changes mid-session. If the size grows past ~300 MB, rebuild
 with maxzoom 14.
@@ -181,7 +184,7 @@ Never use `docker system prune` / `docker volume prune` on this shared host.
 - Freshness: the banner reads `/api/weather/cache-status` (`last_update`,
   `last_attempt_ok`) and flags data older than 3 h or a failed latest fetch.
 - Basemap: `floodwatch-tiles` (caddy:2-alpine, 64m/0.25 CPU, edge network only) serves
-  `/tiles/lka.pmtiles` with HTTP Range; the host Caddy routes `/tiles/*` to it and must
+  `/tiles/{lka,region,context}.pmtiles` with HTTP Range; the host Caddy routes `/tiles/*` to it and must
   not re-encode it (see `@compressible` in the snippet). No CORS headers: same-origin only.
   Optional "Satellite (Esri)" overlay appears only if `NEXT_PUBLIC_ARCGIS_API_KEY` is set
   in `.env` at build time (public browser key; restrict it to the site referrer).
