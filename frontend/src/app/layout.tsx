@@ -60,10 +60,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-slate-300">
-                  <span className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    All systems operational
-                  </span>
                   <span>
                     Data: Irrigation Dept · Met Dept · Open-Meteo · OSM ·{' '}
                     <a href="/data-sources" className={ui.link}>

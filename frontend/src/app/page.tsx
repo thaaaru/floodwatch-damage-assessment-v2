@@ -99,10 +99,10 @@ export default function Dashboard() {
             <div className="min-w-0">
               <h1 className={`${ui.h1} flex items-center gap-2`}>
                 <span>🌧️</span>
-                <span>Rainfall</span>
+                <span>Rainfall &amp; rivers now</span>
               </h1>
               <p className={`${ui.intro} mt-0.5`}>
-                Measured at {summary?.station_count ?? 0} official weather stations.{' '}
+                Rainfall measured at {summary?.station_count ?? 0} stations of the{' '}
                 <a
                   href="https://meteo.gov.lk"
                   target="_blank"
@@ -111,6 +111,7 @@ export default function Dashboard() {
                 >
                   Sri Lanka Department of Meteorology
                 </a>
+                {gauges.length > 0 && <>, and water levels at {gauges.length} Irrigation Department river gauges</>}.
                 {reportTimeLocal && (
                   <span className="text-slate-400"> &middot; report {reportTimeLocal}</span>
                 )}
@@ -231,8 +232,8 @@ export default function Dashboard() {
       </div>
 
       <p className={ui.muted}>
-        Source: Sri Lanka Department of Meteorology - measured rainfall from 24 WMO stations. We publish only
-        directly-measured data; no models or forecasts on this page.
+        Measured rainfall from 24 Sri Lanka Department of Meteorology stations. The optional Rain forecast layer
+        is a model (Open-Meteo), not measured.
       </p>
       </div>
     </div>
