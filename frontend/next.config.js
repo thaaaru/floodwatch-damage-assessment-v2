@@ -9,6 +9,8 @@ const nextConfig = {
     return [
       { source: '/early-warning', destination: '/', permanent: true },
       { source: '/rivers', destination: '/#rivers', permanent: true },
+      // /intel was replaced by the home page's 30-year rainfall context.
+      { source: '/intel', destination: '/', permanent: true },
     ];
   },
 }

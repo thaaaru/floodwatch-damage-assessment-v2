@@ -38,6 +38,12 @@ const ROWS: Row[] = [
     credit: <>CC BY 4.0. {ext('https://open-meteo.com', 'Weather data by Open-Meteo.com')}</>,
   },
   {
+    source: <>{ext('https://open-meteo.com/en/docs/historical-weather-api', 'Open-Meteo Historical Weather API')}: ERA5 daily rainfall</>,
+    feeds: '"Rainfall vs normal" map layer and "30-year rainfall context" (model data, not rain gauges)',
+    how: 'Daily (ERA5 arrives about 5 days late); history from 1996 filled once',
+    credit: <>CC BY 4.0. Contains modified Copernicus Climate Change Service information (ERA5). {ext('https://open-meteo.com', 'Weather data by Open-Meteo.com')}</>,
+  },
+  {
     source: <>Humanitarian OpenStreetMap Team via {ext('https://data.humdata.org', 'HDX')}: waterways</>,
     feeds: 'River lines on the home map',
     how: 'Static file, built 11 Oct 2026',
@@ -69,7 +75,7 @@ const ROWS: Row[] = [
   },
   {
     source: 'OpenStreetMap Overpass API',
-    feeds: 'Emergency facility locations for an older page that is not in the menu',
+    feeds: 'Emergency facility locations. No page shows them now; the job is due to be removed.',
     how: 'Daily',
     credit: 'ODbL. © OpenStreetMap contributors',
   },

@@ -36,6 +36,7 @@ const SECTIONS: { id: string; category: Category; icon: string; title: string; d
       { name: 'Windy.com (Central)', url: 'https://www.windy.com/?7.667,80.112,5', desc: 'Central highlands focus' },
       { name: 'Himawari Satellite', url: 'http://www.data.jma.go.jp/mscweb/data/himawari/sat_img.php?area=ha5', desc: 'JMA satellite imagery (Asia)' },
       { name: 'GSMaP Rainfall', url: 'https://sharaku.eorc.jaxa.jp/GSMaP/', desc: 'JAXA global rainfall map' },
+      { name: 'Zoom Earth', url: 'https://zoom.earth/places/sri-lanka/#map=wind-speed/model=icon', desc: 'Live satellite and wind map' },
     ],
   },
   {

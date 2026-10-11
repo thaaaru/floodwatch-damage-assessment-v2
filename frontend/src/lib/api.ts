@@ -391,13 +391,13 @@ class ApiClient {
     return this.fetch('/api/intel/flood-patterns/districts');
   }
 
-  // Environmental Data endpoints
-  async getEnvironmentalData(startYear: number = 1994, endYear: number = 2024): Promise<EnvironmentalDataResponse> {
-    return this.fetch<EnvironmentalDataResponse>(`/api/intel/environmental?start_year=${startYear}&end_year=${endYear}`);
+  // 30-year rainfall context (ERA5 via Open-Meteo, served from the DB)
+  async getRainVsNormal(): Promise<RainVsNormalResponse> {
+    return this.fetch<RainVsNormalResponse>('/api/rain-history/districts');
   }
 
-  async getFloodCorrelation(): Promise<FloodCorrelationResponse> {
-    return this.fetch<FloodCorrelationResponse>('/api/intel/environmental/flood-correlation');
+  async getRainHistory(district: string): Promise<RainHistoryResponse> {
+    return this.fetch<RainHistoryResponse>(`/api/rain-history/districts/${encodeURIComponent(district)}`);
   }
 
   async getCacheStatus(): Promise<CacheStatus> {
@@ -903,82 +903,38 @@ export interface FloodPatternsResponse {
   analyzed_at: string;
 }
 
-// Environmental Data types
-export interface EnvironmentalTrendAnalysis {
-  first_year: number;
-  last_year: number;
-  first_value: number;
-  last_value: number;
-  absolute_change: number;
-  percent_change: number;
-  annual_rate: number;
-  trend: 'increasing' | 'decreasing' | 'stable';
-  min_value: number;
-  max_value: number;
-  avg_value: number;
-  min_year: number;
-  max_year: number;
+// 30-year rainfall context (ERA5 reanalysis via Open-Meteo): model data, not rain gauges
+export interface RainVsNormal {
+  district: string;
+  lat: number;
+  lon: number;
+  as_of: string | null; // latest ERA5 day stored (about 5 days behind)
+  month?: number;
+  mtd_mm?: number;
+  normal_to_date_mm?: number | null;
+  pct_of_normal?: number | null;
 }
 
-export interface EnvironmentalDataPoint {
-  year: number;
-  value: number;
+export interface RainVsNormalResponse {
+  source: string;
+  districts: RainVsNormal[];
 }
 
-export interface EnvironmentalIndicator {
-  data: EnvironmentalDataPoint[];
-  unit: string;
-  analysis: EnvironmentalTrendAnalysis;
+export interface RainTrend {
+  slope_mm_per_year: number;
+  ci_low: number;
+  ci_high: number;
+  intercept: number;
+  significant: boolean;
 }
 
-export interface FloodRiskFactor {
-  factor: string;
-  description: string;
-  impact: 'High' | 'Medium' | 'Low';
-  explanation: string;
-  risk_contribution: number;
-}
-
-export interface FloodRiskFactors {
-  overall_risk_level: 'HIGH' | 'MEDIUM' | 'LOW';
-  risk_score: number;
-  max_score: number;
-  summary: string;
-  factors: FloodRiskFactor[];
-  recommendation: string;
-}
-
-export interface EnvironmentalDataResponse {
-  country: string;
-  country_code: string;
-  period: string;
-  forest_cover: EnvironmentalIndicator;
-  population_density: EnvironmentalIndicator;
-  population_total: EnvironmentalIndicator;
-  urban_population: EnvironmentalIndicator;
-  agricultural_land: EnvironmentalIndicator;
-  flood_risk_factors: FloodRiskFactors;
-  data_source: string;
-  analyzed_at: string;
-}
-
-export interface FloodCorrelationResponse {
-  period: string;
-  environmental_changes: {
-    forest_cover: EnvironmentalTrendAnalysis;
-    population_density: EnvironmentalTrendAnalysis;
-    urban_population: EnvironmentalTrendAnalysis;
-  };
-  flood_patterns: {
-    extreme_events_trend: string;
-    rainfall_trend: string;
-  };
-  risk_assessment: FloodRiskFactors;
-  key_insights: string[];
-  data_sources: {
-    environmental: string;
-    flood_patterns: string;
-  };
+export interface RainHistoryResponse extends Omit<RainVsNormal, 'lat' | 'lon'> {
+  source: string;
+  monthly_normals_mm?: (number | null)[];
+  wettest_days?: { date: string; mm: number }[];
+  annual_totals?: { year: number; mm: number }[];
+  trend?: RainTrend | null;
+  first_date?: string;
 }
 
 export const api = new ApiClient();

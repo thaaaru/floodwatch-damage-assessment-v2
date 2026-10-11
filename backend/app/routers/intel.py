@@ -27,7 +27,6 @@ from ..services.here_weather import here_weather_service
 from ..services.irrigation_fetcher import irrigation_fetcher
 from ..services.weather_cache import weather_cache
 from ..services.flood_patterns import flood_analyzer, DISTRICT_COORDS
-from ..services.environmental_data import environmental_service
 from ..services.flood_threat_cache import flood_threat_cache
 
 logger = logging.getLogger(__name__)
@@ -1157,71 +1156,3 @@ async def get_current_flood_risk_with_history():
             "historical": "Open-Meteo Archive (30 years)",
         }
     }
-
-
-# ============================================================
-# Environmental Data Endpoints (Deforestation & Population)
-# ============================================================
-
-@router.get("/environmental")
-async def get_environmental_data(
-    start_year: int = Query(1994, ge=1990, le=2024, description="Start year for analysis"),
-    end_year: int = Query(2024, ge=1990, le=2024, description="End year for analysis"),
-):
-    """
-    Get environmental trend data for Sri Lanka.
-
-    Includes:
-    - Forest cover changes (deforestation)
-    - Population density trends
-    - Urban population growth
-    - Agricultural land changes
-
-    Also calculates flood risk factors based on environmental changes.
-    Data is sourced from World Bank Open Data API and cached for 1 week.
-    """
-    return await environmental_service.get_environmental_trends(start_year, end_year)
-
-
-@router.get("/environmental/flood-correlation")
-async def get_flood_correlation():
-    """
-    Get correlation analysis between environmental changes and flood risk.
-
-    Shows how deforestation, population growth, and urbanization
-    have affected flood vulnerability over the past 30 years.
-    """
-    # Get environmental data
-    env_data = await environmental_service.get_environmental_trends(1994, 2024)
-
-    # Get flood pattern data for comparison
-    try:
-        flood_data = await flood_analyzer.run_full_analysis("Colombo", years=30)
-    except Exception:
-        flood_data = {}
-
-    # Prepare correlation analysis
-    correlation = {
-        "period": "1994-2024",
-        "environmental_changes": {
-            "forest_cover": env_data.get("forest_cover", {}).get("analysis", {}),
-            "population_density": env_data.get("population_density", {}).get("analysis", {}),
-            "urban_population": env_data.get("urban_population", {}).get("analysis", {}),
-        },
-        "flood_patterns": {
-            "extreme_events_trend": "increasing" if flood_data.get("climate_change", {}).get("changes", [{}])[1].get("trend") == "increasing" else "stable",
-            "rainfall_trend": flood_data.get("climate_change", {}).get("changes", [{}])[0].get("trend", "unknown"),
-        } if flood_data else {},
-        "risk_assessment": env_data.get("flood_risk_factors", {}),
-        "key_insights": [
-            f"Forest cover has changed by {env_data.get('forest_cover', {}).get('analysis', {}).get('percent_change', 0):.1f}% since 1994",
-            f"Population density increased by {env_data.get('population_density', {}).get('analysis', {}).get('percent_change', 0):.1f}%",
-            f"Urban population grew from {env_data.get('urban_population', {}).get('analysis', {}).get('first_value', 0):.1f}% to {env_data.get('urban_population', {}).get('analysis', {}).get('last_value', 0):.1f}%",
-        ],
-        "data_sources": {
-            "environmental": "World Bank Open Data API",
-            "flood_patterns": "Open-Meteo Historical Archive",
-        }
-    }
-
-    return correlation
