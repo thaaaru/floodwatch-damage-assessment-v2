@@ -82,15 +82,39 @@ class _OkClient(_FakeClient):
         return R()
 
 
-def test_refresh_is_50_calls_persisted_and_not_repeated(tmp_path):
+def test_refresh_is_25_calls_persisted_and_not_repeated(tmp_path):
     eng = _engine(tmp_path)
     svc = owm.OpenWeatherMapService("k", db_engine=eng)
     svc._http_client = client = _OkClient()
     assert asyncio.run(svc.refresh_all()) is True
-    assert client.calls == 50 and len(svc._results) == 25 and not svc.is_stale()
+    assert client.calls == 25 and len(svc._results) == 25 and not svc.is_stale()
 
     # Restart: snapshot reloads from DB and a fresh snapshot is not re-fetched.
     svc2 = owm.OpenWeatherMapService("k", db_engine=eng)
     svc2._http_client = client2 = _OkClient()
     asyncio.run(svc2.refresh_all())
     assert client2.calls == 0 and len(asyncio.run(svc2.get_all_districts_early_warning())) == 25
+
+
+def test_daily_call_arithmetic_within_guard():
+    import math
+    from app.config import OWM_LOCATIONS, get_settings
+
+    interval = get_settings().owm_refresh_minutes
+    assert len(OWM_LOCATIONS) == 25
+    assert interval == 120
+    assert len(OWM_LOCATIONS) * (1440 / interval) == 300
+    assert len(OWM_LOCATIONS) * (1440 / interval) <= owm.DAILY_CALL_BUDGET
+    # Worst case with restarts: runs are at least interval - 10 min apart.
+    assert len(OWM_LOCATIONS) * math.ceil(1440 / owm.OpenWeatherMapService.MIN_REFRESH_AGE_MINUTES) <= owm.DAILY_CALL_BUDGET
+
+
+def test_refresh_interval_floor_keeps_rate_under_guard():
+    import pytest
+    from pydantic import ValidationError
+    from app.config import OWM_LOCATIONS, Settings
+
+    with pytest.raises(ValidationError):
+        Settings(owm_refresh_minutes=39)
+    assert len(OWM_LOCATIONS) * (1440 / 40) <= owm.DAILY_CALL_BUDGET
+

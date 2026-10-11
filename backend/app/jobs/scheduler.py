@@ -168,7 +168,7 @@ def start_scheduler():
         replace_existing=True
     )
 
-    # OpenWeatherMap early warning - every 180 min (400 calls/day), only with a key
+    # OpenWeatherMap early warning - every OWM_REFRESH_MINUTES (120 -> 25 x 12 = 300 calls/day), only with a key
     if settings.openweathermap_api_key:
         from ..services.openweathermap import OpenWeatherMapService
         scheduler.add_job(

@@ -3,15 +3,16 @@
 """
 OpenWeatherMap One Call API 3.0 Service
 Provides early warning system with government weather alerts,
-8-day daily forecast, 48-hour hourly forecast, and AI weather overview.
+8-day daily forecast and 48-hour hourly forecast.
 
 Cost control (One Call 3.0 free tier = 1,000 calls/day, billed beyond):
   - Only the scheduler calls OWM (refresh_all). Every HTTP endpoint, including
     unauthenticated ones, reads the cached snapshot and never calls upstream.
-  - One refresh = 25 districts x 2 calls (onecall + overview) = 50 calls.
-    Scheduled every REFRESH_INTERVAL_MINUTES (180) -> 8/day = 400 calls/day.
-    A refresh is skipped if the snapshot is younger than MIN_REFRESH_AGE_MINUTES
-    (170), so restarts cannot add runs: <= ceil(1440/170) = 9/day = 450 calls/day.
+  - One refresh = 25 locations (config.OWM_LOCATIONS) x 1 onecall = 25 calls.
+    The /overview endpoint is not called (the UI hides the empty summary).
+    Every OWM_REFRESH_MINUTES (120): 1440/120 = 12 runs/day -> 300 calls/day.
+    A refresh is skipped if the snapshot is younger than interval - 10 min, so
+    restarts cannot add runs: <= ceil(1440/110) = 14 runs/day = 350 calls/day.
   - No 429 retries: a failed call keeps that district's previous data (stale).
   - Hard guard: DAILY_CALL_BUDGET (900) per UTC day, reserved atomically in
     Postgres (owm_usage) *before* each HTTP request, so restarts don't reset it.
@@ -27,6 +28,7 @@ import httpx
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
 
+from ..config import OWM_LOCATIONS, get_settings
 from ..database import SessionLocal, engine as default_engine
 from ..models import OwmCache
 
@@ -60,41 +62,14 @@ class OpenWeatherMapService:
     """Service for fetching weather data from OpenWeatherMap One Call API 3.0"""
 
     BASE_URL = "https://api.openweathermap.org/data/3.0/onecall"
-    REFRESH_INTERVAL_MINUTES = 180
-    MIN_REFRESH_AGE_MINUTES = 170
-    STALE_AFTER_MINUTES = 240  # one missed refresh + margin
+    REFRESH_INTERVAL_MINUTES = get_settings().owm_refresh_minutes  # OWM_REFRESH_MINUTES, default 120
+    MIN_REFRESH_AGE_MINUTES = REFRESH_INTERVAL_MINUTES - 10  # tolerate scheduler jitter
+    STALE_AFTER_MINUTES = REFRESH_INTERVAL_MINUTES + 60  # one missed refresh + margin
     DAILY_CALL_BUDGET = DAILY_CALL_BUDGET
     REFRESH_CONCURRENCY = 5
     CACHE_KEY = "all_districts"
 
-    # Sri Lanka district coordinates
-    DISTRICTS = {
-        "Colombo": {"lat": 6.9271, "lon": 79.8612},
-        "Gampaha": {"lat": 7.0873, "lon": 80.0144},
-        "Kalutara": {"lat": 6.5854, "lon": 79.9607},
-        "Kandy": {"lat": 7.2906, "lon": 80.6337},
-        "Matale": {"lat": 7.4675, "lon": 80.6234},
-        "Nuwara Eliya": {"lat": 6.9497, "lon": 80.7891},
-        "Galle": {"lat": 6.0535, "lon": 80.2210},
-        "Matara": {"lat": 5.9549, "lon": 80.5550},
-        "Hambantota": {"lat": 6.1429, "lon": 81.1212},
-        "Jaffna": {"lat": 9.6615, "lon": 80.0255},
-        "Kilinochchi": {"lat": 9.3803, "lon": 80.3770},
-        "Mannar": {"lat": 8.9810, "lon": 79.9044},
-        "Vavuniya": {"lat": 8.7514, "lon": 80.4971},
-        "Mullaitivu": {"lat": 9.2671, "lon": 80.8142},
-        "Batticaloa": {"lat": 7.7310, "lon": 81.6747},
-        "Ampara": {"lat": 7.2975, "lon": 81.6820},
-        "Trincomalee": {"lat": 8.5874, "lon": 81.2152},
-        "Kurunegala": {"lat": 7.4863, "lon": 80.3647},
-        "Puttalam": {"lat": 8.0362, "lon": 79.8283},
-        "Anuradhapura": {"lat": 8.3114, "lon": 80.4037},
-        "Polonnaruwa": {"lat": 7.9403, "lon": 81.0188},
-        "Badulla": {"lat": 6.9934, "lon": 81.0550},
-        "Monaragala": {"lat": 6.8728, "lon": 81.3507},
-        "Ratnapura": {"lat": 6.6828, "lon": 80.3992},
-        "Kegalle": {"lat": 7.2513, "lon": 80.3464},
-    }
+    DISTRICTS = OWM_LOCATIONS
 
     def __init__(self, api_key: str, db_engine: Engine = default_engine):
         self.api_key = api_key
@@ -137,7 +112,7 @@ class OpenWeatherMapService:
         return None
 
     async def refresh_all(self, force: bool = False) -> bool:
-        """Fetch all districts (50 calls). Skipped while the snapshot is younger than MIN_REFRESH_AGE_MINUTES."""
+        """Fetch all locations (1 call each = 25). Skipped while the snapshot is younger than MIN_REFRESH_AGE_MINUTES."""
         async with self._refresh_lock:
             self._load()
             if not force and self.age_minutes() is not None and self.age_minutes() < self.MIN_REFRESH_AGE_MINUTES:
@@ -152,7 +127,6 @@ class OpenWeatherMapService:
                 async with sem:
                     params = {"lat": coords["lat"], "lon": coords["lon"]}
                     data = await self._request(self.BASE_URL, params)
-                    overview = await self._request(f"{self.BASE_URL}/overview", params) if data else None
                     if not data:
                         failed += 1
                         return previous.get(district) or {
@@ -160,7 +134,7 @@ class OpenWeatherMapService:
                             "alerts": [], "alert_count": 0, "risk_level": "unknown",
                         }
                     try:
-                        return self._process_early_warning(district, data, overview or {})
+                        return self._process_early_warning(district, data, {})
                     except Exception as e:
                         failed += 1
                         logger.error(f"Failed to process early warning for {district}: {e}")

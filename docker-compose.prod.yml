@@ -56,6 +56,7 @@ services:
       TOMTOM_API_KEY: ${TOMTOM_API_KEY:-}
       HERE_API_KEY: ${HERE_API_KEY:-}
       WEATHER_SOURCE: ${WEATHER_SOURCE:-open_meteo}
+      OWM_REFRESH_MINUTES: ${OWM_REFRESH_MINUTES:-120}
       FRONTEND_URL: https://floodwatch.teklab.dev
       DEBUG: "false"
     secrets:
