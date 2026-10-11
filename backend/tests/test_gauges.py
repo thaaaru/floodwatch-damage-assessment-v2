@@ -144,7 +144,7 @@ def test_read_endpoints_never_call_upstream(tmp_path, monkeypatch):
     r = client.get("/api/intel/irrigation")
     assert r.status_code == 200 and r.json()["count"] == 1
     assert r.json()["stations"][0]["status"] == "normal"
-    assert client.get("/api/intel/irrigation/history/Magura").json()["readings"][0]["level_m"] == 3.0
+    assert client.get("/api/intel/irrigation/history/Magura").json()[0]["level_m"] == 3.0
     assert client.get("/api/intel/rivers").json()["count"] == 1
     assert client.post("/api/intel/irrigation/refresh").status_code == 200
     assert client.post("/api/intel/rivers/refresh").status_code == 200

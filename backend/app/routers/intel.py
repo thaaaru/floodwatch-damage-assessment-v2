@@ -881,8 +881,8 @@ async def get_irrigation_water_levels():
 
 @router.get("/irrigation/history/{gauge}")
 async def get_irrigation_history(gauge: str, days: int = Query(7, ge=1, le=30)):
-    """Stored readings for one gauge (default 7 days), oldest first."""
-    return {"gauge": gauge, "days": days, "readings": irrigation_fetcher.get_history(gauge, days)}
+    """Stored readings for one gauge (default 7 days), oldest first: [{observed_at, level_m}]."""
+    return irrigation_fetcher.get_history(gauge, days)
 
 
 @router.get("/irrigation/district/{district}")
