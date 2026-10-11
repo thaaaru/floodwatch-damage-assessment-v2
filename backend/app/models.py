@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-from sqlalchemy import Column, Integer, String, Boolean, DECIMAL, TIMESTAMP, Text, ForeignKey, Date, JSON
+from sqlalchemy import Column, Integer, String, Boolean, DECIMAL, TIMESTAMP, Text, ForeignKey, Date, JSON, Float, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 import json
@@ -116,3 +116,34 @@ class OwmCache(Base):
     fetched_at = Column(TIMESTAMP(timezone=True), nullable=False)
     stale = Column(Boolean, nullable=False, default=False)
     payload = Column(JSON, nullable=False)
+
+
+class GaugeReading(Base):
+    """Irrigation Dept river gauge reading (gauges_2_view), stored in metres."""
+    __tablename__ = "gauge_readings"
+    __table_args__ = (UniqueConstraint("gauge", "observed_at", name="uq_gauge_readings_gauge_observed_at"),)
+
+    id = Column(Integer, primary_key=True)
+    gauge = Column(String(100), nullable=False, index=True)
+    basin = Column(String(100))
+    level_m = Column(Float)
+    rainfall_mm = Column(Float)
+    # Thresholds carried on the reading itself (alertpull/minorpull/majorpull), metres.
+    alert_m = Column(Float)
+    minor_m = Column(Float)
+    major_m = Column(Float)
+    observed_at = Column(TIMESTAMP(timezone=True), nullable=False, index=True)
+
+
+class GaugeStation(Base):
+    """Irrigation Dept hydrostations master (location + thresholds, metres)."""
+    __tablename__ = "gauge_stations"
+
+    gauge = Column(String(100), primary_key=True)
+    basin = Column(String(100))
+    lat = Column(Float)
+    lon = Column(Float)
+    unit = Column(String(10))
+    alert_m = Column(Float)
+    minor_m = Column(Float)
+    major_m = Column(Float)

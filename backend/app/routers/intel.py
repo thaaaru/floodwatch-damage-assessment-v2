@@ -11,7 +11,6 @@ from typing import Optional
 
 from ..services.intel_engine import intel_engine
 from ..services.sos_fetcher import sos_fetcher
-from ..services.river_fetcher import river_fetcher
 from ..services.osm_facilities import (
     fetch_all_facilities,
     find_nearby_facilities,
@@ -409,74 +408,40 @@ async def refresh_facilities():
 
 
 # ============================================================
-# River Water Level Endpoints (Sri Lanka Navy Flood Monitoring)
+# River Water Levels (legacy shape for /flood-info)
+# Navy WLRS (floodms.navy.lk) is gone; this serves the Irrigation Dept gauges
+# from the DB. "status" folds threshold status and trend into the old
+# normal/alert/rising/falling vocabulary.
 # ============================================================
+
+def _legacy_river_stations() -> list[dict]:
+    out = []
+    for g in irrigation_fetcher.get_gauges():
+        if g["status"] in ("alert", "minor", "major"):
+            status = "alert"
+        elif g["trend"] in ("rising", "falling"):
+            status = g["trend"]
+        else:
+            status = "normal" if g["status"] == "normal" else "unknown"
+        out.append({**g, "river": g["basin"] or g["river"], "status": status})
+    return out
+
 
 @router.get("/rivers")
 async def get_river_levels():
-    """
-    Get real-time river water levels from Sri Lanka Navy flood monitoring system.
-
-    Returns data from 45+ gauging stations across major rivers including:
-    - Current water level (meters)
-    - Water level 1 hour ago
-    - Water level at 9am
-    - 24-hour rainfall (mm)
-    - Station status: normal, alert, rising, falling
-
-    Data is cached for 5 minutes and sourced from https://floodms.navy.lk
-    """
-    if not river_fetcher.is_cache_valid():
-        await river_fetcher.fetch_river_levels()
-
-    stations = river_fetcher.get_cached_data()
-
-    # Calculate summary stats
-    status_counts = {"normal": 0, "alert": 0, "rising": 0, "falling": 0, "unknown": 0}
-    for station in stations:
-        status = station.get("status", "unknown")
-        status_counts[status] = status_counts.get(status, 0) + 1
-
-    return {
-        "count": len(stations),
-        "summary": {
-            "normal": status_counts["normal"],
-            "alert": status_counts["alert"],
-            "rising": status_counts["rising"],
-            "falling": status_counts["falling"],
-        },
-        "stations": stations,
-    }
+    """Gauge levels in the legacy river-network shape (DB only, never upstream)."""
+    stations = _legacy_river_stations()
+    counts = {k: sum(1 for s in stations if s["status"] == k) for k in ("normal", "alert", "rising", "falling")}
+    return {"count": len(stations), "summary": counts, "stations": stations}
 
 
 @router.post("/rivers/refresh")
 async def refresh_river_levels():
-    """
-    Force refresh river water level data from Navy flood monitoring.
-
-    Normally cached for 5 minutes. Use this to get immediate update.
-    """
-    stations = await river_fetcher.fetch_river_levels()
-
-    status_counts = {"normal": 0, "alert": 0, "rising": 0, "falling": 0, "unknown": 0}
-    for station in stations:
-        status = station.get("status", "unknown")
-        status_counts[status] = status_counts.get(status, 0) + 1
-
-    return {
-        "status": "refreshed",
-        "count": len(stations),
-        "summary": {
-            "normal": status_counts["normal"],
-            "alert": status_counts["alert"],
-            "rising": status_counts["rising"],
-            "falling": status_counts["falling"],
-        },
-    }
+    """Kept for API compatibility: returns stored data, never calls upstream."""
+    data = await get_river_levels()
+    return {"status": "refreshed", "count": data["count"], "summary": data["summary"]}
 
 
-# ============================================================
-# Weather Alerts Endpoints (WeatherAPI.com)
 # ============================================================
 
 @router.get("/weather-alerts")
@@ -898,29 +863,26 @@ async def refresh_here_weather():
 @router.get("/irrigation")
 async def get_irrigation_water_levels():
     """
-    Get real-time river water levels from Irrigation Department.
+    Latest reading for every Irrigation Dept gauge (~40), from the DB.
 
-    Returns water levels for 39 gauging stations with:
-    - Current water level (meters)
-    - Flood thresholds (alert, minor flood, major flood)
-    - Percentage to each threshold
-    - Affected districts
-    - Coordinates for mapping
-
-    Data sourced from Irrigation Department's ArcGIS service.
-    Cached for 5 minutes.
+    Per gauge: level, observed_at, thresholds (reading -> hydrostations ->
+    built-in fallback), status normal/alert/minor/major/unknown, trend
+    rising/falling/steady (last 3 readings, +/-2 cm), stale (> 6 h).
+    Synced every 15 min by the scheduler; never calls upstream.
     """
-    if not irrigation_fetcher.is_cache_valid():
-        await irrigation_fetcher.fetch_water_levels()
-
-    stations = irrigation_fetcher.get_cached_data()
-    summary = irrigation_fetcher.get_summary()
-
+    stations = irrigation_fetcher.get_gauges()
     return {
         "count": len(stations),
-        "summary": summary,
+        "summary": irrigation_fetcher.get_summary(stations),
         "stations": stations,
+        "source": "Irrigation Department of Sri Lanka",
     }
+
+
+@router.get("/irrigation/history/{gauge}")
+async def get_irrigation_history(gauge: str, days: int = Query(7, ge=1, le=30)):
+    """Stored readings for one gauge (default 7 days), oldest first."""
+    return {"gauge": gauge, "days": days, "readings": irrigation_fetcher.get_history(gauge, days)}
 
 
 @router.get("/irrigation/district/{district}")
@@ -931,26 +893,17 @@ async def get_irrigation_by_district(district: str):
     Returns flood risk assessment for the district based on
     river water levels at upstream stations.
     """
-    if not irrigation_fetcher.is_cache_valid():
-        await irrigation_fetcher.fetch_water_levels()
-
     return irrigation_fetcher.get_flood_risk_for_district(district)
 
 
 @router.post("/irrigation/refresh")
 async def refresh_irrigation_data():
-    """
-    Force refresh river water level data from Irrigation Department.
-
-    Normally cached for 5 minutes. Use this to get immediate update.
-    """
-    stations = await irrigation_fetcher.fetch_water_levels()
-    summary = irrigation_fetcher.get_summary()
-
+    """Kept for API compatibility: returns stored data, never calls upstream."""
+    stations = irrigation_fetcher.get_gauges()
     return {
         "status": "refreshed",
         "count": len(stations),
-        "summary": summary,
+        "summary": irrigation_fetcher.get_summary(stations),
     }
 
 
@@ -1167,7 +1120,7 @@ async def get_current_flood_risk_with_history():
         rainfalls = [w.get("current_precip_mm", 0) or 0 for w in weather_data]
         current_rainfall_avg = sum(rainfalls) / len(rainfalls) if rainfalls else 0
 
-    rivers_at_risk = len([r for r in river_data if r.get("status") in ["alert", "minor_flood", "major_flood"]])
+    rivers_at_risk = len([r for r in river_data if r.get("status") in ["alert", "minor", "major"]])
 
     # Compare with historical
     historical_avg = historical_monthly.get("avg_daily_rainfall_mm", 0)

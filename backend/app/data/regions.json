@@ -26,7 +26,7 @@
       "districts": 25,
       "dataProviders": {
         "weather": ["open_meteo", "here_weather"],
-        "rivers": ["srilanka_navy"],
+        "rivers": ["srilanka_irrigation"],
         "emergencyServices": ["colombo_disaster", "police_lk"]
       },
       "smsGateway": "twilio",

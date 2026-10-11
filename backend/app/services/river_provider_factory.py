@@ -12,7 +12,6 @@ import logging
 from .river_provider import (
     RiverProvider,
     BoundingBox,
-    SriLankaNorthRiverProvider,
     SriLankaIrrigationRiverProvider,
     IndiaWaterCommissionProvider,
     TamilNaduRiverProvider,
@@ -33,11 +32,9 @@ class RiverProviderFactory:
     def __init__(self):
         """Initialize available providers"""
         self._providers: Dict[str, RiverProvider] = {
-            # Primary Sri Lanka source: Irrigation Dept (ArcGIS + GitHub fallback).
-            # Reachable globally, structured thresholds, district-mapped.
+            # Sri Lanka: Irrigation Dept gauges (synced to the DB by the scheduler).
+            # Navy WLRS (floodms.navy.lk) was removed: the host no longer resolves.
             "srilanka_irrigation": SriLankaIrrigationRiverProvider(),
-            # Secondary Sri Lanka source: Navy WLRS (often geo-blocked outside LK).
-            "srilanka_navy": SriLankaNorthRiverProvider(),
             "india_cwc": IndiaWaterCommissionProvider(),
             "tamil_nadu": TamilNaduRiverProvider(),
             "karnataka": KarnatakaRiverProvider(),
@@ -50,7 +47,7 @@ class RiverProviderFactory:
         # currently iterate all of them and concatenate results, so a working
         # primary masks a failing secondary in `validate_region`).
         self._region_providers: Dict[str, List[str]] = {
-            "srilanka": ["srilanka_irrigation", "srilanka_navy"],
+            "srilanka": ["srilanka_irrigation"],
             "south_india": [
                 "india_cwc",
                 "tamil_nadu",

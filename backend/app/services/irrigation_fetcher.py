@@ -1,35 +1,43 @@
 # SPDX-License-Identifier: Apache-2.0
 
 """
-Irrigation Department River Water Level Fetcher
-Fetches real-time river water level data from Sri Lanka Irrigation Department's ArcGIS service.
-Source: https://github.com/nuuuwan/lk_irrigation
+Irrigation Department river gauges (public ArcGIS, no key).
 
-This provides more accurate data than Navy scraping:
-- Precise coordinates for each station
-- Flood thresholds (alert, minor flood, major flood levels)
-- District mapping
+  - Readings:  gauges_2_view      (append-only, rolling ~7 days, ~40 gauges)
+  - Stations:  hydrostations      (location, basin, Alert/Minor/Major levels, unit)
+
+A scheduler job (sync_gauges, every 15 min) pulls readings into Postgres
+(gauge_readings, unique on gauge+observed_at), backfilling the whole ~7-day
+layer when the table is empty, and prunes rows older than 30 days. Every read
+path (get_gauges / get_history and the legacy helpers below) reads the DB only,
+so when upstream is down the last stored data is served and marked stale.
+
+All levels and thresholds are stored in metres; stations whose unit is "ft"
+(Nagalagam Street) are converted on ingest.
 """
-import httpx
-from typing import Optional
-from datetime import datetime
 import logging
+from collections import Counter
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+import httpx
+from sqlalchemy import delete, func, select
+from sqlalchemy.engine import Engine
+
+from ..database import engine as default_engine
+from ..models import GaugeReading, GaugeStation
 
 logger = logging.getLogger(__name__)
 
-# ArcGIS REST API endpoint (Irrigation Dept)
-ARCGIS_URL = "https://services3.arcgis.com/J7ZFXmR8rSmQ3FGf/arcgis/rest/services/gauges_2_view/FeatureServer/0/query"
+ARCGIS_BASE = "https://services3.arcgis.com/J7ZFXmR8rSmQ3FGf/arcgis/rest/services"
+ARCGIS_URL = f"{ARCGIS_BASE}/gauges_2_view/FeatureServer/0/query"
+HYDROSTATIONS_URL = f"{ARCGIS_BASE}/hydrostations/FeatureServer/0/query"
 
-# GitHub raw data (fallback, updated hourly)
-#
-# NOTE (2026-05-22): The upstream repo restructured. The historical
-# `data/latest-100.json` file now 404s. We switched to `data/all.json`
-# which carries the same flat schema (list of
-# {station_name, time_ut, water_level_m}) but contains the full history,
-# so we must select only the most recent reading per station ourselves.
-GITHUB_LATEST_URL = "https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/all.json"
-GITHUB_ALERT_URL = "https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/alert_data.json"
-GITHUB_STATIONS_URL = "https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/static/stations.json"
+FT_TO_M = 0.3048
+STALE_AFTER = timedelta(hours=6)
+TREND_DEADBAND_M = 0.02
+RETENTION = timedelta(days=30)
+PAGE_SIZE = 1000  # layer maxRecordCount
 
 # Station metadata with flood thresholds and coordinates
 # From: https://raw.githubusercontent.com/nuuuwan/lk_irrigation/main/data/static/stations.json
@@ -429,374 +437,287 @@ DISTRICT_MAP = {
 }
 
 
-class IrrigationFetcher:
-    """Fetches river water levels from Irrigation Department ArcGIS service"""
+# ---------------------------------------------------------------------------
+# Pure helpers (unit-tested)
+# ---------------------------------------------------------------------------
 
-    def __init__(self):
-        self._cache: list[dict] = []
-        self._last_fetch: Optional[datetime] = None
-        self._cache_duration_seconds = 300  # 5 minute cache
+def _num(v) -> Optional[float]:
+    """Positive float or None (ArcGIS uses null/0 for 'not defined')."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f > 0 else None
+
+
+def resolve_thresholds(reading: dict, station: Optional[dict], metadata: Optional[dict]) -> dict:
+    """Per level: reading (alertpull...) -> hydrostations -> STATION_METADATA. Metres, None if missing."""
+    meta = metadata or {}
+    meta_scale = FT_TO_M if meta.get("unit") == "ft" else 1.0
+    fallback = {
+        "alert": _num(meta.get("alert_level_m")),
+        "minor": _num(meta.get("minor_flood_m")),
+        "major": _num(meta.get("major_flood_m")),
+    }
+    out = {}
+    for key in ("alert", "minor", "major"):
+        meta_val = fallback[key] * meta_scale if fallback[key] else None
+        out[key] = _num(reading.get(f"{key}_m")) or _num((station or {}).get(f"{key}_m")) or meta_val
+    return out
+
+
+def compute_status(level: Optional[float], thresholds: dict) -> str:
+    """normal / alert / minor / major, or unknown when there is no level or no threshold."""
+    if level is None or not any(thresholds.get(k) for k in ("alert", "minor", "major")):
+        return "unknown"
+    for key in ("major", "minor", "alert"):
+        t = thresholds.get(key)
+        if t is not None and level >= t:
+            return key
+    return "normal"
+
+
+def compute_trend(levels_newest_first: list) -> Optional[str]:
+    """rising / falling / steady from the last (up to) 3 readings, +/-2 cm deadband."""
+    levels = [l for l in levels_newest_first[:3] if l is not None]
+    if len(levels) < 2:
+        return None
+    delta = round(levels[0] - levels[-1], 3)  # mm; avoids float noise at the deadband edge
+    if delta > TREND_DEADBAND_M:
+        return "rising"
+    if delta < -TREND_DEADBAND_M:
+        return "falling"
+    return "steady"
+
+
+def is_stale(observed_at: Optional[datetime], now: Optional[datetime] = None) -> bool:
+    if observed_at is None:
+        return True
+    now = now or datetime.now(timezone.utc)
+    return now - _utc(observed_at) > STALE_AFTER
+
+
+def _utc(dt: datetime) -> datetime:
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+
+
+def _metadata_for(name: str) -> Optional[dict]:
+    meta = STATION_METADATA.get(name)
+    if meta:
+        return meta
+    for key, m in STATION_METADATA.items():
+        if key.lower() in name.lower() or name.lower() in key.lower():
+            return m
+    return None
+
+
+def _insert(engine: Engine, table):
+    if engine.dialect.name == "postgresql":
+        from sqlalchemy.dialects.postgresql import insert
+    else:
+        from sqlalchemy.dialects.sqlite import insert
+    return insert(table)
+
+
+class IrrigationFetcher:
+    """Irrigation Dept gauges: scheduler-side sync into Postgres, DB-only reads."""
+
+    def __init__(self, db_engine: Optional[Engine] = None):
+        self.engine = db_engine or default_engine
+
+    # ------------------------------------------------------------------
+    # Ingest (scheduler only)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    async def _query_all(client: httpx.AsyncClient, url: str, params: dict) -> list[dict]:
+        """Paged ArcGIS query -> list of feature attributes."""
+        out: list[dict] = []
+        offset = 0
+        while True:
+            resp = await client.get(url, params={**params, "resultOffset": offset,
+                                                 "resultRecordCount": PAGE_SIZE, "f": "json"})
+            resp.raise_for_status()
+            data = resp.json()
+            if "error" in data:
+                raise RuntimeError(f"ArcGIS error: {data['error']}")
+            feats = data.get("features", [])
+            out.extend(f.get("attributes", {}) for f in feats)
+            if not data.get("exceededTransferLimit") or not feats:
+                return out
+            offset += len(feats)
+
+    def ingest(self, readings: list[dict], stations: list[dict]) -> int:
+        """Upsert hydrostations and readings (idempotent). Returns readings offered."""
+        units: dict[str, str] = {}
+        with self.engine.begin() as conn:
+            for st in stations:
+                name = (st.get("station") or "").strip()
+                if not name:
+                    continue
+                unit = (st.get("Unit") or "m").strip().lower()
+                units[name] = unit
+                k = FT_TO_M if unit == "ft" else 1.0
+                row = {
+                    "gauge": name,
+                    "basin": (st.get("basin") or "").strip() or None,
+                    "lat": st.get("latitude"),
+                    "lon": st.get("longitude"),
+                    "unit": unit,
+                    "alert_m": (_num(st.get("Alert_Level")) or 0) * k or None,
+                    "minor_m": (_num(st.get("Minor_Flood_Level")) or 0) * k or None,
+                    "major_m": (_num(st.get("Major_Flood_Level")) or 0) * k or None,
+                }
+                stmt = _insert(self.engine, GaugeStation.__table__).values(**row)
+                conn.execute(stmt.on_conflict_do_update(
+                    index_elements=["gauge"], set_={c: stmt.excluded[c] for c in row if c != "gauge"}))
+
+            if not units:  # stations call failed: fall back to stored units
+                units = {g: u for g, u in conn.execute(select(GaugeStation.gauge, GaugeStation.unit))}
+
+            rows = []
+            for r in readings:
+                name = (r.get("gauge") or "").strip()
+                edit = r.get("EditDate")
+                if not name or not edit:
+                    continue
+                unit = units.get(name) or (_metadata_for(name) or {}).get("unit", "m")
+                k = FT_TO_M if unit == "ft" else 1.0
+                level = r.get("water_level")
+                rows.append({
+                    "gauge": name,
+                    "basin": (r.get("basin") or "").strip() or None,
+                    "level_m": round(level * k, 3) if level is not None else None,
+                    "rainfall_mm": r.get("rain_fall"),
+                    "alert_m": (_num(r.get("alertpull")) or 0) * k or None,
+                    "minor_m": (_num(r.get("minorpull")) or 0) * k or None,
+                    "major_m": (_num(r.get("majorpull")) or 0) * k or None,
+                    "observed_at": datetime.fromtimestamp(edit / 1000, tz=timezone.utc),
+                })
+            for i in range(0, len(rows), 500):
+                stmt = _insert(self.engine, GaugeReading.__table__).values(rows[i:i + 500])
+                conn.execute(stmt.on_conflict_do_nothing(index_elements=["gauge", "observed_at"]))
+
+            conn.execute(delete(GaugeReading).where(
+                GaugeReading.observed_at < datetime.now(timezone.utc) - RETENTION))
+        return len(rows)
+
+    async def sync_gauges(self) -> int:
+        """Fetch upstream and store. Backfills the whole layer (~7 days) when the table is empty."""
+        with self.engine.connect() as conn:
+            empty = conn.execute(select(func.count()).select_from(GaugeReading.__table__)).scalar() == 0
+        since = (datetime.now(timezone.utc) - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        where = "1=1" if empty else f"EditDate >= TIMESTAMP '{since}'"
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            readings = await self._query_all(client, ARCGIS_URL, {
+                "where": where,
+                "outFields": "gauge,basin,water_level,rain_fall,EditDate,alertpull,minorpull,majorpull",
+                "orderByFields": "objectid ASC",
+            })
+            try:
+                stations = await self._query_all(client, HYDROSTATIONS_URL, {"where": "1=1", "outFields": "*"})
+            except Exception as e:
+                logger.warning(f"hydrostations fetch failed, using stored stations: {e}")
+                stations = []
+        n = self.ingest(readings, stations)
+        logger.info(f"Gauges synced: {n} readings ({'backfill' if empty else 'last 24h'}), {len(stations)} stations")
+        return n
+
+    # ------------------------------------------------------------------
+    # Reads (DB only, never upstream)
+    # ------------------------------------------------------------------
+
+    def get_gauges(self) -> list[dict]:
+        """Latest reading per gauge with status, trend and stale flag."""
+        ranked = select(
+            *GaugeReading.__table__.c,
+            func.row_number().over(partition_by=GaugeReading.gauge,
+                                   order_by=GaugeReading.observed_at.desc()).label("rn"),
+        ).subquery()
+        with self.engine.connect() as conn:
+            rows = conn.execute(select(ranked).where(ranked.c.rn <= 3)
+                                .order_by(ranked.c.gauge, ranked.c.rn)).mappings().all()
+            stations = {r["gauge"]: dict(r) for r in conn.execute(select(GaugeStation.__table__)).mappings()}
+
+        by_gauge: dict[str, list] = {}
+        for r in rows:
+            by_gauge.setdefault(r["gauge"], []).append(r)
+
+        now = datetime.now(timezone.utc)
+        out = []
+        for name, recent in by_gauge.items():
+            latest = recent[0]
+            station = stations.get(name)
+            meta = _metadata_for(name)
+            th = resolve_thresholds(dict(latest), station, meta)
+            level = latest["level_m"]
+            observed = _utc(latest["observed_at"])
+            lat = (station or {}).get("lat") or (meta or {}).get("lat")
+            lon = (station or {}).get("lon") or (meta or {}).get("lon")
+            district_ids = (meta or {}).get("district_ids", [])
+            pct = lambda t: round(level / t * 100, 1) if (level is not None and t) else None
+            out.append({
+                "station": name,
+                "basin": latest["basin"] or (station or {}).get("basin"),
+                "river": latest["basin"] or (station or {}).get("basin") or (meta or {}).get("river"),
+                "lat": lat,
+                "lon": lon,
+                "districts": [DISTRICT_MAP.get(d, d) for d in district_ids],
+                "district_ids": district_ids,
+                "water_level_m": round(level, 2) if level is not None else None,
+                "rainfall_mm": latest["rainfall_mm"],
+                "alert_level_m": th["alert"],
+                "minor_flood_level_m": th["minor"],
+                "major_flood_level_m": th["major"],
+                "status": compute_status(level, th),
+                "trend": compute_trend([r["level_m"] for r in recent]),
+                "stale": is_stale(observed, now),
+                "observed_at": observed.isoformat(),
+                "last_updated": observed.isoformat(),
+                "pct_to_alert": pct(th["alert"]),
+                "pct_to_minor_flood": pct(th["minor"]),
+                "pct_to_major_flood": pct(th["major"]),
+            })
+        return sorted(out, key=lambda g: g["station"])
+
+    def get_history(self, gauge: str, days: int = 7) -> list[dict]:
+        since = datetime.now(timezone.utc) - timedelta(days=days)
+        with self.engine.connect() as conn:
+            rows = conn.execute(
+                select(GaugeReading.observed_at, GaugeReading.level_m)
+                .where(GaugeReading.gauge == gauge, GaugeReading.observed_at >= since)
+                .order_by(GaugeReading.observed_at)
+            ).all()
+        return [{"observed_at": _utc(t).isoformat(), "level_m": l} for t, l in rows]
+
+    # ------------------------------------------------------------------
+    # Legacy helpers (flood threat, intel, river provider) - DB-backed
+    # ------------------------------------------------------------------
 
     async def fetch_water_levels(self) -> list[dict]:
-        """
-        Fetch river water levels from ArcGIS API.
-        Falls back to GitHub mirrors if ArcGIS fails.
-
-        Fallback order:
-          1. ArcGIS REST (live, ~hourly upstream refresh)
-          2. GitHub `alert_data.json` (small, station -> date -> time -> level)
-          3. GitHub `all.json` (~15 MB; full history, last-resort)
-        """
-        try:
-            # Try ArcGIS API first (real-time)
-            data = await self._fetch_from_arcgis()
-            if data:
-                self._cache = data
-                self._last_fetch = datetime.utcnow()
-                logger.info(f"Fetched {len(data)} stations from ArcGIS")
-                return data
-        except Exception as e:
-            logger.warning(f"ArcGIS fetch failed: {e}, trying GitHub alert_data fallback")
-
-        try:
-            # Compact, pre-grouped mirror (preferred fallback)
-            data = await self._fetch_from_github_alert()
-            if data:
-                self._cache = data
-                self._last_fetch = datetime.utcnow()
-                logger.info(f"Fetched {len(data)} stations from GitHub alert_data")
-                return data
-        except Exception as e:
-            logger.warning(f"GitHub alert_data fallback failed: {e}, trying all.json")
-
-        try:
-            # Fallback to GitHub all.json (large; full history)
-            data = await self._fetch_from_github()
-            if data:
-                self._cache = data
-                self._last_fetch = datetime.utcnow()
-                logger.info(f"Fetched {len(data)} stations from GitHub all.json")
-                return data
-        except Exception as e:
-            logger.error(f"GitHub all.json fallback also failed: {e}")
-
-        return self._cache  # Return cached data on error
-
-    async def _fetch_from_arcgis(self) -> list[dict]:
-        """Fetch from ArcGIS REST API"""
-        params = {
-            "where": "1=1",
-            "outFields": "*",
-            "orderByFields": "EditDate DESC",
-            "resultRecordCount": 200,
-            "f": "json",
-        }
-
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(ARCGIS_URL, params=params)
-            response.raise_for_status()
-            data = response.json()
-
-        features = data.get("features", [])
-        if not features:
-            return []
-
-        # Group by station (get latest reading for each)
-        station_readings = {}
-        for feature in features:
-            attrs = feature.get("attributes", {})
-            station_name = attrs.get("gauge", "").strip()
-            if not station_name:
-                continue
-
-            # Only keep latest reading per station
-            if station_name not in station_readings:
-                station_readings[station_name] = attrs
-
-        # Convert to our format with metadata
-        results = []
-        for station_name, attrs in station_readings.items():
-            result = self._build_station_data(station_name, attrs)
-            if result:
-                results.append(result)
-
-        return results
-
-    async def _fetch_from_github_alert(self) -> list[dict]:
-        """Fetch from GitHub `alert_data.json` (compact, pre-grouped).
-
-        Schema:
-            {
-              "event_data": {
-                 "Horowpothana": {
-                    "20260522": {"102708": 1.27, "090954": 1.27, ...},
-                    "20260521": {...},
-                    ...
-                 },
-                 ...
-              }
-            }
-        """
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(GITHUB_ALERT_URL)
-            response.raise_for_status()
-            payload = response.json()
-
-        event_data = payload.get("event_data", {}) or {}
-        results: list[dict] = []
-        for station_name, by_date in event_data.items():
-            if not isinstance(by_date, dict) or not by_date:
-                continue
-            # Pick most recent date (YYYYMMDD) then most recent time (HHMMSS).
-            latest_date = max(by_date.keys())
-            times = by_date.get(latest_date) or {}
-            if not isinstance(times, dict) or not times:
-                continue
-            latest_time = max(times.keys())
-            water_level = times.get(latest_time)
-            if water_level is None:
-                continue
-
-            # Convert YYYYMMDD + HHMMSS -> POSIX timestamp (UTC).
-            try:
-                ts = datetime.strptime(
-                    f"{latest_date}{latest_time.zfill(6)}", "%Y%m%d%H%M%S"
-                )
-                time_ut = int(ts.timestamp())
-            except ValueError:
-                time_ut = int(datetime.utcnow().timestamp())
-
-            reading = {"water_level_m": water_level, "time_ut": time_ut}
-            built = self._build_station_data_github(station_name, reading)
-            if built:
-                results.append(built)
-
-        return results
-
-    async def _fetch_from_github(self) -> list[dict]:
-        """Fetch from GitHub (pre-processed data)"""
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(GITHUB_LATEST_URL)
-            response.raise_for_status()
-            readings = response.json()
-
-        # Group by station (get latest reading for each)
-        station_readings = {}
-        for reading in readings:
-            station_name = reading.get("station_name", "").strip()
-            if not station_name:
-                continue
-
-            time_ut = reading.get("time_ut", 0)
-            if station_name not in station_readings or time_ut > station_readings[station_name].get("time_ut", 0):
-                station_readings[station_name] = reading
-
-        # Convert to our format with metadata
-        results = []
-        for station_name, reading in station_readings.items():
-            result = self._build_station_data_github(station_name, reading)
-            if result:
-                results.append(result)
-
-        return results
-
-    def _build_station_data(self, station_name: str, attrs: dict) -> Optional[dict]:
-        """Build station data from ArcGIS attributes"""
-        metadata = STATION_METADATA.get(station_name)
-        if not metadata:
-            # Try partial match
-            for name, meta in STATION_METADATA.items():
-                if name.lower() in station_name.lower() or station_name.lower() in name.lower():
-                    metadata = meta
-                    break
-
-        if not metadata:
-            logger.debug(f"No metadata for station: {station_name}")
-            return None
-
-        # Get water level
-        water_level_raw = attrs.get("water_level", 0) or 0
-
-        # Check if station reports in feet (based on metadata)
-        station_unit = metadata.get("unit", "m")  # Default to meters
-
-        # Get thresholds (in same unit as station reports)
-        alert_level = metadata["alert_level_m"]
-        minor_flood = metadata["minor_flood_m"]
-        major_flood = metadata["major_flood_m"]
-
-        if station_unit == "ft":
-            # Station reports in feet - keep raw value, thresholds are also in feet
-            water_level = water_level_raw  # Keep as feet, do NOT convert
-        else:
-            # Station reports in meters
-            water_level = water_level_raw
-            if water_level > 50:  # Legacy check: very high values might be in feet
-                water_level = water_level * 0.3048
-
-        # Determine flood status (compare in native unit)
-        if water_level >= major_flood:
-            status = "major_flood"
-        elif water_level >= minor_flood:
-            status = "minor_flood"
-        elif water_level >= alert_level:
-            status = "alert"
-        else:
-            status = "normal"
-
-        # Calculate percentage to thresholds
-        pct_to_alert = (water_level / alert_level * 100) if alert_level > 0 else 0
-        pct_to_minor = (water_level / minor_flood * 100) if minor_flood > 0 else 0
-        pct_to_major = (water_level / major_flood * 100) if major_flood > 0 else 0
-
-        # Get district names
-        districts = [DISTRICT_MAP.get(d, d) for d in metadata["district_ids"]]
-
-        # Timestamp
-        edit_date = attrs.get("EditDate")
-        if edit_date:
-            # ArcGIS returns milliseconds
-            last_updated = datetime.utcfromtimestamp(edit_date / 1000).isoformat()
-        else:
-            last_updated = datetime.utcnow().isoformat()
-
-        return {
-            "station": station_name,
-            "river": metadata["river"],
-            "lat": metadata["lat"],
-            "lon": metadata["lon"],
-            "districts": districts,
-            "district_ids": metadata["district_ids"],
-            "water_level_m": round(water_level, 2),
-            "alert_level_m": alert_level,
-            "minor_flood_level_m": minor_flood,
-            "major_flood_level_m": major_flood,
-            "status": status,
-            "pct_to_alert": round(pct_to_alert, 1),
-            "pct_to_minor_flood": round(pct_to_minor, 1),
-            "pct_to_major_flood": round(pct_to_major, 1),
-            "last_updated": last_updated,
-        }
-
-    def _build_station_data_github(self, station_name: str, reading: dict) -> Optional[dict]:
-        """Build station data from GitHub reading"""
-        metadata = STATION_METADATA.get(station_name)
-        if not metadata:
-            # Try partial match
-            for name, meta in STATION_METADATA.items():
-                if name.lower() in station_name.lower() or station_name.lower() in name.lower():
-                    metadata = meta
-                    break
-
-        if not metadata:
-            return None
-
-        water_level_raw = reading.get("water_level_m", 0) or 0
-
-        # Check if station reports in feet (based on metadata)
-        station_unit = metadata.get("unit", "m")  # Default to meters
-
-        # Get thresholds (in same unit as station reports)
-        alert_level = metadata["alert_level_m"]
-        minor_flood = metadata["minor_flood_m"]
-        major_flood = metadata["major_flood_m"]
-
-        if station_unit == "ft":
-            # Station reports in feet - keep raw value, thresholds are also in feet
-            water_level = water_level_raw  # Keep as feet, do NOT convert
-        else:
-            water_level = water_level_raw
-
-        # Determine flood status (compare in native unit)
-        if water_level >= major_flood:
-            status = "major_flood"
-        elif water_level >= minor_flood:
-            status = "minor_flood"
-        elif water_level >= alert_level:
-            status = "alert"
-        else:
-            status = "normal"
-
-        # Calculate percentages
-        pct_to_alert = (water_level / alert_level * 100) if alert_level > 0 else 0
-        pct_to_minor = (water_level / minor_flood * 100) if minor_flood > 0 else 0
-        pct_to_major = (water_level / major_flood * 100) if major_flood > 0 else 0
-
-        # Get district names
-        districts = [DISTRICT_MAP.get(d, d) for d in metadata["district_ids"]]
-
-        # Timestamp
-        time_ut = reading.get("time_ut", 0)
-        last_updated = datetime.utcfromtimestamp(time_ut).isoformat() if time_ut else datetime.utcnow().isoformat()
-
-        return {
-            "station": station_name,
-            "river": metadata["river"],
-            "lat": metadata["lat"],
-            "lon": metadata["lon"],
-            "districts": districts,
-            "district_ids": metadata["district_ids"],
-            "water_level_m": round(water_level, 2),
-            "alert_level_m": alert_level,
-            "minor_flood_level_m": minor_flood,
-            "major_flood_level_m": major_flood,
-            "status": status,
-            "pct_to_alert": round(pct_to_alert, 1),
-            "pct_to_minor_flood": round(pct_to_minor, 1),
-            "pct_to_major_flood": round(pct_to_major, 1),
-            "last_updated": last_updated,
-        }
+        return self.get_gauges()
 
     def get_cached_data(self) -> list[dict]:
-        """Get cached data without fetching"""
-        return self._cache
+        return self.get_gauges()
 
     def is_cache_valid(self) -> bool:
-        """Check if cache is still valid"""
-        if not self._last_fetch:
-            return False
-        elapsed = (datetime.utcnow() - self._last_fetch).total_seconds()
-        return elapsed < self._cache_duration_seconds
+        return True  # reads always come from the DB
 
-    def get_summary(self) -> dict:
-        """Get summary statistics"""
-        data = self._cache
-        if not data:
-            return {
-                "total_stations": 0,
-                "normal": 0,
-                "alert": 0,
-                "minor_flood": 0,
-                "major_flood": 0,
-                "highest_risk_station": None,
-            }
-
-        status_counts = {"normal": 0, "alert": 0, "minor_flood": 0, "major_flood": 0}
-        highest_risk = None
-        highest_pct = 0
-
-        for station in data:
-            status = station.get("status", "normal")
-            status_counts[status] = status_counts.get(status, 0) + 1
-
-            pct = station.get("pct_to_major_flood", 0)
-            if pct > highest_pct:
-                highest_pct = pct
-                highest_risk = station
-
+    def get_summary(self, data: Optional[list[dict]] = None) -> dict:
+        data = self.get_gauges() if data is None else data
+        counts = Counter(g["status"] for g in data)
+        ranked = [g for g in data if g.get("pct_to_major_flood") is not None]
+        highest = max(ranked, key=lambda g: g["pct_to_major_flood"], default=None)
         return {
             "total_stations": len(data),
-            **status_counts,
-            "highest_risk_station": highest_risk,
+            **{k: counts.get(k, 0) for k in ("normal", "alert", "minor", "major", "unknown")},
+            "stale": sum(1 for g in data if g["stale"]),
+            "highest_risk_station": highest,
         }
 
     def get_stations_by_district(self, district: str) -> list[dict]:
-        """Get stations affecting a specific district"""
-        district_lower = district.lower()
-        return [
-            s for s in self._cache
-            if any(d.lower() == district_lower for d in s.get("districts", []))
-        ]
+        d = district.lower()
+        return [s for s in self.get_gauges() if any(x.lower() == d for x in s.get("districts", []))]
 
     def get_flood_risk_for_district(self, district: str) -> dict:
         """Calculate flood risk for a district based on river levels"""
@@ -804,8 +725,7 @@ class IrrigationFetcher:
         if not stations:
             return {"risk_level": "unknown", "risk_score": 0, "stations": []}
 
-        # Calculate risk score based on highest station risk
-        max_pct = max(s.get("pct_to_major_flood", 0) for s in stations)
+        max_pct = max((s.get("pct_to_major_flood") or 0) for s in stations)
 
         if max_pct >= 100:
             risk_level = "major_flood"

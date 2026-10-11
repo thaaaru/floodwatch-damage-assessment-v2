@@ -23,6 +23,7 @@ WEATHER_CACHE_INTERVAL_MINUTES = 30  # Refresh every 30 minutes for more timely 
 INTEL_ANALYSIS_INTERVAL_MINUTES = 30  # Reduced to minimize API load
 FACILITIES_REFRESH_INTERVAL_HOURS = 24  # Daily refresh for OSM facilities
 FLOOD_THREAT_INTERVAL_MINUTES = 15  # Refresh every 15 minutes for real-time threat assessment
+GAUGE_SYNC_INTERVAL_MINUTES = 15  # Irrigation Dept river gauges -> gauge_readings
 
 
 async def refresh_weather_cache():
@@ -109,6 +110,15 @@ async def refresh_flood_threat():
         logger.error(f"Error refreshing flood threat cache: {e}")
 
 
+async def sync_river_gauges():
+    """Background job: the only caller of the Irrigation Dept gauge layers."""
+    from ..services.irrigation_fetcher import irrigation_fetcher
+    try:
+        await irrigation_fetcher.sync_gauges()
+    except Exception as e:
+        logger.error(f"River gauge sync failed (serving stored data): {e}")
+
+
 async def refresh_owm_early_warning():
     """Background job: the only caller of OpenWeatherMap One Call (see services/openweathermap.py)."""
     from ..services.openweathermap import get_openweathermap_service
@@ -168,6 +178,15 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # River gauges - every 15 minutes (backfills ~7 days on first run)
+    scheduler.add_job(
+        sync_river_gauges,
+        trigger=IntervalTrigger(minutes=GAUGE_SYNC_INTERVAL_MINUTES),
+        id="river_gauge_sync",
+        name="Sync Irrigation Dept river gauges",
+        replace_existing=True
+    )
+
     # OpenWeatherMap early warning - every OWM_REFRESH_MINUTES (120 -> 25 x 12 = 300 calls/day), only with a key
     if settings.openweathermap_api_key:
         from ..services.openweathermap import OpenWeatherMapService
@@ -192,6 +211,7 @@ def start_scheduler():
     if settings.sos_enabled:
         asyncio.get_event_loop().create_task(refresh_intel_analysis())
     asyncio.get_event_loop().create_task(refresh_osm_facilities())
+    asyncio.get_event_loop().create_task(sync_river_gauges())
     asyncio.get_event_loop().create_task(refresh_flood_threat())
     if settings.openweathermap_api_key:
         # Skipped automatically if the persisted snapshot is still fresh.

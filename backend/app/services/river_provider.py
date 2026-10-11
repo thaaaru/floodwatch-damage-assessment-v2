@@ -3,7 +3,7 @@
 """
 River Data Provider Pattern
 Abstraction layer for fetching river water level data from different sources.
-Supports multiple regional river monitoring systems (Sri Lanka Navy, India CWC, state APIs, etc.)
+Supports multiple regional river monitoring systems (Sri Lanka Irrigation Dept, India CWC, state APIs, etc.)
 """
 
 from abc import ABC, abstractmethod
@@ -123,92 +123,6 @@ class RiverProvider(ABC):
             True if connection successful, False otherwise
         """
         pass
-
-
-class SriLankaNorthRiverProvider(RiverProvider):
-    """
-    Provider for Sri Lanka Navy flood monitoring system
-    Fetches water level data from Navy's WLRS (Water Level Recording System)
-    """
-
-    def __init__(self):
-        self.base_url = "https://floodms.navy.lk/wlrs/api/"
-        self.region_id = "srilanka"
-        # Import the existing RiverFetcher
-        from .river_fetcher import river_fetcher as existing_fetcher
-        self.fetcher = existing_fetcher
-
-    async def fetch_stations(self, bounds: Optional[BoundingBox] = None) -> List[RiverStationData]:
-        """Fetch all Sri Lankan river stations"""
-        try:
-            # Use existing fetcher to get data
-            raw_data = await self.fetcher.fetch_river_levels()
-
-            stations = []
-            for item in raw_data:
-                # Check if station is within bounds if provided
-                if bounds and not bounds.contains_point(item['lat'], item['lon']):
-                    continue
-
-                station = RiverStationData(
-                    station_id=f"srilanka_{item['river_code']}_{item['station']}",
-                    river_name=item['river'],
-                    river_code=item['river_code'],
-                    station_name=item['station'],
-                    latitude=item['lat'],
-                    longitude=item['lon'],
-                    catchment_area_km2=item.get('catchment_area_km2'),
-                    water_level_m=item['water_level_m'],
-                    water_level_previous_m=item.get('water_level_1hr_ago_m'),
-                    rainfall_24h_mm=item.get('rainfall_24h_mm'),
-                    status=item['status'],
-                    last_updated=datetime.fromisoformat(item['last_updated']) if isinstance(item['last_updated'], str) else item['last_updated'],
-                    region_id=self.region_id
-                )
-                stations.append(station)
-
-            logger.info(f"SriLankaNorthRiverProvider: Fetched {len(stations)} stations")
-            return stations
-
-        except Exception as e:
-            logger.error(f"SriLankaNorthRiverProvider: Failed to fetch stations: {e}")
-            return []
-
-    async def fetch_station_reading(self, station_id: str) -> Optional[WaterReading]:
-        """Fetch current reading for a station"""
-        try:
-            stations = await self.fetch_stations()
-            for station in stations:
-                if station.station_id == station_id:
-                    return WaterReading(
-                        station_id=station_id,
-                        water_level_m=station.water_level_m,
-                        rainfall_mm=station.rainfall_24h_mm,
-                        status=station.status,
-                        timestamp=station.last_updated
-                    )
-            return None
-        except Exception as e:
-            logger.error(f"SriLankaNorthRiverProvider: Failed to fetch reading for {station_id}: {e}")
-            return None
-
-    async def fetch_readings_history(self, station_id: str, hours: int = 24) -> List[WaterReading]:
-        """
-        Fetch historical readings.
-        Note: Sri Lanka Navy API doesn't provide historical data, so we return empty list.
-        Historical data should be fetched from database.
-        """
-        logger.info(f"SriLankaNorthRiverProvider: Historical data not available from source")
-        return []
-
-    async def test_connection(self) -> bool:
-        """Test connection to Sri Lanka Navy API"""
-        try:
-            stations = await self.fetch_stations()
-            return len(stations) > 0
-        except Exception as e:
-            logger.error(f"SriLankaNorthRiverProvider: Connection test failed: {e}")
-            return False
 
 
 class SriLankaIrrigationRiverProvider(RiverProvider):

@@ -150,8 +150,8 @@ class FloodThreatCache:
                 "critical_districts": critical_count,
                 "high_risk_districts": high_count,
                 "medium_risk_districts": medium_count,
-                "rivers_at_major_flood": river_summary.get("major_flood", 0),
-                "rivers_at_minor_flood": river_summary.get("minor_flood", 0),
+                "rivers_at_major_flood": river_summary.get("major", 0),
+                "rivers_at_minor_flood": river_summary.get("minor", 0),
                 "rivers_at_alert": river_summary.get("alert", 0),
             },
             "top_risk_districts": district_threats[:10],
@@ -210,9 +210,10 @@ class FloodThreatCache:
         if district_rivers:
             max_river_score = 0
             for river in district_rivers:
-                pct_to_alert = river.get("pct_to_alert", 100)
-                pct_to_minor = river.get("pct_to_minor_flood", 100)
-                pct_to_major = river.get("pct_to_major_flood", 100)
+                # None = gauge has no such threshold
+                pct_to_alert = river.get("pct_to_alert") if river.get("pct_to_alert") is not None else 100
+                pct_to_minor = river.get("pct_to_minor_flood") if river.get("pct_to_minor_flood") is not None else 100
+                pct_to_major = river.get("pct_to_major_flood") if river.get("pct_to_major_flood") is not None else 100
 
                 # Score based on how close to flood levels
                 if pct_to_major < 0:  # Already at major flood
