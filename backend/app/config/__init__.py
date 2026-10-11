@@ -1,8 +1,11 @@
 """Application and region configuration for FloodWatch backend."""
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List
+from urllib.parse import quote
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 from .region_config import RegionConfig, get_region_config
@@ -11,6 +14,13 @@ from .region_config import RegionConfig, get_region_config
 class Settings(BaseSettings):
     # Database
     database_url: str = "postgresql://user:password@localhost:5432/floodwatch"
+    # Production: password comes from a Docker secret file and DATABASE_URL is
+    # built from the parts below. Unset -> database_url is used as-is (local dev).
+    db_password_file: str = ""
+    db_user: str = "floodwatch"
+    db_host: str = "db"
+    db_port: int = 5432
+    db_name: str = "floodwatch"
 
     # Twilio
     twilio_account_sid: str = ""
@@ -30,6 +40,10 @@ class Settings(BaseSettings):
     openweathermap_api_key: str = ""
     google_floods_api_key: str = ""
 
+    # SMS/WhatsApp subscriber alerts. Off by default: subscription routes are
+    # not registered and the alert engine never sends messages.
+    alerts_enabled: bool = False
+
     # Application
     alert_check_interval_minutes: int = 15
     frontend_url: str = "https://floodwatch.teklab.dev"
@@ -48,6 +62,16 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+
+    @model_validator(mode="after")
+    def _database_url_from_secret(self) -> "Settings":
+        if self.db_password_file:
+            password = Path(self.db_password_file).read_text().strip()
+            self.database_url = (
+                f"postgresql://{quote(self.db_user, safe='')}:{quote(password, safe='')}"
+                f"@{self.db_host}:{self.db_port}/{self.db_name}"
+            )
+        return self
 
     def get_region_data(self) -> Dict[str, Any]:
         region_config = get_region_config()

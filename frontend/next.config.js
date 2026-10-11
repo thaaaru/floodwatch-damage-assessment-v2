@@ -2,14 +2,6 @@
 const nextConfig = {
   output: 'standalone',
   reactStrictMode: true,
-  async rewrites() {
-    return [
-      {
-        source: '/api/proxy/:path*',
-        destination: 'https://api.teklab.dev/api/:path*',
-      },
-    ];
-  },
 }
 
 module.exports = nextConfig

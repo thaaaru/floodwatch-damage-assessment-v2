@@ -119,21 +119,6 @@ export interface ForecastAlert {
   source: string;
 }
 
-export interface SubscribeRequest {
-  phone_number: string;
-  districts: string[];
-  language: string;
-}
-
-export interface SubscribeResponse {
-  id: number;
-  phone_number: string;
-  districts: string[];
-  language: string;
-  active: boolean;
-  created_at: string;
-}
-
 class ApiClient {
   private emptyEarlyWarningResponse(): EarlyWarningResponse {
     return {
@@ -303,20 +288,6 @@ class ApiClient {
     if (options?.limit) params.set('limit', options.limit.toString());
     const query = params.toString();
     return this.fetch<Alert[]>(`/api/alerts/history${query ? `?${query}` : ''}`);
-  }
-
-  async subscribe(data: SubscribeRequest): Promise<SubscribeResponse> {
-    return this.fetch<SubscribeResponse>('/api/subscribe', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async unsubscribe(phone_number: string): Promise<{ message: string }> {
-    return this.fetch('/api/unsubscribe', {
-      method: 'POST',
-      body: JSON.stringify({ phone_number }),
-    });
   }
 
   async healthCheck(): Promise<{ status: string; version: string }> {
@@ -528,7 +499,9 @@ class ApiClient {
 
 export interface CacheStatus {
   cached_districts: number;
-  last_update: string;
+  last_update: string | null;
+  last_attempt: string | null;
+  last_attempt_ok: boolean | null;
   cache_age_seconds: number;
   is_valid: boolean;
   next_refresh_seconds: number;

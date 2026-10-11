@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
 import Header from '@/components/Header';
+import StatusBanner from '@/components/StatusBanner';
 import '@/styles/globals.css';
 
 const inter = Inter({
@@ -14,7 +15,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: 'FloodWatch LK - Sri Lanka Flood Monitoring System',
-  description: 'Real-time flood monitoring and early warning system for Sri Lanka. Get SMS alerts for flood warnings in your district.',
+  description: 'Real-time flood monitoring and early warning system for Sri Lanka.',
   keywords: 'flood, sri lanka, monitoring, alerts, weather, rainfall, disaster',
 };
 
@@ -47,7 +48,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={`${inter.className} antialiased bg-slate-900 text-white`}>
         <div className="min-h-screen flex flex-col">
-          <Header />
+          {/* Sticky wrapper keeps the disclaimer visible on every page. */}
+          <div className="sticky top-0 z-50">
+            <Header />
+            <StatusBanner />
+          </div>
           <main className="flex-grow">{children}</main>
           <footer className="bg-slate-900 text-white py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

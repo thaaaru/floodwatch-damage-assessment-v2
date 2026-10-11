@@ -38,6 +38,8 @@ class WeatherCache:
     def __init__(self):
         self._cache: dict = {}
         self._last_update: Optional[datetime] = None
+        self._last_attempt: Optional[datetime] = None
+        self._last_attempt_ok: Optional[bool] = None
         self._ensure_cache_dir()
         self._load_cache_from_disk()
 
@@ -196,6 +198,7 @@ class WeatherCache:
                 return True
 
             logger.info(f"Refreshing weather cache using {WEATHER_SOURCE}...")
+            self._last_attempt = datetime.now(timezone.utc)
 
             try:
                 if WEATHER_SOURCE == "here":
@@ -233,14 +236,17 @@ class WeatherCache:
                     self._cache = new_cache
                     self._last_update = datetime.now(timezone.utc)
                     self._save_cache_to_disk()
+                    self._last_attempt_ok = True
                     logger.info(f"Weather cache refreshed: {len(new_cache)} locations updated via {WEATHER_SOURCE}")
                     return True
                 else:
                     logger.error("Failed to refresh any weather data")
+                    self._last_attempt_ok = False
                     return False
 
             except Exception as e:
                 logger.error(f"Weather cache refresh failed: {e}")
+                self._last_attempt_ok = False
                 return False
 
     def get_all_weather(self, hours: int = 24) -> list[dict]:
@@ -335,6 +341,8 @@ class WeatherCache:
         return {
             "cached_districts": len(self._cache),
             "last_update": self._last_update.isoformat() if self._last_update else None,
+            "last_attempt": self._last_attempt.isoformat() if self._last_attempt else None,
+            "last_attempt_ok": self._last_attempt_ok,
             "cache_age_seconds": self.get_cache_age_seconds(),
             "is_valid": self.is_cache_valid(),
             "freeze_mode": CACHE_FREEZE_MODE,

@@ -128,15 +128,19 @@ app.add_middleware(
 # Include routers
 app.include_router(weather.router)
 app.include_router(alerts.router)
-app.include_router(subscribers.router)
 app.include_router(districts.router)
 app.include_router(intel.router)
-app.include_router(whatsapp.router)
 app.include_router(early_warning.router)
 app.include_router(flood_map.router)
 app.include_router(wind.router)
 app.include_router(rivers.router)
 app.include_router(google_floods.router)
+
+# Subscription / messaging endpoints exist only when alerts are enabled;
+# otherwise they are not registered at all (404).
+if settings.alerts_enabled:
+    app.include_router(subscribers.router)
+    app.include_router(whatsapp.router)
 
 
 @app.get("/api/health", response_model=HealthResponse)

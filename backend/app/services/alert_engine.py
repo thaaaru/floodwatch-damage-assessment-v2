@@ -168,8 +168,9 @@ class AlertEngine:
 
         logger.info(f"Alert triggered: {district} - {level} - {rainfall_mm}mm")
 
-        # Send SMS to subscribers
-        await self._notify_subscribers(district, level, rainfall_mm)
+        # Send SMS/WhatsApp to subscribers (only when alerts are enabled)
+        if settings.alerts_enabled:
+            await self._notify_subscribers(district, level, rainfall_mm)
 
         return {
             "id": alert.id,

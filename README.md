@@ -1,8 +1,11 @@
-# FloodWatch LK - Damage Assessment Module 🔒
+# FloodWatch LK - Damage Assessment Module
 
-**Private Development Repository**
+**Public repository** (Apache 2.0). Hosted at **https://floodwatch.teklab.dev**.
 
-This is a private development fork of FloodWatch LK focused on satellite-based damage assessment and flood visualization capabilities. Inspired by Microsoft AI for Good's Cyclone Ditwah damage assessment visualizer.
+> **Not an official warning service.** For warnings, follow the Disaster Management
+> Centre (DMC) and the Department of Meteorology.
+
+This is a development fork of FloodWatch LK focused on satellite-based damage assessment and flood visualization capabilities. Inspired by Microsoft AI for Good's Cyclone Ditwah damage assessment visualizer.
 
 **Parent Repository:** https://github.com/thaaaru/floodwatch-lk (Public, Apache 2.0)
 **Status:** Experimental - Active Development
@@ -26,13 +29,15 @@ See [DAMAGE_ASSESSMENT_PLAN.md](DAMAGE_ASSESSMENT_PLAN.md) for detailed implemen
 
 ## Original FloodWatch LK Description
 
-Real-time flood monitoring and early warning system for Sri Lanka that sends SMS alerts to subscribers when flood conditions are detected.
+Real-time flood monitoring for Sri Lanka. The original project sent SMS alerts to subscribers;
+in this deployment SMS/WhatsApp alerts are **disabled** (`ALERTS_ENABLED=false`) and no phone
+numbers are collected.
 
 ## Features
 
 - Real-time rainfall monitoring for all 25 districts of Sri Lanka
 - Integration with Open-Meteo weather API and GDACS flood alerts
-- SMS alerts via Twilio for flood warnings
+- SMS/WhatsApp alerts via Twilio (disabled by default; `ALERTS_ENABLED=true` to re-enable)
 - Interactive map dashboard with color-coded alert levels
 - Multi-language support (English, Sinhala, Tamil)
 
@@ -112,30 +117,27 @@ npm run dev
 | `/api/weather/{district}` | GET | Detailed weather for district |
 | `/api/alerts` | GET | Active alerts |
 | `/api/alerts/history` | GET | Historical alerts |
-| `/api/subscribe` | POST | Subscribe to SMS alerts |
-| `/api/unsubscribe` | POST | Unsubscribe from alerts |
+| `/api/weather/cache-status` | GET | Data freshness (last successful fetch) |
+| `/api/subscribe`, `/api/unsubscribe` | POST | Only when `ALERTS_ENABLED=true` (404 otherwise) |
 
 ## Deployment
 
-Production runs on a **GCP VM** with `docker-compose.prod.yml` (Caddy + frontend + backend + Postgres),
-serving `https://floodwatch.teklab.dev`.
+Production: `https://floodwatch.teklab.dev` on a shared Tencent VM. `docker-compose.prod.yml`
+runs db + backend + frontend with no host ports; the host's existing Caddy reverse-proxies
+over the external `edge` network. The DB password is a Docker secret
+(`/run/floodwatch/db_password`, decrypted from age at boot).
+See [deploy/teklab/RUNBOOK.md](deploy/teklab/RUNBOOK.md).
 
-```bash
-# On the VM
-git pull
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-Caddy config: `deploy/caddy/Caddyfile`. Legacy DigitalOcean/Vercel artifacts are in `deploy/_archive/`.
+`deploy/caddy/Caddyfile` is the previous standalone (GCP) config; legacy DigitalOcean/Vercel
+artifacts are in `deploy/_archive/`.
 
 ## Environment Variables
 
 ### Backend
 ```
-DATABASE_URL=postgresql://user:pass@host:5432/floodwatch
-TWILIO_ACCOUNT_SID=your_sid
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_PHONE_NUMBER=+1234567890
+DATABASE_URL=postgresql://user:pass@host:5432/floodwatch   # local dev
+DB_PASSWORD_FILE=/run/secrets/db_password                  # prod: overrides DATABASE_URL
+ALERTS_ENABLED=false                                       # true also needs TWILIO_* vars
 FRONTEND_URL=https://your-frontend-domain.com
 ```
 

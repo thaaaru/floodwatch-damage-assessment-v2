@@ -1,0 +1,45 @@
+# FloodWatch LK - append to the Synapses Caddyfile (synapses-app-caddy-1).
+# Requires that Caddy container to be attached to the external `edge` network.
+# Routing mirrors deploy/caddy/Caddyfile.
+
+floodwatch.teklab.dev {
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), payment=(), geolocation=(self)"
+		-Server
+		-X-Powered-By
+	}
+
+	# Next.js route handlers
+	handle /api/news* {
+		reverse_proxy floodwatch-frontend:3000
+	}
+	handle /api/proxy* {
+		reverse_proxy floodwatch-frontend:3000
+	}
+
+	# FastAPI
+	handle /api/* {
+		reverse_proxy floodwatch-backend:8000
+	}
+	handle /docs* {
+		reverse_proxy floodwatch-backend:8000
+	}
+	handle /openapi.json {
+		reverse_proxy floodwatch-backend:8000
+	}
+
+	handle {
+		reverse_proxy floodwatch-frontend:3000
+	}
+}
+
+# Only if a www DNS record exists:
+# www.floodwatch.teklab.dev {
+# 	redir https://floodwatch.teklab.dev{uri} 308
+# }

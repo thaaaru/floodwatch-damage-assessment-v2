@@ -1,0 +1,4 @@
+# Runtime cache is regenerated on start; never ship the committed snapshot.
+cache/*.json
+__pycache__/
+.env

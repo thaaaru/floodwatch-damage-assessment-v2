@@ -1,29 +1,55 @@
+# FloodWatch LK - production stack for floodwatch.teklab.dev (shared Tencent VM).
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# No host ports and no Caddy here: the host's existing Caddy
+# (synapses-app-caddy-1) reaches floodwatch-frontend / floodwatch-backend over
+# the external `edge` network. Postgres sits only on the internal network.
+# Edge-attached services carry a floodwatch- prefix because every service name
+# becomes a DNS alias on `edge`, which other projects share.
+# See deploy/teklab/RUNBOOK.md.
+
+name: floodwatch
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   db:
     image: postgres:15-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: floodwatch
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
       POSTGRES_DB: floodwatch
+    secrets:
+      - db_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql:ro
+    networks:
+      - internal
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U floodwatch"]
+      test: ["CMD-SHELL", "pg_isready -U floodwatch -d floodwatch"]
       interval: 10s
       timeout: 5s
       retries: 5
+    mem_limit: 512m
+    cpus: 0.5
+    logging: *logging
 
-  backend:
+  floodwatch-backend:
     build: ./backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://floodwatch:${POSTGRES_PASSWORD}@db:5432/floodwatch
-      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID:-}
-      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN:-}
-      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER:-}
-      TWILIO_WHATSAPP_NUMBER: ${TWILIO_WHATSAPP_NUMBER:-}
+      DB_PASSWORD_FILE: /run/secrets/db_password
+      DB_HOST: db
+      ALERTS_ENABLED: "false"
+      # Optional third-party keys; empty = that feature degrades. Core data
+      # (Open-Meteo, GDACS, Met Dept) needs no key.
       OPENWEATHERMAP_API_KEY: ${OPENWEATHERMAP_API_KEY:-}
       WEATHERAPI_KEY: ${WEATHERAPI_KEY:-}
       TOMTOM_API_KEY: ${TOMTOM_API_KEY:-}
@@ -31,43 +57,62 @@ services:
       WEATHER_SOURCE: ${WEATHER_SOURCE:-open_meteo}
       FRONTEND_URL: https://floodwatch.teklab.dev
       DEBUG: "false"
+    secrets:
+      - db_password
+    networks:
+      - internal
+      - edge
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    mem_limit: 768m
+    cpus: 1.0
+    logging: *logging
 
-  frontend:
+  floodwatch-frontend:
     build:
       context: ./frontend
       args:
-        # NEXT_PUBLIC_* must be passed as build args; Next.js inlines them
-        # into the bundle at `npm run build` time. Runtime `environment:`
-        # below is kept too so server components (e.g. the API proxy
-        # rewrite target) can also read them at runtime.
+        # NEXT_PUBLIC_* are inlined into the bundle at build time.
+        # The Maps key is a public browser key: restrict it in Google Cloud to
+        # HTTP referrer https://floodwatch.teklab.dev/* and to the
+        # Maps JavaScript API + Places API only.
         NEXT_PUBLIC_API_URL: https://floodwatch.teklab.dev
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
     restart: unless-stopped
     environment:
-      NEXT_PUBLIC_API_URL: https://floodwatch.teklab.dev
-      BACKEND_URL: http://backend:8000
-      NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY:-}
+      BACKEND_URL: http://floodwatch-backend:8000
+    networks:
+      - internal
+      - edge
     depends_on:
-      - backend
+      - floodwatch-backend
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    mem_limit: 512m
+    cpus: 0.5
+    logging: *logging
 
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - frontend
-      - backend
+secrets:
+  db_password:
+    # Decrypted at boot into tmpfs by deploy/teklab/floodwatch-secrets.service.
+    file: /run/floodwatch/db_password
+
+networks:
+  internal:
+    internal: true
+  edge:
+    external: true
 
 volumes:
   postgres_data:
-  caddy_data:
-  caddy_config:

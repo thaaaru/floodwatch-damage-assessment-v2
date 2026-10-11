@@ -23,7 +23,7 @@ All security issues identified in this audit have been successfully resolved:
 **Issue:** Google Maps API key is hardcoded as a fallback value
 **Code:**
 ```typescript
-const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAUQv4YkDz2D0IgQqi6Ncocjm5sxFMp8zM';
+const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAU…[redacted, revoked 2025-12-10]';
 ```
 
 **Risk:**
@@ -132,7 +132,7 @@ database_url: str = "postgresql://user:password@localhost:5432/floodwatch"
 
 ### ✅ Completed (December 10, 2025)
 
-- [x] **CRITICAL:** Revoked the exposed Google Maps API key `AIzaSyAUQv4YkDz2D0IgQqi6Ncocjm5sxFMp8zM`
+- [x] **CRITICAL:** Revoked the exposed Google Maps API key `AIzaSyAU…[redacted, revoked 2025-12-10]`
 - [x] Created a new Google Maps API key with domain restrictions
 - [x] Removed hardcoded API key fallback from `layout.tsx`
 - [x] Updated SECURITY.md GitHub URL placeholder
