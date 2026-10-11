@@ -183,6 +183,11 @@ Never use `docker system prune` / `docker volume prune` on this shared host.
   `dc exec -T db psql -U floodwatch -tAc "select * from owm_usage order by day desc limit 3"`.
 - Freshness: the banner reads `/api/weather/cache-status` (`last_update`,
   `last_attempt_ok`) and flags data older than 3 h or a failed latest fetch.
+- News (/news): the backend refreshes SL Met, NewsFirst, GDACS (Sri Lanka region),
+  IMD RSMC and ReliefWeb every 15 min; pages read `GET /api/news` (snapshot + per-source
+  status). ReliefWeb stays "Not configured" until `RELIEFWEB_APPNAME` is set in `.env` to
+  an appname approved by ReliefWeb (request form linked at
+  https://apidoc.reliefweb.int/parameters#appname), then `dc up -d floodwatch-backend`.
 - Basemap: `floodwatch-tiles` (caddy:2-alpine, 64m/0.25 CPU, edge network only) serves
   `/tiles/{lka,region,context}.pmtiles` with HTTP Range; the host Caddy routes `/tiles/*` to it and must
   not re-encode it (see `@compressible` in the snippet). No CORS headers: same-origin only.

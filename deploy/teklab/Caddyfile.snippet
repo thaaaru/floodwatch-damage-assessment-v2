@@ -23,9 +23,6 @@ floodwatch.teklab.dev {
 	}
 
 	# Next.js route handlers
-	handle /api/news* {
-		reverse_proxy floodwatch-frontend:3000
-	}
 	handle /api/proxy* {
 		reverse_proxy floodwatch-frontend:3000
 	}

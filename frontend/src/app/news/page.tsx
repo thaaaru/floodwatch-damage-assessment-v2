@@ -3,7 +3,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { NewsItem, getMockNews, formatRelativeTime } from '@/lib/newsService';
+import { api } from '@/lib/api';
+import { NewsItem, NewsSourceStatus, formatColombo, formatRelativeTime } from '@/lib/newsService';
 
 const categoryConfig: Record<NewsItem['category'], { icon: string; bgColor: string; textColor: string }> = {
   cyclone: { icon: '🌀', bgColor: 'bg-purple-100', textColor: 'text-purple-300' },
@@ -21,27 +22,29 @@ const severityConfig: Record<NonNullable<NewsItem['severity']>, { border: string
 
 export default function NewsPage() {
   const [news, setNews] = useState<NewsItem[]>([]);
+  const [sources, setSources] = useState<NewsSourceStatus[]>([]);
+  const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<NewsItem['category'] | 'all'>('all');
 
   useEffect(() => {
+    // Served from the backend's 15-minute snapshot; no mock items on failure.
     const fetchNews = async () => {
       try {
-        const response = await fetch('/api/news');
-        if (response.ok) {
-          const data = await response.json();
-          setNews(data);
-        } else {
-          setNews(getMockNews());
-        }
+        const data = await api.getNews();
+        setNews(data?.items ?? []);
+        setSources(data?.sources ?? []);
+        setFailed(!data?.items);
       } catch {
-        setNews(getMockNews());
+        setFailed(true);
       } finally {
         setLoading(false);
       }
     };
 
     fetchNews();
+    const id = setInterval(fetchNews, 5 * 60 * 1000);
+    return () => clearInterval(id);
   }, []);
 
   const filteredNews = selectedCategory === 'all'
@@ -107,7 +110,9 @@ export default function NewsPage() {
           <div className="glass rounded-2xl text-center py-16 shadow-md">
             <div className="text-6xl mb-4">📰</div>
             <h3 className="text-xl font-bold text-white mb-2">No updates available</h3>
-            <p className="text-slate-300">Check back later for the latest news and alerts.</p>
+            <p className="text-slate-300">
+              {failed ? 'News could not be loaded right now.' : 'No items from the last 30 days.'} Check back later.
+            </p>
           </div>
         ) : (
           <>
@@ -149,8 +154,14 @@ export default function NewsPage() {
                           <span className="text-xl">{filteredNews[0].sourceIcon}</span>
                           <span className="font-medium">{filteredNews[0].source}</span>
                         </span>
-                        <span>•</span>
-                        <span>{formatRelativeTime(filteredNews[0].publishedAt)}</span>
+                        {filteredNews[0].publishedAt && (
+                          <>
+                            <span>•</span>
+                            <span title={formatColombo(filteredNews[0].publishedAt)}>
+                              {formatRelativeTime(filteredNews[0].publishedAt)}
+                            </span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -167,8 +178,50 @@ export default function NewsPage() {
           </>
         )}
 
+        {/* Source status */}
+        {sources.length > 0 && (
+          <div className="mt-12 p-6 glass rounded-2xl shadow-md">
+            <h3 className="text-sm font-bold text-white mb-1">Sources</h3>
+            <p className="text-xs text-slate-400 mb-3">Checked every 15 minutes. Times are Colombo time. Items older than 30 days are hidden.</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-slate-300 min-w-[520px]">
+                <thead>
+                  <tr className="text-left text-slate-400 border-b border-slate-700">
+                    <th className="py-1.5 pr-3">Source</th>
+                    <th className="py-1.5 pr-3">Status</th>
+                    <th className="py-1.5 pr-3">Items</th>
+                    <th className="py-1.5 pr-3">Newest item</th>
+                    <th className="py-1.5">Last checked</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sources.map((s) => (
+                    <tr key={s.source} className="border-b border-slate-800 align-top">
+                      <td className="py-1.5 pr-3 font-medium text-white">{s.source}</td>
+                      <td className="py-1.5 pr-3">
+                        <span
+                          className={
+                            s.status === 'ok' ? 'text-emerald-400' : s.status === 'error' ? 'text-red-400' : 'text-slate-400'
+                          }
+                          title={s.message ?? undefined}
+                        >
+                          {s.status === 'ok' ? 'OK' : s.status === 'empty' ? 'No current items' : s.status === 'disabled' ? 'Not configured' : 'Error'}
+                        </span>
+                        {s.status === 'error' && s.message && <div className="text-[10px] text-slate-500">{s.message}</div>}
+                      </td>
+                      <td className="py-1.5 pr-3">{s.itemCount}</td>
+                      <td className="py-1.5 pr-3">{s.newest ? formatColombo(s.newest) : '—'}</td>
+                      <td className="py-1.5">{formatColombo(s.lastChecked)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Source Attribution */}
-        <div className="mt-12 p-6 glass rounded-2xl shadow-md">
+        <div className="mt-6 p-6 glass rounded-2xl shadow-md">
           <h3 className="text-sm font-bold text-white mb-3">Official Sources</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <a
@@ -250,7 +303,11 @@ function NewsCard({ item }: { item: NewsItem }) {
                 {item.severity}
               </span>
             )}
-            <span className="text-xs text-slate-400 ml-auto">{formatRelativeTime(item.publishedAt)}</span>
+            {item.publishedAt && (
+              <span className="text-xs text-slate-400 ml-auto" title={formatColombo(item.publishedAt)}>
+                {formatRelativeTime(item.publishedAt)}
+              </span>
+            )}
           </div>
 
           {/* Title */}

@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     # nominal rate <= 25 x 1440/40 = 900 (the hard daily guard) whatever is configured.
     owm_refresh_minutes: int = Field(120, ge=40)
     google_floods_api_key: str = ""
+    # ReliefWeb API v2 requires a pre-approved appname; empty = source disabled.
+    reliefweb_appname: str = ""
 
     # SMS/WhatsApp subscriber alerts. Off by default: subscription routes are
     # not registered and the alert engine never sends messages.

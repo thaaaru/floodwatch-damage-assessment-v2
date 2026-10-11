@@ -57,6 +57,8 @@ services:
       TOMTOM_API_KEY: ${TOMTOM_API_KEY:-}
       HERE_API_KEY: ${HERE_API_KEY:-}
       WEATHER_SOURCE: ${WEATHER_SOURCE:-open_meteo}
+      # ReliefWeb API v2 appname (pre-approved by ReliefWeb); empty = source off
+      RELIEFWEB_APPNAME: ${RELIEFWEB_APPNAME:-}
       OWM_REFRESH_MINUTES: ${OWM_REFRESH_MINUTES:-120}
       FRONTEND_URL: https://floodwatch.teklab.dev
       DEBUG: "false"

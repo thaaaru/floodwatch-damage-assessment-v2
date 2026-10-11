@@ -110,6 +110,15 @@ async def refresh_flood_threat():
         logger.error(f"Error refreshing flood threat cache: {e}")
 
 
+async def refresh_news():
+    """Background job: the only caller of the /news sources."""
+    from ..services.news_feed import news_feed
+    try:
+        await news_feed.refresh()
+    except Exception as e:
+        logger.error(f"News refresh failed: {e}")
+
+
 async def sync_river_gauges():
     """Background job: the only caller of the Irrigation Dept gauge layers."""
     from ..services.irrigation_fetcher import irrigation_fetcher
@@ -178,6 +187,15 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # News & updates - every 15 minutes
+    scheduler.add_job(
+        refresh_news,
+        trigger=IntervalTrigger(minutes=15),
+        id="news_refresh",
+        name="Refresh news sources",
+        replace_existing=True
+    )
+
     # River gauges - every 15 minutes (backfills ~7 days on first run)
     scheduler.add_job(
         sync_river_gauges,
@@ -212,6 +230,7 @@ def start_scheduler():
         asyncio.get_event_loop().create_task(refresh_intel_analysis())
     asyncio.get_event_loop().create_task(refresh_osm_facilities())
     asyncio.get_event_loop().create_task(sync_river_gauges())
+    asyncio.get_event_loop().create_task(refresh_news())
     asyncio.get_event_loop().create_task(refresh_flood_threat())
     if settings.openweathermap_api_key:
         # Skipped automatically if the persisted snapshot is still fresh.

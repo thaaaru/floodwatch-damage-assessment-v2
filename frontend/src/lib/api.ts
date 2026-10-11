@@ -378,6 +378,10 @@ class ApiClient {
     return this.fetch<IrrigationResponse>('/api/intel/irrigation');
   }
 
+  async getNews(): Promise<import('./newsService').NewsResponse> {
+    return this.fetch('/api/news');
+  }
+
   async getGaugeHistory(gauge: string, days: number = 7): Promise<GaugeReading[]> {
     return this.fetch<GaugeReading[]>(`/api/intel/irrigation/history/${encodeURIComponent(gauge)}?days=${days}`);
   }
