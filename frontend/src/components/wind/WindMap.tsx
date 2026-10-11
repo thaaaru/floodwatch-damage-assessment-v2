@@ -170,6 +170,7 @@ export function WindMap({
       <MapContainer
         center={initialCenter}
         zoom={initialZoom}
+        minZoom={4} // below z4 the view runs past the basemap extracts (scripts/build_basemap.sh)
         className="w-full h-full z-0"
         ref={mapRef}
         scrollWheelZoom={true}
