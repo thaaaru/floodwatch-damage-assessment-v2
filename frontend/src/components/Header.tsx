@@ -99,7 +99,6 @@ export default function Header() {
         hoverPanel: 'hover:bg-white/50',
         mobileBtn: 'text-slate-600 hover:text-slate-900 hover:bg-white/50',
         mobileBorder: 'border-slate-200/60',
-        partnerChip: 'text-slate-600 hover:text-slate-900',
       }
     : {
         headerBg: 'bg-slate-800/50 backdrop-blur-md border-b border-slate-700/50',
@@ -109,7 +108,6 @@ export default function Header() {
         hoverPanel: 'hover:bg-white/10',
         mobileBtn: 'text-slate-300 hover:text-white hover:bg-white/10',
         mobileBorder: 'border-slate-700/50',
-        partnerChip: 'text-slate-300 hover:text-white',
       };
 
   return (
@@ -135,19 +133,6 @@ export default function Header() {
                 <span className={`text-xs font-semibold ${palette.subText}`}>Sri Lanka</span>
               </div>
             </Link>
-            <a
-              href="https://hackandbuild.dev/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`hidden sm:flex items-center gap-1 px-2.5 py-1 glass rounded-lg text-xs ${palette.partnerChip} transition-all hover:shadow-sm`}
-              title="Built by Hack & Build"
-            >
-              <span>by</span>
-              <span className="font-semibold">Hack & Build</span>
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
           </div>
 
           {/* Desktop Navigation */}
