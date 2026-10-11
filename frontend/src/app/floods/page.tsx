@@ -5,11 +5,11 @@
 // history at commit e627f20 if it ever needs to be restored.
 //
 // Anyone landing here directly via an old link or bookmark is sent to
-// /rivers, which surfaces the same 24 Sri Lanka Irrigation Department
-// gauging stations with their water-level data.
+// the home page's river section (/#rivers), which shows the Sri Lanka
+// Irrigation Department gauging stations with their water-level data.
 
 import { redirect } from 'next/navigation';
 
 export default function FloodsPage() {
-  redirect('/rivers');
+  redirect('/#rivers');
 }

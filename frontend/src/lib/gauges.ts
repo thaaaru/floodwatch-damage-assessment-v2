@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Shared Leaflet layers for Irrigation Dept river gauges and river basins
-// (used by RiversMap on /rivers and MetStationsMap on the home page).
+// (used by MetStationsMap on the home page).
 // Leaflet popups are HTML strings, so the 7-day chart is a small inline SVG
 // rather than one of the React chart components.
 
@@ -104,9 +104,9 @@ export function loadBasins(): Promise<GeoJSON.FeatureCollection> {
 
 /**
  * How basins are filled by the worst current gauge status inside them:
- *  - 'always'     (/rivers): every gauged basin is filled with its status colour.
- *  - 'alertsOnly' (home map): only alert/minor/major basins are filled, a little
- *                 stronger; normal/unknown/ungauged basins are thin grey outlines.
+ *  - 'alertsOnly' (home map default): only alert/minor/major basins are filled, a
+ *                 little stronger; normal/unknown/ungauged basins are thin grey outlines.
+ *  - 'always'     ("Colour all basins" switch): every gauged basin gets its status colour.
  */
 export type BasinFillMode = 'always' | 'alertsOnly';
 const FLOODING: GaugeStatus[] = ['alert', 'minor', 'major'];
@@ -115,7 +115,7 @@ const FLOODING: GaugeStatus[] = ['alert', 'minor', 'major'];
 export function createBasinLayer(
   data: GeoJSON.FeatureCollection,
   getGauges: () => IrrigationStation[],
-  fillMode: BasinFillMode = 'always',
+  getFillMode: () => BasinFillMode,
 ): L.GeoJSON {
   const inside = (f?: GeoJSON.Feature) => {
     const names: string[] = f?.properties?.gauges ?? [];
@@ -123,7 +123,7 @@ export function createBasinLayer(
   };
   const style = (f?: GeoJSON.Feature): L.PathOptions => {
     const worst = worstStatus(inside(f));
-    if (fillMode === 'alertsOnly') {
+    if (getFillMode() === 'alertsOnly') {
       return worst && FLOODING.includes(worst)
         ? { color: STATUS_COLOR[worst], weight: 2, opacity: 0.9, fillColor: STATUS_COLOR[worst], fillOpacity: 0.35 }
         : { color: '#64748b', weight: 1, opacity: 0.6, fillOpacity: 0 }; // fillOpacity 0 keeps the area clickable
@@ -236,10 +236,10 @@ function createRiverLayer(
 export async function createWaterLayer(
   map: L.Map,
   getGauges: () => IrrigationStation[],
-  fillMode: BasinFillMode = 'always',
+  fillMode: BasinFillMode = 'alertsOnly',
 ) {
   const [basinData, riverData] = await Promise.all([loadBasins(), loadRivers()]);
-  const basins = createBasinLayer(basinData, getGauges, fillMode);
+  const basins = createBasinLayer(basinData, getGauges, () => fillMode);
   const basinGauges = new Map<number, string[]>(
     basinData.features.map((f) => [f.properties?.id as number, (f.properties?.gauges ?? []) as string[]]),
   );
@@ -250,15 +250,21 @@ export async function createWaterLayer(
       basins.resetStyle();
       rivers.lines.setStyle(rivers.style as L.StyleFunction);
     },
+    setFillMode: (mode: BasinFillMode) => {
+      fillMode = mode;
+      basins.resetStyle();
+    },
   };
 }
 
 /** Legend for 'alertsOnly' basins; collapsed by default on narrow screens. */
 export function createBasinLegend(): L.Control {
-  const legend = new L.Control({ position: 'bottomleft' });
+  // On phones the map credits span the bottom edge and would cover it, so it goes top-left, closed.
+  const wide = window.innerWidth >= 640;
+  const legend = new L.Control({ position: wide ? 'bottomleft' : 'topleft' });
   legend.onAdd = () => {
     const el = L.DomUtil.create('details', 'fw-basin-legend');
-    if (window.innerWidth >= 640) el.setAttribute('open', '');
+    if (wide) el.setAttribute('open', '');
     el.innerHTML = `<summary>Basin colour = highest river gauge status</summary>` +
       FLOODING.map((s) => `<div><span style="background:${STATUS_COLOR[s]}"></span>${STATUS_LABEL[s].charAt(0)}${STATUS_LABEL[s].slice(1).toLowerCase()}</div>`).join('');
     L.DomEvent.disableClickPropagation(el);

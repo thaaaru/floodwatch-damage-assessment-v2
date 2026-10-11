@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// Shared text and surface styles, taken from the /rivers page.
+// Shared text and surface styles (originally from the /rivers page, now part of home).
 export const ui = {
   page: 'min-h-screen bg-slate-900 text-white',
   container: 'mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8',

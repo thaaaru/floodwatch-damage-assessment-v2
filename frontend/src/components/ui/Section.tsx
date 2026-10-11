@@ -3,7 +3,7 @@
 import { useId } from 'react';
 import { ui } from '@/lib/ui';
 
-// A /rivers-style card. With a title it is a labelled <section>; without, a plain card.
+// A shared card. With a title it is a labelled <section>; without, a plain card.
 export default function Section({
   title,
   subtitle,

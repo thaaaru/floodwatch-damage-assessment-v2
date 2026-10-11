@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useState } from 'react';
 import { api, IrrigationStation, MetStation, MetStationsResponse } from '@/lib/api';
 import { ui } from '@/lib/ui';
+import BasinStatusTable from '@/components/BasinStatusTable';
 
 const MetStationsMap = dynamic(() => import('@/components/MetStationsMap'), {
   ssr: false,
@@ -230,6 +231,8 @@ export default function Dashboard() {
         {reportTimeLocal && <span>Met rainfall {reportTimeLocal}</span>}
         {updated && <span className="sm:ml-auto">Updated {updated}</span>}
       </div>
+
+      <BasinStatusTable stations={gauges} />
 
       <p className={ui.muted}>
         Measured rainfall from 24 Sri Lanka Department of Meteorology stations. The optional Rain forecast layer

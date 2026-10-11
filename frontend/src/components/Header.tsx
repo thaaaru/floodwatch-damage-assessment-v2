@@ -9,7 +9,6 @@ import { useState, useEffect } from 'react';
 const navigation = [
   { name: 'Dashboard', href: '/' },
   { name: 'News', href: '/news' },
-  { name: 'Rivers', href: '/rivers' },
   // 'Flood Hub' (/floods) is hidden per UX request 2026-05-22; the page
   // still exists but is no longer linked from the nav.
   { name: 'External Links', href: '/external-links' },
