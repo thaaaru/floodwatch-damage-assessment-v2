@@ -134,3 +134,98 @@ export function createBasinLayer(data: GeoJSON.FeatureCollection, getGauges: () 
     },
   });
 }
+
+// ---------------------------------------------------------------------------
+// Rivers (HOT OSM via HDX) - drawn above basin fills, below gauge markers
+// ---------------------------------------------------------------------------
+
+export const RIVER_COLOR = '#2563eb';
+const RIVER_PANE = 'fw-rivers'; // z 450: above overlayPane (basins, 400), below markerPane (600)
+const LABEL_MIN_ZOOM = 11;
+
+let riversPromise: Promise<GeoJSON.FeatureCollection> | null = null;
+function loadRivers(): Promise<GeoJSON.FeatureCollection> {
+  riversPromise ??= fetch('/data/rivers.geojson').then((r) => {
+    if (!r.ok) throw new Error(`rivers ${r.status}`);
+    return r.json();
+  });
+  return riversPromise;
+}
+
+// Loose river-name key so gauge basins ("Kelani Ganga", "Aththanagalu Oya")
+// meet OSM names ("Kelani River", "Attanagalu Oya", "Kaluganga", "Mahaweli").
+export function riverKey(name?: string | null): string {
+  const words = (name ?? '').toLowerCase().replace(/th/g, 't').match(/[a-z]+/g) ?? [];
+  const key = words.filter((w) => !['ganga', 'oya', 'river', 'aru', 'aaru', 'ela'].includes(w)).join('');
+  return key.replace(/ganga$/, '');
+}
+
+function riverLabel(f: GeoJSON.Feature): string {
+  const p = f.properties ?? {};
+  return [p.name, p['name:si'], p['name:ta']].filter(Boolean).map(esc).join(' &middot; ');
+}
+
+// Midpoint of the longest part, for the zoomed-in name label.
+function labelPoint(geom: GeoJSON.MultiLineString): L.LatLngExpression | null {
+  const longest = geom.coordinates.reduce((a, b) => (b.length > a.length ? b : a), [] as number[][]);
+  const mid = longest[Math.floor(longest.length / 2)];
+  return mid ? [mid[1], mid[0]] : null;
+}
+
+function createRiverLayer(map: L.Map, data: GeoJSON.FeatureCollection, getGauges: () => IrrigationStation[]) {
+  if (!map.getPane(RIVER_PANE)) map.createPane(RIVER_PANE).style.zIndex = '450';
+  // A river takes the worst alert-or-higher status of gauges on its basin; otherwise plain blue.
+  const style = (f?: GeoJSON.Feature): L.PathOptions => {
+    const key = riverKey(f?.properties?.name);
+    const worst = key ? worstStatus(getGauges().filter((g) => riverKey(g.basin ?? g.river) === key)) : null;
+    const flagged = worst === 'alert' || worst === 'minor' || worst === 'major';
+    return {
+      pane: RIVER_PANE,
+      color: flagged ? STATUS_COLOR[worst] : RIVER_COLOR,
+      weight: flagged ? 2.5 : f?.properties?.name ? 1.5 : 1,
+      opacity: f?.properties?.name ? 0.85 : 0.55,
+    };
+  };
+  const lines = L.geoJSON(data, {
+    pane: RIVER_PANE,
+    style,
+    onEachFeature: (f, layer) => {
+      if (f.properties?.name) layer.bindTooltip(riverLabel(f), { sticky: true, className: 'fw-river-tip' });
+    },
+  });
+  const labels = L.layerGroup(
+    data.features
+      .filter((f) => f.properties?.name && f.geometry.type === 'MultiLineString')
+      .map((f) => {
+        const at = labelPoint(f.geometry as GeoJSON.MultiLineString);
+        return at && L.marker(at, {
+          pane: RIVER_PANE,
+          interactive: false,
+          icon: L.divIcon({ className: 'fw-river-label', html: esc(f.properties?.name), iconSize: undefined }),
+        });
+      })
+      .filter((m): m is L.Marker => !!m),
+  );
+  const group = L.layerGroup([lines]);
+  const syncLabels = () => {
+    if (map.hasLayer(group) && map.getZoom() >= LABEL_MIN_ZOOM) group.addLayer(labels);
+    else group.removeLayer(labels);
+  };
+  group.on('add', () => { map.on('zoomend', syncLabels); syncLabels(); });
+  group.on('remove', () => map.off('zoomend', syncLabels));
+  return { group, lines, style };
+}
+
+// Basins + rivers as one switchable overlay. restyle() re-applies gauge status colours.
+export async function createWaterLayer(map: L.Map, getGauges: () => IrrigationStation[]) {
+  const [basinData, riverData] = await Promise.all([loadBasins(), loadRivers()]);
+  const basins = createBasinLayer(basinData, getGauges);
+  const rivers = createRiverLayer(map, riverData, getGauges);
+  return {
+    layer: L.layerGroup([basins, rivers.group]),
+    restyle: () => {
+      basins.resetStyle();
+      rivers.lines.setStyle(rivers.style as L.StyleFunction);
+    },
+  };
+}

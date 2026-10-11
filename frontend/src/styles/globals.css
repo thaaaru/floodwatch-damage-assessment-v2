@@ -461,3 +461,13 @@
   min-width: 200px;
   color: #1f2937;
 }
+/* River names (lib/gauges.ts): hover tooltip and zoomed-in labels */
+.fw-river-tip {
+  font-size: 11px;
+}
+.fw-river-label {
+  color: #1e3a8a;
+  font: italic 600 11px/1 system-ui, sans-serif;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #ffffff, 0 0 3px #ffffff;
+}

@@ -115,6 +115,15 @@ export default function DataSourcesPage() {
                   <td className="py-3 px-3 text-xs">River gauges (~40 stations, 7-day history) and river basin outlines</td>
                 </tr>
                 <tr className="border-b border-slate-700/50">
+                  <td className="py-3 px-3 font-medium">
+                    <a href="https://data.humdata.org/dataset/hotosm_lka_waterways" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      Rivers: HOT/OSM via HDX (ODbL)
+                    </a>
+                  </td>
+                  <td className="py-3 px-3"><span className="px-2 py-1 bg-slate-600/20 text-slate-400 rounded text-xs">Static file</span></td>
+                  <td className="py-3 px-3 text-xs">River network lines (Waterways of Sri Lanka, OpenStreetMap contributors)</td>
+                </tr>
+                <tr className="border-b border-slate-700/50">
                   <td className="py-3 px-3 font-medium">RiverNet.lk</td>
                   <td className="py-3 px-3"><span className="px-2 py-1 bg-slate-600/20 text-slate-400 rounded text-xs">Manual link</span></td>
                   <td className="py-3 px-3 text-xs">Live river levels portal - External link</td>

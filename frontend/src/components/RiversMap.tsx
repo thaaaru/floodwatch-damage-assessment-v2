@@ -7,7 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { IrrigationStation } from '@/lib/api';
 import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
-import { BASIN_CREDIT, GAUGE_CREDIT, createBasinLayer, createGaugeLayer, gaugesKey, loadBasins } from '@/lib/gauges';
+import { BASIN_CREDIT, GAUGE_CREDIT, createGaugeLayer, createWaterLayer, gaugesKey } from '@/lib/gauges';
 
 interface RiversMapProps {
   stations: IrrigationStation[];
@@ -20,7 +20,7 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
   const containerRef = useRef<HTMLDivElement>(null);
   const controlRef = useRef<L.Control.Layers | null>(null);
   const gaugeLayerRef = useRef<L.LayerGroup | null>(null);
-  const basinLayerRef = useRef<L.GeoJSON | null>(null);
+  const restyleWaterRef = useRef<(() => void) | null>(null);
   const gaugeKeyRef = useRef('');
   const stationsRef = useRef<IrrigationStation[]>(stations);
   stationsRef.current = stations;
@@ -42,15 +42,15 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft', collapsed: false }).addTo(map);
     mapRef.current = map;
 
-    // Basins: on by default on /rivers, drawn under the gauge markers.
-    loadBasins()
-      .then((data) => {
+    // Basins + rivers: on by default on /rivers, drawn under the gauge markers.
+    createWaterLayer(map, () => stationsRef.current)
+      .then(({ layer, restyle }) => {
         if (mapRef.current !== map) return;
-        const layer = createBasinLayer(data, () => stationsRef.current).addTo(map);
-        basinLayerRef.current = layer;
-        controlRef.current?.addOverlay(layer, 'River basins');
+        layer.addTo(map);
+        restyleWaterRef.current = restyle;
+        controlRef.current?.addOverlay(layer, 'River basins &amp; rivers');
       })
-      .catch((e) => console.error('Failed to load river basins:', e));
+      .catch((e) => console.error('Failed to load river basins/rivers:', e));
 
     return () => {
       map.remove();
@@ -74,7 +74,7 @@ export default function RiversMap({ stations, onStationSelect, selectedStation }
     if (wasOn) layer.addTo(map);
     controlRef.current?.addOverlay(layer, 'River gauges');
     gaugeLayerRef.current = layer;
-    basinLayerRef.current?.resetStyle();
+    restyleWaterRef.current?.();
   }, [stations, onStationSelect]);
 
   // Pan to selected station

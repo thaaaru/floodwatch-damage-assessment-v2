@@ -7,7 +7,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { IrrigationStation, MetStation } from '@/lib/api';
 import { BASEMAP_URL, BASEMAP_ATTRIBUTION, BASEMAP_MAX_ZOOM } from '@/lib/basemap';
-import { BASIN_CREDIT, GAUGE_CREDIT, createBasinLayer, createGaugeLayer, gaugesKey, loadBasins } from '@/lib/gauges';
+import { BASIN_CREDIT, GAUGE_CREDIT, createGaugeLayer, createWaterLayer, gaugesKey } from '@/lib/gauges';
 
 interface MetStationsMapProps {
   stations: MetStation[];
@@ -138,7 +138,7 @@ export default function MetStationsMap({
   const markersRef = useRef<L.Marker[]>([]);
   const controlRef = useRef<L.Control.Layers | null>(null);
   const gaugeLayerRef = useRef<L.LayerGroup | null>(null);
-  const basinLayerRef = useRef<L.GeoJSON | null>(null);
+  const restyleWaterRef = useRef<(() => void) | null>(null);
   const gaugeKeyRef = useRef('');
   const gaugesRef = useRef<IrrigationStation[]>(gauges);
   gaugesRef.current = gauges;
@@ -166,14 +166,14 @@ export default function MetStationsMap({
       .addTo(map);
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
     mapRef.current = map;
-    // Basins: available in the layer control, off by default on the home map.
-    loadBasins()
-      .then((data) => {
+    // Basins + rivers: in the layer control, off by default on the home map.
+    createWaterLayer(map, () => gaugesRef.current)
+      .then(({ layer, restyle }) => {
         if (mapRef.current !== map) return;
-        basinLayerRef.current = createBasinLayer(data, () => gaugesRef.current);
-        controlRef.current?.addOverlay(basinLayerRef.current, 'River basins');
+        restyleWaterRef.current = restyle;
+        controlRef.current?.addOverlay(layer, 'River basins &amp; rivers');
       })
-      .catch((e) => console.error('Failed to load river basins:', e));
+      .catch((e) => console.error('Failed to load river basins/rivers:', e));
     return () => {
       map.remove();
       mapRef.current = null;
@@ -210,7 +210,7 @@ export default function MetStationsMap({
     gaugeLayerRef.current = createGaugeLayer(gauges);
     if (wasOn) gaugeLayerRef.current.addTo(map);
     controlRef.current?.addOverlay(gaugeLayerRef.current, 'River gauges');
-    basinLayerRef.current?.resetStyle();
+    restyleWaterRef.current?.();
   }, [gauges]);
 
   // --- pan to selected station ------------------------------------------
