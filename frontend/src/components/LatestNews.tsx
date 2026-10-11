@@ -9,7 +9,7 @@ import { ui } from '@/lib/ui';
 import { NewsItem } from '@/lib/newsService';
 import NewsRow from '@/components/NewsRow';
 
-const SHOW = 8;
+const SHOW = 6;
 const ts = (i: NewsItem) => (i.publishedAt ? Date.parse(i.publishedAt) : 0);
 
 // Newest items from the backend's 15-minute news snapshot; the full list is on /news.
@@ -37,7 +37,7 @@ export default function LatestNews() {
       ) : latest.length === 0 ? (
         <p className={`${ui.body} mt-3`}>No news right now.</p>
       ) : (
-        <ul className="divide-y divide-slate-700">{latest.map((item) => <NewsRow key={item.id} item={item} />)}</ul>
+        <ul className="mt-2 divide-y divide-slate-700">{latest.map((item) => <NewsRow key={item.id} item={item} compact />)}</ul>
       )}
     </section>
   );
