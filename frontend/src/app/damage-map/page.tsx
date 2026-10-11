@@ -2,6 +2,8 @@
 
 'use client';
 
+import PageHeader from '@/components/ui/PageHeader';
+import { ui } from '@/lib/ui';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 // The exported HTML runs standalone (no /tiles), so it uses OSM raster tiles.
@@ -440,39 +442,19 @@ export default function DamageMapPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-sm">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-white">Satellite Flood Damage Detection</h1>
-                <p className="text-xs text-slate-400">Sentinel-1 SAR & Sentinel-2 Optical Analysis • Sri Lanka</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowPythonScript(!showPythonScript)}
-                className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-900 text-slate-200 text-sm font-medium transition-colors flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                </svg>
-                View Script
-              </button>
-              <a href="/" className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
-                Dashboard
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className={ui.page}>
+      <PageHeader
+        title="Satellite Flood Damage Detection"
+        subtitle="Sentinel-1 SAR & Sentinel-2 Optical Analysis • Sri Lanka"
+        actions={
+          <>
+            <button type="button" onClick={() => setShowPythonScript(!showPythonScript)} className={ui.btn}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+              View Script
+            </button>
+          </>
+        }
+      />
 
       {/* Tab Navigation */}
       <div className="bg-slate-800 border-b border-slate-700">
@@ -500,14 +482,14 @@ export default function DamageMapPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className={`max-w-7xl ${ui.container}`}>
         {selectedTab === 'map' && (
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Panel - Controls */}
             <div className="space-y-4">
               {/* Data Configuration */}
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3 flex items-center gap-2`}>
                   <span className="w-6 h-6 rounded-lg bg-slate-900 flex items-center justify-center text-xs">📡</span>
                   Satellite Data Sources
                 </h3>
@@ -532,8 +514,8 @@ export default function DamageMapPage() {
               </div>
 
               {/* Processing Parameters */}
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3 flex items-center gap-2`}>
                   <span className="w-6 h-6 rounded-lg bg-amber-500/20 flex items-center justify-center text-xs">⚙️</span>
                   Processing Parameters
                 </h3>
@@ -615,7 +597,7 @@ export default function DamageMapPage() {
             {/* Center - Map & Results */}
             <div className="lg:col-span-2 space-y-4">
               {/* Map */}
-              <div className="bg-slate-800 rounded-xl overflow-hidden border border-slate-700 shadow-sm">
+              <div className={`${ui.card} overflow-hidden`}>
                 <div className="h-[600px] relative">
                   <DamageMapLeaflet hasResults={hasResults} activeLayer={activeLayer} />
 
@@ -679,22 +661,22 @@ export default function DamageMapPage() {
               {/* Quick Stats */}
               {hasResults && stats && (
                 <div className="grid grid-cols-4 gap-3">
-                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                  <div className={`${ui.card} ${ui.cardPad}`}>
                     <div className="text-xs text-slate-400 mb-1">Flood Area</div>
                     <div className="text-xl font-bold text-blue-600">{stats.flood_area_km2.toFixed(0)}</div>
                     <div className="text-xs text-slate-400">km²</div>
                   </div>
-                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                  <div className={`${ui.card} ${ui.cardPad}`}>
                     <div className="text-xs text-slate-400 mb-1">Coverage</div>
                     <div className="text-xl font-bold text-emerald-600">{stats.flood_percentage.toFixed(2)}%</div>
                     <div className="text-xs text-slate-400">of land</div>
                   </div>
-                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                  <div className={`${ui.card} ${ui.cardPad}`}>
                     <div className="text-xs text-slate-400 mb-1">Districts</div>
                     <div className="text-xl font-bold text-amber-600">{stats.affected_districts.length}</div>
                     <div className="text-xs text-slate-400">affected</div>
                   </div>
-                  <div className="bg-slate-800 rounded-xl p-3 border border-slate-700 shadow-sm">
+                  <div className={`${ui.card} ${ui.cardPad}`}>
                     <div className="text-xs text-slate-400 mb-1">Cloud Cover</div>
                     <div className="text-xl font-bold text-slate-300">{stats.cloud_cover_pct.toFixed(0)}%</div>
                     <div className="text-xs text-slate-400">optical</div>
@@ -704,8 +686,8 @@ export default function DamageMapPage() {
 
               {/* Download Options */}
               {hasResults && stats && (
-                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-                  <h3 className="text-sm font-semibold text-white mb-3">Download Results</h3>
+                <div className={`${ui.card} ${ui.cardPad}`}>
+                  <h3 className={`${ui.h2} mb-3`}>Download Results</h3>
                   <div className="grid grid-cols-4 gap-2">
                     <button
                       onClick={() => downloadGeoJSON(stats)}
@@ -746,8 +728,8 @@ export default function DamageMapPage() {
 
             {/* Right Panel - Processing Steps */}
             <div className="space-y-4">
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3 flex items-center gap-2`}>
                   <span className="w-6 h-6 rounded-lg bg-emerald-500/20 flex items-center justify-center text-xs">⚡</span>
                   Processing Pipeline
                 </h3>
@@ -789,8 +771,8 @@ export default function DamageMapPage() {
 
               {/* Affected Districts */}
               {hasResults && stats && (
-                <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-                  <h3 className="text-sm font-semibold text-white mb-3">Affected Districts</h3>
+                <div className={`${ui.card} ${ui.cardPad}`}>
+                  <h3 className={`${ui.h2} mb-3`}>Affected Districts</h3>
                   <div className="space-y-1.5">
                     {stats.affected_districts.map((district) => {
                       const districtData = DISTRICTS.find(d => d.name === district);
@@ -817,8 +799,8 @@ export default function DamageMapPage() {
         {selectedTab === 'analysis' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Severity Breakdown */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-white mb-4">Flood Severity Distribution</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>Flood Severity Distribution</h3>
               {hasResults && stats ? (
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
@@ -863,8 +845,8 @@ export default function DamageMapPage() {
             </div>
 
             {/* Data Quality */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-white mb-4">Data Quality Metrics</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>Data Quality Metrics</h3>
               {hasResults && stats ? (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-slate-900 rounded-lg p-4">
@@ -896,8 +878,8 @@ export default function DamageMapPage() {
             </div>
 
             {/* District Impact Table */}
-            <div className="lg:col-span-2 bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-white mb-4">District-Level Analysis</h3>
+            <div className={`${ui.card} ${ui.cardPad} lg:col-span-2`}>
+              <h3 className={`${ui.h2} mb-3`}>District-Level Analysis</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -943,13 +925,13 @@ export default function DamageMapPage() {
         {selectedTab === 'methodology' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* SAR Processing */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+            <div className={`${ui.card} ${ui.cardPad}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-orange-500/20 flex items-center justify-center">
                   <span className="text-xl">📡</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">SAR Processing</h3>
+                  <h3 className={ui.h2}>SAR Processing</h3>
                   <p className="text-sm text-slate-400">Sentinel-1 C-band radar analysis</p>
                 </div>
               </div>
@@ -972,13 +954,13 @@ export default function DamageMapPage() {
             </div>
 
             {/* Optical Processing */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+            <div className={`${ui.card} ${ui.cardPad}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                   <span className="text-xl">🛰️</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Optical Processing</h3>
+                  <h3 className={ui.h2}>Optical Processing</h3>
                   <p className="text-sm text-slate-400">Sentinel-2 multispectral analysis</p>
                 </div>
               </div>
@@ -1000,13 +982,13 @@ export default function DamageMapPage() {
             </div>
 
             {/* Data Fusion */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+            <div className={`${ui.card} ${ui.cardPad}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
                   <span className="text-xl">🔗</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Data Fusion Strategy</h3>
+                  <h3 className={ui.h2}>Data Fusion Strategy</h3>
                   <p className="text-sm text-slate-400">Combining SAR and optical results</p>
                 </div>
               </div>
@@ -1027,13 +1009,13 @@ export default function DamageMapPage() {
             </div>
 
             {/* Output Generation */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
+            <div className={`${ui.card} ${ui.cardPad}`}>
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
                   <span className="text-xl">📊</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Output Generation</h3>
+                  <h3 className={ui.h2}>Output Generation</h3>
                   <p className="text-sm text-slate-400">Map and data products</p>
                 </div>
               </div>
@@ -1078,7 +1060,7 @@ export default function DamageMapPage() {
           <div className="bg-slate-800 rounded-2xl max-w-5xl w-full max-h-[85vh] overflow-hidden shadow-2xl">
             <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
               <div>
-                <h3 className="text-lg font-semibold text-white">flood_damage_detection.py</h3>
+                <h3 className={ui.h2}>flood_damage_detection.py</h3>
                 <p className="text-sm text-slate-400">Complete Python script for satellite-based flood detection</p>
               </div>
               <button
@@ -1304,7 +1286,7 @@ if __name__ == "__main__":
 
       {/* Footer */}
       <footer className="border-t border-slate-700 bg-slate-800 mt-8">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className={`max-w-7xl ${ui.container}`}>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-400">
               Data: <span className="font-medium">Copernicus Sentinel-1 & Sentinel-2</span> •

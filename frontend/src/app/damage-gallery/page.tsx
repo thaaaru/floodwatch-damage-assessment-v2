@@ -2,6 +2,8 @@
 
 'use client';
 
+import PageHeader from '@/components/ui/PageHeader';
+import { ui } from '@/lib/ui';
 import { useState } from 'react';
 
 interface DisasterEvent {
@@ -244,47 +246,25 @@ export default function DamageGalleryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-orange-600 flex items-center justify-center shadow-sm">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-white">Disaster Damage Gallery</h1>
-                <p className="text-xs text-slate-400">Before & After Satellite Imagery Comparison</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowSatelliteViewer(!showSatelliteViewer)}
-                className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-900 text-slate-200 text-sm font-medium transition-colors flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
-                </svg>
-                Live Viewer
-              </button>
-              <a href="/damage-map" className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-blue-500/30 text-blue-300 text-sm font-medium transition-colors">
-                Detection Map
-              </a>
-              <a href="/" className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
-                Dashboard
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className={ui.page}>
+      <PageHeader
+        title="Disaster Damage Gallery"
+        subtitle="Before & After Satellite Imagery Comparison"
+        actions={
+          <>
+            <button type="button" onClick={() => setShowSatelliteViewer(!showSatelliteViewer)} className={ui.btn}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" /></svg>
+              Live Viewer
+            </button>
+            <a href="/damage-map" className={ui.btn}>Detection Map</a>
+          </>
+        }
+      />
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className={`max-w-7xl ${ui.container}`}>
         {/* Live Satellite Viewer Panel */}
         {showSatelliteViewer && (
-          <div className="mb-6 bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+          <div className={`${ui.card} mb-6 overflow-hidden`}>
             <div className="p-4 border-b border-slate-700 bg-slate-900 flex items-center justify-between">
               <div>
                 <h3 className="font-semibold text-white">Live Satellite Viewer</h3>
@@ -368,8 +348,8 @@ export default function DamageGalleryPage() {
           {/* Left Panel - Event List */}
           <div className="space-y-4">
             {/* Filter */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-              <h3 className="text-sm font-semibold text-white mb-3">Filter Events</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>Filter Events</h3>
               <div className="flex gap-2">
                 {[
                   { id: 'all', label: 'All', icon: '📋' },
@@ -393,9 +373,9 @@ export default function DamageGalleryPage() {
             </div>
 
             {/* Event List */}
-            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+            <div className={`${ui.card} overflow-hidden`}>
               <div className="p-3 border-b border-slate-700 bg-slate-900">
-                <h3 className="text-sm font-semibold text-white">Recent Disaster Events</h3>
+                <h3 className={ui.h2}>Recent Disaster Events</h3>
                 <p className="text-xs text-slate-400">{filteredEvents.length} events with satellite imagery</p>
               </div>
               <div className="max-h-[500px] overflow-y-auto">
@@ -428,8 +408,8 @@ export default function DamageGalleryPage() {
             </div>
 
             {/* Data Sources */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-              <h3 className="text-sm font-semibold text-white mb-3">Data Sources</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>Data Sources</h3>
               <div className="space-y-2 text-xs text-slate-300">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
@@ -454,12 +434,12 @@ export default function DamageGalleryPage() {
           {/* Right Panel - Image Comparison */}
           <div className="lg:col-span-2 space-y-4">
             {/* Event Header */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+            <div className={`${ui.card} ${ui.cardPad}`}>
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-2xl">{getTypeIcon(selectedEvent.type)}</span>
-                    <h2 className="text-xl font-bold text-white">{selectedEvent.name}</h2>
+                    <h2 className={ui.h2}>{selectedEvent.name}</h2>
                   </div>
                   <p className="text-sm text-slate-300 mt-1">{selectedEvent.location}, {selectedEvent.district}</p>
                 </div>
@@ -473,8 +453,8 @@ export default function DamageGalleryPage() {
             </div>
 
             {/* Image Comparison Slider */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-              <h3 className="text-sm font-semibold text-white mb-3">Before / After Comparison</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>Before / After Comparison</h3>
               <ImageComparisonSlider
                 beforeImage={`https://placehold.co/800x400/22c55e/ffffff?text=${encodeURIComponent('Before: ' + selectedEvent.name)}`}
                 afterImage={`https://placehold.co/800x400/dc2626/ffffff?text=${encodeURIComponent('After: ' + selectedEvent.name + ' - Damage Visible')}`}
@@ -496,8 +476,8 @@ export default function DamageGalleryPage() {
 
             {/* Event Details */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-                <h3 className="text-sm font-semibold text-white mb-3">Event Details</h3>
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3`}>Event Details</h3>
                 <p className="text-sm text-slate-300 leading-relaxed">{selectedEvent.description}</p>
                 <div className="mt-4 pt-4 border-t border-slate-100">
                   <div className="grid grid-cols-2 gap-3">
@@ -513,8 +493,8 @@ export default function DamageGalleryPage() {
                 </div>
               </div>
 
-              <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-                <h3 className="text-sm font-semibold text-white mb-3">Location</h3>
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3`}>Location</h3>
                 <div className="aspect-video bg-slate-900 rounded-lg overflow-hidden">
                   <iframe
                     src={`https://www.openstreetmap.org/export/embed.html?bbox=${selectedEvent.coordinates.lon - 0.2}%2C${selectedEvent.coordinates.lat - 0.15}%2C${selectedEvent.coordinates.lon + 0.2}%2C${selectedEvent.coordinates.lat + 0.15}&layer=mapnik&marker=${selectedEvent.coordinates.lat}%2C${selectedEvent.coordinates.lon}`}
@@ -529,8 +509,8 @@ export default function DamageGalleryPage() {
             </div>
 
             {/* Quick Actions */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-              <h3 className="text-sm font-semibold text-white mb-3">Explore Imagery</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>Explore Imagery</h3>
               <div className="grid grid-cols-4 gap-2">
                 <a
                   href={`https://apps.sentinel-hub.com/eo-browser/?zoom=12&lat=${selectedEvent.coordinates.lat}&lng=${selectedEvent.coordinates.lon}&themeId=DEFAULT-THEME&datasetId=S2L2A&layerId=1_TRUE_COLOR`}
@@ -576,7 +556,7 @@ export default function DamageGalleryPage() {
 
       {/* Footer */}
       <footer className="border-t border-slate-700 bg-slate-800 mt-8">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className={`max-w-7xl ${ui.container}`}>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-400">
               Imagery: <span className="font-medium">Copernicus Sentinel, NASA MODIS, Maxar</span> •

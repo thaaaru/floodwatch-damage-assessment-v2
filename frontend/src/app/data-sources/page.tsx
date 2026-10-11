@@ -18,27 +18,27 @@ export default function DataSourcesPage() {
 
         {/* Summary Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className={`${ui.card} ${ui.cardPad}`}>
             <div className="text-3xl font-bold text-blue-400">46+</div>
             <div className="text-sm text-slate-400 mt-1">Total Data Sources</div>
           </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className={`${ui.card} ${ui.cardPad}`}>
             <div className="text-3xl font-bold text-green-400">40+</div>
             <div className="text-sm text-slate-400 mt-1">API Endpoints</div>
           </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className={`${ui.card} ${ui.cardPad}`}>
             <div className="text-3xl font-bold text-yellow-400">85-90%</div>
             <div className="text-sm text-slate-400 mt-1">Cache Hit Rate</div>
           </div>
-          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className={`${ui.card} ${ui.cardPad}`}>
             <div className="text-3xl font-bold text-purple-400">5 min</div>
             <div className="text-sm text-slate-400 mt-1">Fastest Refresh</div>
           </div>
         </div>
 
         {/* Weather & Climate Data */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">🌤️</span>
             Weather & Climate Data
           </h2>
@@ -78,8 +78,8 @@ export default function DataSourcesPage() {
         </section>
 
         {/* River & Flood Monitoring */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">🌊</span>
             River & Flood Monitoring
           </h2>
@@ -134,8 +134,8 @@ export default function DataSourcesPage() {
         </section>
 
         {/* News Sources */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">📰</span>
             News Sources
           </h2>
@@ -215,8 +215,8 @@ export default function DataSourcesPage() {
         </section>
 
         {/* Wind Data */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">🌬️</span>
             Wind Data
           </h2>
@@ -257,8 +257,8 @@ export default function DataSourcesPage() {
         </section>
 
         {/* Intelligence & Alerts */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">🚨</span>
             Intelligence & Alerts
           </h2>
@@ -304,8 +304,8 @@ export default function DataSourcesPage() {
         </section>
 
         {/* Emergency Services */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">📍</span>
             Emergency Services
           </h2>
@@ -340,7 +340,7 @@ export default function DataSourcesPage() {
 
         {/* Refresh Frequency Summary */}
         <section className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 rounded-lg p-6 border border-blue-700/30">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">⚡</span>
             Data Refresh Frequencies Summary
           </h2>
@@ -393,8 +393,8 @@ export default function DataSourcesPage() {
         </section>
 
         {/* API Keys Required */}
-        <section className="bg-slate-800 rounded-lg p-6 border border-slate-700">
-          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <section className={`${ui.card} ${ui.cardPad}`}>
+          <h2 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="text-2xl">🔑</span>
             API Keys Required
           </h2>

@@ -2,6 +2,8 @@
 
 'use client';
 
+import PageHeader from '@/components/ui/PageHeader';
+import { ui } from '@/lib/ui';
 import { useState } from 'react';
 
 interface ProcessingConfig {
@@ -1036,33 +1038,16 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 `;
 
   return (
-    <div className="min-h-screen bg-slate-900">
-      {/* Header */}
-      <header className="bg-slate-800 border-b border-slate-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-sm">
-                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-white">SAR Processing Toolkit</h1>
-                <p className="text-xs text-slate-400">Sentinel-1 Before/After Composites & Google Earth Integration</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <a href="/damage-gallery" className="px-3 py-2 rounded-lg bg-slate-900 hover:bg-slate-900 text-slate-200 text-sm font-medium transition-colors">
-                Damage Gallery
-              </a>
-              <a href="/" className="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
-                Dashboard
-              </a>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className={ui.page}>
+      <PageHeader
+        title="SAR Processing Toolkit"
+        subtitle="Sentinel-1 Before/After Composites & Google Earth Integration"
+        actions={
+          <>
+            <a href="/damage-gallery" className={ui.btn}>Damage Gallery</a>
+          </>
+        }
+      />
 
       {/* Tab Navigation */}
       <div className="bg-slate-800 border-b border-slate-700">
@@ -1092,10 +1077,10 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className={`max-w-7xl ${ui.container}`}>
         {/* Configuration Panel */}
-        <div className="mb-6 bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
-          <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+        <div className={`${ui.card} ${ui.cardPad} mb-6`}>
+          <h3 className={`${ui.h2} mb-3 flex items-center gap-2`}>
             <span className="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center text-xs">⚙️</span>
             Processing Configuration
           </h3>
@@ -1196,8 +1181,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Workflow Diagram */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-white mb-4">SAR Processing Workflow</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>SAR Processing Workflow</h3>
               <div className="space-y-3">
                 {[
                   { step: 1, name: 'Data Acquisition', desc: 'Download Sentinel-1 IW GRD products', icon: '📡' },
@@ -1225,8 +1210,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* Output Files */}
             <div className="space-y-6">
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Output Files</h3>
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3`}>Output Files</h3>
                 <div className="space-y-3">
                   {[
                     { name: 'sri_lanka_before.tif', desc: 'RGB GeoTIFF composite (before event)' },
@@ -1248,8 +1233,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
               </div>
 
               {/* RGB Composite Explanation */}
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">RGB Composite Bands</h3>
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3`}>RGB Composite Bands</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded bg-red-500"></div>
@@ -1285,7 +1270,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
         {activeTab === 'snap' && (
           <div className="space-y-4">
-            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+            <div className={`${ui.card} overflow-hidden`}>
               <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
                 <div>
                   <h3 className="font-semibold text-white">SNAP Python Script (snappy)</h3>
@@ -1322,7 +1307,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
         {activeTab === 'gee' && (
           <div className="space-y-4">
-            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+            <div className={`${ui.card} overflow-hidden`}>
               <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
                 <div>
                   <h3 className="font-semibold text-white">Google Earth Engine Script</h3>
@@ -1372,7 +1357,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
         {activeTab === 'kmz' && (
           <div className="space-y-4">
-            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-sm overflow-hidden">
+            <div className={`${ui.card} overflow-hidden`}>
               <div className="flex items-center justify-between p-4 border-b border-slate-700 bg-slate-900">
                 <div>
                   <h3 className="font-semibold text-white">GeoTIFF to KMZ Conversion</h3>
@@ -1395,7 +1380,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
             </div>
 
             {/* CLI Quick Reference */}
-            <div className="bg-slate-800 rounded-xl p-4 border border-slate-700 shadow-sm">
+            <div className={`${ui.card} ${ui.cardPad}`}>
               <h4 className="font-semibold text-white mb-3">Quick CLI Commands</h4>
               <div className="space-y-3 font-mono text-sm">
                 <div className="bg-slate-900 p-3 rounded-lg">
@@ -1422,8 +1407,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
         {activeTab === 'instructions' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Step by Step Guide */}
-            <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-              <h3 className="text-lg font-semibold text-white mb-4">Step-by-Step Guide</h3>
+            <div className={`${ui.card} ${ui.cardPad}`}>
+              <h3 className={`${ui.h2} mb-3`}>Step-by-Step Guide</h3>
 
               <div className="space-y-4">
                 <div className="border-l-4 border-blue-500 pl-4">
@@ -1459,8 +1444,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
             {/* Validation */}
             <div className="space-y-6">
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Validation Checklist</h3>
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3`}>Validation Checklist</h3>
                 <div className="space-y-2">
                   {[
                     'GeoTIFF opens correctly in QGIS/ArcGIS',
@@ -1480,8 +1465,8 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
                 </div>
               </div>
 
-              <div className="bg-slate-800 rounded-xl p-6 border border-slate-700 shadow-sm">
-                <h3 className="text-lg font-semibold text-white mb-4">Troubleshooting</h3>
+              <div className={`${ui.card} ${ui.cardPad}`}>
+                <h3 className={`${ui.h2} mb-3`}>Troubleshooting</h3>
                 <div className="space-y-3 text-sm">
                   <div className="p-3 bg-red-600/20 rounded-lg border border-red-700/50">
                     <div className="font-medium text-red-300">No images found in GEE</div>
@@ -1504,7 +1489,7 @@ echo "Python script saved: $OUTPUT_DIR/generate_kmz.py"
 
       {/* Footer */}
       <footer className="border-t border-slate-700 bg-slate-800 mt-8">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className={`max-w-7xl ${ui.container}`}>
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="text-sm text-slate-400">
               Data: <span className="font-medium">Copernicus Sentinel-1 GRD</span> •
