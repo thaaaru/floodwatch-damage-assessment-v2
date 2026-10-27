@@ -54,11 +54,14 @@ services:
       WEATHERAPI_KEY: ${WEATHERAPI_KEY:-}
       TOMTOM_API_KEY: ${TOMTOM_API_KEY:-}
       HERE_API_KEY: ${HERE_API_KEY:-}
+      GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
       WEATHER_SOURCE: ${WEATHER_SOURCE:-open_meteo}
       # ReliefWeb API v2 appname (pre-approved by ReliefWeb); empty = source off
       RELIEFWEB_APPNAME: ${RELIEFWEB_APPNAME:-}
       FRONTEND_URL: https://floodwatch.teklab.dev
       DEBUG: "false"
+      # Required in production: CIDRs containing only Caddy and the Next proxy.
+      TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:?set trusted proxy CIDRs}
     secrets:
       - db_password
     networks:
@@ -87,6 +90,8 @@ services:
     restart: unless-stopped
     environment:
       BACKEND_URL: http://floodwatch-backend:8000
+      # Must match the host Caddy environment; attests its sanitized client IP.
+      TRUSTED_PROXY_TOKEN: ${TRUSTED_PROXY_TOKEN:?set trusted proxy token}
     networks:
       - internal
       - edge

@@ -119,6 +119,120 @@ export interface ForecastAlert {
   source: string;
 }
 
+export type ExternalFloodSourceKind = 'aggregator' | 'community' | 'forecast';
+export type ExternalFloodSourceStatus = 'ok' | 'partial' | 'stale' | 'disabled' | 'error';
+
+export interface ExternalFloodSource {
+  id: string;
+  name: string;
+  kind: ExternalFloodSourceKind;
+  status: ExternalFloodSourceStatus;
+  status_message: string;
+  source_url: string;
+  attribution: string;
+  license: string;
+  updated_at: string | null;
+  summary: Record<string, unknown>;
+}
+
+export interface ExternalFloodSnapshot {
+  retrieved_at: string;
+  sources: ExternalFloodSource[];
+  source_status_counts: Record<ExternalFloodSourceStatus, number>;
+  oldest_usable_update_at: string | null;
+  newest_usable_update_at: string | null;
+}
+
+export interface MapCoordinate {
+  latitude: number;
+  longitude: number;
+}
+
+export interface MapWeather {
+  source: string;
+  source_type: 'model';
+  generated_at?: string;
+  updated_at?: string | null;
+  weather?: Record<string, unknown>;
+  temperature_c?: number | null;
+  precipitation_mm?: number | null;
+  precipitation_probability_pct?: number | null;
+  wind_speed_kmh?: number | null;
+  [key: string]: unknown;
+}
+
+export interface PlaceSuggestion {
+  place_id: string;
+  description: string;
+  text?: string;
+}
+
+export interface PlaceDetails extends MapCoordinate {
+  place_id: string;
+  name?: string;
+  formatted_address?: string;
+  source?: string;
+}
+
+export interface CandidateRoute {
+  source: string;
+  polyline: MapCoordinate[];
+  distance_meters?: number | null;
+  duration?: string | null;
+  safety_disclaimer: string;
+}
+
+export interface ElevationContext {
+  source: string;
+  elevation_m: number | null;
+  resolution_m?: number | null;
+  disclaimer?: string;
+}
+
+
+export type ApiFailureKind = 'disabled' | 'timeout' | 'transport' | 'http';
+
+export class ApiRequestError extends Error {
+  constructor(
+    message: string,
+    public readonly kind: ApiFailureKind,
+    public readonly status?: number,
+  ) {
+    super(message);
+    this.name = 'ApiRequestError';
+  }
+}
+
+export const isDisabledMapFeature = (error: unknown) =>
+  error instanceof ApiRequestError && error.kind === 'disabled';
+function decodeGooglePolyline(encoded: string): MapCoordinate[] {
+  const points: MapCoordinate[] = [];
+  let index = 0;
+  let latitude = 0;
+  let longitude = 0;
+  while (index < encoded.length) {
+    let result = 0;
+    let shift = 0;
+    let byte: number;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    latitude += result & 1 ? ~(result >> 1) : result >> 1;
+    result = 0;
+    shift = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20);
+    longitude += result & 1 ? ~(result >> 1) : result >> 1;
+    points.push({ latitude: latitude / 1e5, longitude: longitude / 1e5 });
+  }
+  return points;
+}
+
 class ApiClient {
   private getUrl(endpoint: string): string {
     if (USE_PROXY) {
@@ -130,6 +244,7 @@ class ApiClient {
   }
 
   private async fetch<T>(endpoint: string, options?: RequestInit): Promise<T> {
+    const isMonitoringSource = endpoint === '/api/weather/met-stations' || endpoint === '/api/intel/irrigation' || endpoint === '/api/external-flood/snapshot';
     try {
       // Create abort controller for timeout (fallback for browsers without AbortSignal.timeout)
       const controller = new AbortController();
@@ -147,6 +262,20 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        // A response proves the server is reachable. Map-context 503 specifically
+        // means the optional paid integration is not configured; transport
+        // failures are classified separately in the catch below.
+        if (endpoint.startsWith('/api/map-context')) {
+          throw new ApiRequestError(
+            error.detail || `HTTP ${response.status}`,
+            response.status === 503 ? 'disabled' : 'http',
+            response.status,
+          );
+        }
+        if (isMonitoringSource) {
+          throw new ApiRequestError(error.detail || `HTTP ${response.status}`, 'http', response.status);
+        }
         // Handle 502 Bad Gateway and other server errors
         if (response.status >= 500) {
           console.error(`Backend server error (${response.status}) for ${endpoint}. Backend may be temporarily unavailable.`);
@@ -163,7 +292,6 @@ class ApiClient {
           }
           return {} as T;
         }
-        const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
         throw new Error(error.detail || `HTTP ${response.status}`);
       }
 
@@ -180,8 +308,17 @@ class ApiClient {
       return data;
     } catch (error: any) {
       // Handle network errors, timeouts, etc.
+      if (endpoint.startsWith('/api/map-context') && error instanceof ApiRequestError) {
+        throw error;
+      }
       if (error.name === 'AbortError' || error.name === 'TimeoutError') {
         console.error(`Request timeout for ${endpoint}`);
+        if (endpoint.startsWith('/api/map-context')) {
+          throw new ApiRequestError('The map context request timed out.', 'timeout');
+        }
+        if (isMonitoringSource) {
+          throw new ApiRequestError('The monitoring source request timed out.', 'timeout');
+        }
         // Return empty result to prevent UI crashes
         if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
@@ -195,8 +332,14 @@ class ApiClient {
         return {} as T;
       }
       // Handle fetch errors (network failures, CORS, etc.)
-      if (error instanceof TypeError && error.message.includes('fetch')) {
+      if (error instanceof TypeError && (endpoint.startsWith('/api/map-context') || error.message.includes('fetch'))) {
         console.error(`Network error for ${endpoint}:`, error.message);
+        if (endpoint.startsWith('/api/map-context')) {
+          throw new ApiRequestError('The map context service could not be reached.', 'transport');
+        }
+        if (isMonitoringSource) {
+          throw new ApiRequestError('The monitoring source could not be reached.', 'transport');
+        }
         // Return empty result based on endpoint type
         if (endpoint.includes('/alerts') || endpoint.includes('/history') || endpoint.includes('/forecast')) {
           return [] as T;
@@ -212,6 +355,66 @@ class ApiClient {
       // Re-throw other errors
       throw error;
     }
+  }
+
+  async getMapWeather(latitude: number, longitude: number): Promise<MapWeather> {
+    const params = new URLSearchParams({ lat: latitude.toString(), lon: longitude.toString() });
+    return this.fetch<MapWeather>(`/api/map-context/weather?${params}`);
+  }
+
+  async autocompletePlaces(input: string): Promise<PlaceSuggestion[]> {
+    const response = await this.fetch<{ suggestions?: Array<{ place_id: string; text: string }> }>(
+      '/api/map-context/places/autocomplete',
+      { method: 'POST', body: JSON.stringify({ input }) },
+    );
+    return (response.suggestions ?? []).map((place) => ({
+      place_id: place.place_id,
+      description: place.text,
+      text: place.text,
+    }));
+  }
+
+  async getPlace(placeId: string): Promise<PlaceDetails> {
+    const response = await this.fetch<{
+      place_id: string;
+      formatted_address?: string;
+      location: MapCoordinate;
+      source?: string;
+    }>(`/api/map-context/places/${encodeURIComponent(placeId)}`);
+    return { ...response.location, place_id: response.place_id, formatted_address: response.formatted_address, source: response.source };
+  }
+
+  async getCandidateRoute(origin: MapCoordinate, destination: MapCoordinate): Promise<CandidateRoute> {
+    const response = await this.fetch<{
+      source: string;
+      encoded_polyline?: string;
+      distance_meters?: number | null;
+      duration?: string | null;
+      safety_disclaimer: string;
+    }>('/api/map-context/route', { method: 'POST', body: JSON.stringify({ origin, destination }) });
+    return {
+      source: response.source,
+      polyline: response.encoded_polyline ? decodeGooglePolyline(response.encoded_polyline) : [],
+      distance_meters: response.distance_meters,
+      duration: response.duration,
+      safety_disclaimer: response.safety_disclaimer,
+    };
+  }
+
+  async getElevation(latitude: number, longitude: number): Promise<ElevationContext> {
+    const params = new URLSearchParams({ lat: latitude.toString(), lon: longitude.toString() });
+    const response = await this.fetch<{
+      source: string;
+      elevation_meters: number | null;
+      resolution_meters?: number | null;
+      disclaimer?: string;
+    }>(`/api/map-context/elevation?${params}`);
+    return {
+      source: response.source,
+      elevation_m: response.elevation_meters,
+      resolution_m: response.resolution_meters,
+      disclaimer: response.disclaimer,
+    };
   }
 
   async getDistricts(): Promise<District[]> {
@@ -413,8 +616,9 @@ class ApiClient {
     return this.fetch<GoogleFloodsResponse>('/api/google-floods/gauges');
   }
 
-  async getGoogleFloodForecast(gaugeId: string): Promise<GoogleFloodForecast> {
-    return this.fetch<GoogleFloodForecast>(`/api/google-floods/gauges/${encodeURIComponent(gaugeId)}/forecast`);
+
+  async getExternalFloodSnapshot(): Promise<ExternalFloodSnapshot> {
+    return this.fetch<ExternalFloodSnapshot>('/api/external-flood/snapshot');
   }
 }
 
@@ -959,13 +1163,6 @@ export interface GoogleFloodGauge {
   site_name: string | null;
   latitude: number | null;
   longitude: number | null;
-  current_value: number | null;
-  current_value_unit: string | null;
-  thresholds: {
-    warning: number | null;
-    danger: number | null;
-    extreme: number | null;
-  };
   issued_time: string | null;
   source_url: string | null;
   raw_status?: unknown;
@@ -980,12 +1177,4 @@ export interface GoogleFloodsResponse {
   gauges: GoogleFloodGauge[];
   source: string;
   license_note: string;
-}
-
-// Forecast shape mirrors the upstream queryGaugeForecast response.
-// Stored loosely typed: the page just iterates whatever timeseries it returns.
-export interface GoogleFloodForecast {
-  gauge_id?: string;
-  forecastTimeSeries?: unknown;
-  [key: string]: unknown;
 }

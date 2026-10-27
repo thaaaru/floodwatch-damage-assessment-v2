@@ -24,12 +24,17 @@ floodwatch.teklab.dev {
 
 	# Next.js route handlers
 	handle /api/proxy* {
-		reverse_proxy floodwatch-frontend:3000
+		reverse_proxy floodwatch-frontend:3000 {
+			header_up X-FloodWatch-Client-IP {http.request.remote.host}
+			header_up X-FloodWatch-Proxy-Token {$TRUSTED_PROXY_TOKEN}
+		}
 	}
 
 	# FastAPI
 	handle /api/* {
-		reverse_proxy floodwatch-backend:8000
+		reverse_proxy floodwatch-backend:8000 {
+			header_up X-Forwarded-For {http.request.remote.host}
+		}
 	}
 	handle /docs* {
 		reverse_proxy floodwatch-backend:8000

@@ -357,6 +357,9 @@ async def get_nearby_facilities(
         "location": {"latitude": lat, "longitude": lon},
         "radius_km": radius_km,
         "total_found": total,
+        "source": "OpenStreetMap",
+        "verification_status": "unverified",
+        "disclaimer": "OpenStreetMap facilities are unverified candidates; confirm availability and suitability with local authorities.",
         **nearby,
     }
 

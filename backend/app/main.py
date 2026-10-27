@@ -7,13 +7,13 @@ import logging
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 from .config import get_settings
+from .config.rate_limit import limiter
 from .database import engine, Base
-from .routers import weather, alerts, subscribers, districts, intel, whatsapp, flood_map, wind, rivers, google_floods, news, rain_history
+from .routers import weather, alerts, subscribers, districts, intel, whatsapp, flood_map, wind, rivers, google_floods, external_flood, map_context, news, rain_history
 from .jobs.scheduler import start_scheduler, stop_scheduler
 from .schemas import HealthResponse
 
@@ -26,8 +26,6 @@ logger = logging.getLogger(__name__)
 
 settings = get_settings()
 
-# Rate limiter
-limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
@@ -56,6 +54,18 @@ async def lifespan(app: FastAPI):
             await google_floods_service.aclose()
     except Exception as e:
         logger.warning(f"Error closing Google Floods HTTP client: {e}")
+
+    # Close the shared external flood source client.
+    try:
+        await external_flood.external_flood_service.aclose()
+    except Exception as e:
+        logger.warning(f"Error closing external flood HTTP clients: {e}")
+
+    # Close the server-only Maps Platform client if it was initialized.
+    try:
+        await map_context.google_maps_service.aclose()
+    except Exception as e:
+        logger.warning(f"Error closing Google Maps HTTP client: {e}")
 
     # Close the shared Open-Meteo Flood HTTP client (if it was ever initialized).
     try:
@@ -128,6 +138,8 @@ app.include_router(flood_map.router)
 app.include_router(wind.router)
 app.include_router(rivers.router)
 app.include_router(google_floods.router)
+app.include_router(external_flood.router)
+app.include_router(map_context.router)
 
 # Subscription / messaging endpoints exist only when alerts are enabled;
 # otherwise they are not registered at all (404).

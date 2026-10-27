@@ -37,6 +37,12 @@
     @apply outline-none ring-2 ring-brand-500 ring-offset-2;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 
 @layer components {
   /* Card component */
@@ -512,13 +518,28 @@
   opacity: 0.8;
 }
 
+.leaflet-control-zoom a,
+.fw-fullscreen {
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+}
+
+.fw-fullscreen {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: inherit;
+  cursor: pointer;
+}
+
 /* Home-map "Colour all basins" switch (MetStationsMap createFillModeSwitch) */
 .fw-basin-switch {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 32px;
-  padding: 4px 10px;
+  min-height: 44px;
+  padding: 6px 10px;
   background: rgba(255, 255, 255, 0.95);
   color: #1f2937;
   border-radius: 8px;
@@ -527,8 +548,8 @@
   cursor: pointer;
 }
 .fw-basin-switch input {
-  width: 16px;
-  height: 16px;
+  width: 24px;
+  height: 24px;
   accent-color: #2563eb;
 }
 
@@ -547,7 +568,7 @@
   cursor: pointer;
 }
 .fw-forecast-switch button {
-  min-height: 32px;
+  min-height: 44px;
 }
 .fw-forecast-switch {
   display: flex;

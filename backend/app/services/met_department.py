@@ -25,6 +25,7 @@ import logging
 import re
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from typing import Optional
 
 import httpx
@@ -141,7 +142,10 @@ class MetDepartmentService:
     # 15 min so we pick up the new file within a few minutes of release
     # without hammering their server.
     CACHE_TTL_SECONDS = 15 * 60
-    REQUEST_TIMEOUT = 30.0
+    REQUEST_TIMEOUT = 8.0
+    FALLBACK_BULLETIN_PATH: Optional[Path] = (
+        Path(__file__).resolve().parents[2] / "data" / "met_department_3hourly.xlsx"
+    )
 
     def __init__(self) -> None:
         self._client: Optional[httpx.AsyncClient] = None
@@ -199,7 +203,19 @@ class MetDepartmentService:
                     "Met Dept fetch failed (%s); serving stale cache of %d stations",
                     exc, len(self._cache),
                 )
-                return self._cache
+                if self._cache:
+                    return self._cache
+                path = self.FALLBACK_BULLETIN_PATH
+                if path is None or not path.is_file():
+                    return self._cache
+                try:
+                    stations = self._parse_workbook(path.read_bytes())
+                except Exception as fallback_exc:
+                    logger.warning("Bundled Met Dept bulletin is unreadable: %s", fallback_exc)
+                    return self._cache
+                logger.warning(
+                    "Serving bundled measured Met Dept bulletin from %s", path
+                )
 
             self._cache = stations
             self._cache_at = datetime.now(timezone.utc)
@@ -295,9 +311,10 @@ class MetDepartmentService:
 
         return out
 
-    async def get_summary(self) -> dict:
-        """Aggregate summary (used for legend / status strip)."""
-        stations = await self.get_stations()
+    async def get_summary(self, stations: Optional[list[MetStation]] = None) -> dict:
+        """Aggregate a station snapshot (used for legend / status strip)."""
+        if stations is None:
+            stations = await self.get_stations()
         if not stations:
             return {
                 "station_count": 0,

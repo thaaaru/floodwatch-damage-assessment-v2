@@ -1,6 +1,54 @@
+import { timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'https://api.teklab.dev';
+
+function trustedClientIp(request: NextRequest): string | null {
+  const expected = process.env.TRUSTED_PROXY_TOKEN;
+  const presented = request.headers.get('x-floodwatch-proxy-token');
+  if (!expected || !presented) return null;
+  const expectedBytes = Buffer.from(expected);
+  const presentedBytes = Buffer.from(presented);
+  if (expectedBytes.length !== presentedBytes.length ||
+      !timingSafeEqual(expectedBytes, presentedBytes)) return null;
+  return request.headers.get('x-floodwatch-client-ip');
+}
+
+function getBackendUrl(path: string): URL | null {
+  let inspected = path;
+
+  for (let depth = 0; depth < 10; depth += 1) {
+    const pathname = inspected.split('?', 1)[0];
+    if (
+      inspected.includes('#') ||
+      !pathname.startsWith('/api/') ||
+      pathname.slice('/api/'.length).startsWith('//') ||
+      pathname.includes('\\') ||
+      pathname.split('/').some((segment) => segment === '.' || segment === '..')
+    ) {
+      return null;
+    }
+
+    const decoded = inspected.replace(
+      /%(?:25|2e|2f|5c|23|3f|40|3a)/gi,
+      (encoding) => decodeURIComponent(encoding)
+    );
+    if (decoded === inspected) {
+      const backend = new URL(BACKEND_URL);
+      const url = new URL(path, backend.origin);
+      return url.origin === backend.origin &&
+        !url.username &&
+        !url.password &&
+        !url.hash &&
+        url.pathname.startsWith('/api/')
+        ? url
+        : null;
+    }
+    inspected = decoded;
+  }
+
+  return null;
+}
 
 export async function GET(request: NextRequest) {
   const path = request.nextUrl.searchParams.get('path');
@@ -13,8 +61,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const apiUrl = `${BACKEND_URL}${path}`;
-    const url = new URL(apiUrl);
+    const url = getBackendUrl(path);
+    if (!url) {
+      return NextResponse.json(
+        { error: 'Invalid path parameter' },
+        { status: 400 }
+      );
+    }
 
     // Preserve query parameters
     request.nextUrl.searchParams.forEach((value, key) => {
@@ -36,10 +89,12 @@ export async function GET(request: NextRequest) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
+    const clientIp = trustedClientIp(request);
     const response = await fetch(url.toString(), {
       method: request.method,
       headers: {
         'Content-Type': 'application/json',
+        ...(clientIp ? { 'X-Forwarded-For': clientIp } : {}),
       },
       body: request.method === 'GET' ? undefined : await request.text(),
       signal: controller.signal,
@@ -98,3 +153,5 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const POST = GET;

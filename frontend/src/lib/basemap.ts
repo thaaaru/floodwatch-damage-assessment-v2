@@ -103,13 +103,17 @@ const ARCGIS_API_KEY = process.env.NEXT_PUBLIC_ARCGIS_API_KEY || '';
 export const SATELLITE_ATTRIBUTION = 'Imagery: Esri, Maxar, Earthstar Geographics';
 
 /** Adds the imagery overlay to `control`; returns false (and adds nothing) without a key. */
-export function addSatelliteOption(L: typeof Leaflet, control: Leaflet.Control.Layers): boolean {
+export function addSatelliteOption(
+  L: typeof Leaflet,
+  control: Leaflet.Control.Layers,
+  label = 'Satellite (Esri)',
+): boolean {
   if (!ARCGIS_API_KEY) return false;
   const imagery = L.tileLayer(
     'https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}' +
       `?token=${encodeURIComponent(ARCGIS_API_KEY)}`,
     { maxZoom: 19, zIndex: 10, attribution: SATELLITE_ATTRIBUTION },
   );
-  control.addOverlay(imagery, 'Satellite (Esri)');
+  control.addOverlay(imagery, label);
   return true;
 }

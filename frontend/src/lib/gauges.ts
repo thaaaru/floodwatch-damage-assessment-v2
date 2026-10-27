@@ -148,6 +148,9 @@ export function createBasinLayer(
                  : '<div style="font-size:11px;color:#6b7280;margin-top:6px">No river gauge in this basin</div>'}
           <div style="font-size:9px;color:#9ca3af;margin-top:4px">${BASIN_CREDIT}</div></div>`;
       }, { className: 'fw-light-popup', maxWidth: 260 });
+      layer.on('add', () => {
+        if (layer instanceof L.Path) layer.getElement()?.setAttribute('tabindex', '-1');
+      });
     },
   });
 }

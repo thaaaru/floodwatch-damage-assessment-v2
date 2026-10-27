@@ -12,10 +12,50 @@ const FLOODING: GaugeStatus[] = ['alert', 'minor', 'major'];
 const ARROW = { rising: '↑', falling: '↓', steady: '→' } as const;
 const fmtM = (v: number | null | undefined) => (v === null || v === undefined ? '—' : `${v.toFixed(2)} m`);
 
+const BASIN_NAME_SI: Record<string, string> = {
+  'Aththanagalu Oya': 'අත්තනගලු ඔය',
+  'Deduru Oya': 'දැදුරු ඔය',
+  'Gal Oya': 'ගල් ඔය',
+  'Gin Ganga': 'ගිං ගඟ',
+  'Heda Oya': 'හැඩ ඔය',
+  'Kalu Ganga': 'කළු ගඟ',
+  'Kelani Ganga': 'කැලණි ගඟ',
+  'Kirindi Oya': 'කිරිඳි ඔය',
+  'Kumbukkan Oya': 'කුඹුක්කන් ඔය',
+  'Ma Oya': 'මා ඔය',
+  'Maduru Oya': 'මාදුරු ඔය',
+  'Maha Oya': 'මහ ඔය',
+  'Mahaweli Ganga': 'මහවැලි ගඟ',
+  'Malwathu Oya': 'මල්වතු ඔය',
+  'Mee Oya': 'මී ඔය',
+  'Menik Ganga': 'මැණික් ගඟ',
+  'Nilwala Ganga': 'නිල්වලා ගඟ',
+  'Walawe Ganga': 'වලවේ ගඟ',
+  'Yan Oya': 'යාන් ඔය',
+};
+
 function StatusPill({ status }: { status: GaugeStatus }) {
   return (
     <span className="px-2 py-0.5 rounded text-xs font-bold text-white whitespace-nowrap" style={{ background: STATUS_COLOR[status] }}>
       {STATUS_LABEL[status]}
+    </span>
+  );
+}
+
+function BasinTrend({ gauges }: { gauges: IrrigationStation[] }) {
+  const rising = gauges.filter((g) => g.trend === 'rising').length;
+  const trend = rising > 0
+    ? { icon: '↑', label: `${rising} rising`, color: 'text-red-300' }
+    : gauges.some((g) => g.trend === 'falling')
+      ? { icon: '↓', label: 'falling', color: 'text-emerald-300' }
+      : gauges.some((g) => g.trend === 'steady')
+        ? { icon: '→', label: 'steady', color: 'text-sky-300' }
+        : { icon: '—', label: 'unknown', color: 'text-slate-400' };
+
+  return (
+    <span className={`inline-flex items-center gap-1 font-semibold whitespace-nowrap ${trend.color}`} aria-label={`Basin trend: ${trend.label}`}>
+      <span className="text-xl leading-none" aria-hidden="true">{trend.icon}</span>
+      <span>{trend.label}</span>
     </span>
   );
 }
@@ -65,7 +105,7 @@ export default function BasinStatusTable({ stations }: { stations: IrrigationSta
                 <tr className={ui.th}>
                   <th className="text-left py-2 px-2">Basin</th>
                   <th className="text-left py-2 px-2">Gauges (level, trend)</th>
-                  <th className="text-center py-2 px-2">Rising</th>
+                  <th className="text-center py-2 px-2">Trend</th>
                   <th className="text-center py-2 px-2">Stale</th>
                   <th className="text-center py-2 px-2">Status</th>
                 </tr>
@@ -73,7 +113,12 @@ export default function BasinStatusTable({ stations }: { stations: IrrigationSta
               <tbody>
                 {basins.map((b) => (
                   <tr key={b.basin} className={`${ui.tr} align-top`}>
-                    <td className="py-2 px-2 font-medium">{b.basin}</td>
+                    <td className="py-2 px-2 font-medium">
+                      <span className="block">{b.basin}</span>
+                      {Object.hasOwn(BASIN_NAME_SI, b.basin) && (
+                        <span lang="si" className="block text-slate-300 font-normal">{BASIN_NAME_SI[b.basin]}</span>
+                      )}
+                    </td>
                     <td className="py-2 px-2 text-slate-300">
                       {b.gauges.map((g) => (
                         <span key={g.station} className="inline-block mr-3 whitespace-nowrap">
@@ -83,7 +128,7 @@ export default function BasinStatusTable({ stations }: { stations: IrrigationSta
                         </span>
                       ))}
                     </td>
-                    <td className="text-center py-2 px-2">{b.gauges.filter((g) => g.trend === 'rising').length}</td>
+                    <td className="text-center py-2 px-2"><BasinTrend gauges={b.gauges} /></td>
                     <td className="text-center py-2 px-2">{b.gauges.filter((g) => g.stale).length}</td>
                     <td className="text-center py-2 px-2"><StatusPill status={b.worst} /></td>
                   </tr>

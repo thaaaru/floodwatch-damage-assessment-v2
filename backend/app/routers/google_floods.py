@@ -50,22 +50,6 @@ async def list_gauges():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/gauges/{gauge_id}/forecast")
-async def gauge_forecast(gauge_id: str):
-    """
-    Forecast trend for a single gauge. Cached per gauge for ~30 minutes.
-    """
-    try:
-        service = get_service()
-        data = await service.get_gauge_forecast(gauge_id)
-        if not data:
-            raise HTTPException(status_code=404, detail=f"No forecast available for gauge {gauge_id}")
-        return data
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("google-floods/gauges/%s/forecast failed: %s", gauge_id, e)
-        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/status")
@@ -77,9 +61,9 @@ async def service_status():
     remaining = service._budget_remaining()
     cache_age_min: Optional[float] = None
     if service._area_cache_time:
-        from datetime import datetime
+        from datetime import datetime, timezone
         cache_age_min = round(
-            (datetime.utcnow() - service._area_cache_time).total_seconds() / 60,
+            (datetime.now(timezone.utc) - service._area_cache_time).total_seconds() / 60,
             1,
         )
     return {
@@ -87,9 +71,6 @@ async def service_status():
             "area_cached": bool(service._area_cache),
             "area_age_minutes": cache_age_min,
             "area_ttl_minutes": service.AREA_CACHE_MINUTES,
-            "gauge_meta_entries": len(service._gauge_meta_cache),
-            "forecast_entries": len(service._forecast_cache),
-            "status_entries": len(service._status_cache),
         },
         "rate_limit": {
             "calls_today": service._calls_today,

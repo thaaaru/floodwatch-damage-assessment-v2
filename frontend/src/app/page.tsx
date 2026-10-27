@@ -3,296 +3,404 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useState } from 'react';
-import { api, IrrigationStation, MetStation, MetStationsResponse } from '@/lib/api';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
+import { api, isDisabledMapFeature } from '@/lib/api';
+import type {
+  CandidateRoute,
+  ElevationContext,
+  EmergencyFacility,
+  IrrigationStation,
+  MapCoordinate,
+  MapWeather,
+  MetStation,
+  MetStationsResponse,
+  PlaceSuggestion,
+} from '@/lib/api';
 import { ui } from '@/lib/ui';
 import BasinStatusTable from '@/components/BasinStatusTable';
 import LatestNews from '@/components/LatestNews';
 import RainContext from '@/components/RainContext';
+import ExternalFloodSources from '@/components/ExternalFloodSources';
 
 const MetStationsMap = dynamic(() => import('@/components/MetStationsMap'), {
   ssr: false,
-  loading: () => (
-    <div className="h-full w-full bg-slate-900 flex items-center justify-center">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-10 h-10 border-2 border-blue-700/50 border-t-blue-600 rounded-full animate-spin" />
-        <span className="text-sm text-slate-400">Loading map...</span>
-      </div>
-    </div>
-  ),
+  loading: () => <MapMessage text="Loading map…" busy />,
 });
 
-const fmt = (v: number | null | undefined, d: number = 1): string => {
-  if (v === null || v === undefined || isNaN(Number(v))) return '—';
-  return Number(v).toFixed(d);
-};
+type Mode = 'public' | 'technical';
+type TechnicalSource = 'all' | 'rainfall' | 'gauges';
+type Freshness = 'all' | 'current' | 'stale';
+type ContextSourceState = 'idle' | 'loading' | 'success' | 'empty' | 'disabled' | 'error';
+
+const fmt = (value: number | null | undefined, digits = 1) =>
+  value === null || value === undefined || Number.isNaN(Number(value)) ? '—' : Number(value).toFixed(digits);
 
 export default function Dashboard() {
+  const [mode, setMode] = useState<Mode>('public');
   const [data, setData] = useState<MetStationsResponse | null>(null);
   const [selected, setSelected] = useState<MetStation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
   const [gauges, setGauges] = useState<IrrigationStation[]>([]);
+  const [technicalSource, setTechnicalSource] = useState<TechnicalSource>('all');
+  const [rainSourceState, setRainSourceState] = useState<ContextSourceState>('loading');
+  const [gaugeSourceState, setGaugeSourceState] = useState<ContextSourceState>('loading');
+  const [freshness, setFreshness] = useState<Freshness>('all');
+
+  const [location, setLocation] = useState<MapCoordinate | null>(null);
+  const [query, setQuery] = useState('');
+  const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [searchState, setSearchState] = useState<'idle' | 'loading' | 'disabled' | 'error'>('idle');
+  const [contextLoading, setContextLoading] = useState(false);
+  const [weatherState, setWeatherState] = useState<ContextSourceState>('idle');
+  const [elevationState, setElevationState] = useState<ContextSourceState>('idle');
+  const [facilitiesState, setFacilitiesState] = useState<ContextSourceState>('idle');
+  const [weather, setWeather] = useState<MapWeather | null>(null);
+  const [elevation, setElevation] = useState<ElevationContext | null>(null);
+  const [facilities, setFacilities] = useState<EmergencyFacility[]>([]);
+  const [destination, setDestination] = useState<EmergencyFacility | null>(null);
+  const [route, setRoute] = useState<CandidateRoute | null>(null);
+  const [routeState, setRouteState] = useState<'idle' | 'loading' | 'disabled' | 'error'>('idle');
+  const contextRequestRef = useRef(0);
+  const routeRequestRef = useRef(0);
+  const monitoringRequestRef = useRef(0);
 
   const fetchData = useCallback(async () => {
-    try {
-      setError(null);
-      const res = await api.getMetStations();
-      setData(res);
-      setLastFetched(new Date());
-      // River gauges are a secondary layer: a failure must not blank the rainfall map.
-      api.getIrrigationData()
-        .then((g) => setGauges(g?.stations ?? []))
-        .catch((e) => console.error('Failed to fetch river gauges:', e));
-    } catch (err) {
-      console.error('Failed to fetch Met Dept data:', err);
-      setError('Unable to load Met Dept data. Please try again in a moment.');
-    } finally {
-      setLoading(false);
+    const requestId = ++monitoringRequestRef.current;
+    setLoading(true);
+    setRainSourceState('loading');
+    setGaugeSourceState('loading');
+    const [rainResult, gaugeResult] = await Promise.allSettled([
+      api.getMetStations(),
+      api.getIrrigationData(),
+    ]);
+    if (requestId !== monitoringRequestRef.current) return;
+    if (rainResult.status === 'fulfilled') {
+      setData(rainResult.value);
+      setRainSourceState(rainResult.value.stations.length === 0 ? 'empty' : 'success');
+    } else {
+      setRainSourceState('error');
     }
+    if (gaugeResult.status === 'fulfilled') {
+      const nextGauges = gaugeResult.value?.stations ?? [];
+      setGauges(nextGauges);
+      setGaugeSourceState(nextGauges.length === 0 ? 'empty' : 'success');
+    } else {
+      setGaugeSourceState('error');
+    }
+    const failed = rainResult.status === 'rejected' || gaugeResult.status === 'rejected';
+    setError(failed ? 'One or more measured monitoring sources are temporarily unavailable.' : null);
+    if (rainResult.status === 'fulfilled' || gaugeResult.status === 'fulfilled') setLastFetched(new Date());
+    setLoading(false);
   }, []);
-
   useEffect(() => {
     fetchData();
-    // The Met Dept publishes a new bulletin every 3 hours; our backend
-    // refreshes every 15 min. Poll every 5 min so we see new data
-    // within ~minutes of release without burning rate budget.
     const interval = setInterval(fetchData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
+  const loadPublicContext = useCallback(async (point: MapCoordinate) => {
+    const requestId = ++contextRequestRef.current;
+    routeRequestRef.current += 1;
+    setLocation(point);
+    setDestination(null);
+    setRoute(null);
+    setContextLoading(true);
+    setWeatherState('loading');
+    setElevationState('loading');
+    setFacilitiesState('loading');
+    const [weatherResult, elevationResult, facilityResult] = await Promise.allSettled([
+      api.getMapWeather(point.latitude, point.longitude),
+      api.getElevation(point.latitude, point.longitude),
+      api.getNearbyFacilities(point.latitude, point.longitude, 10, 4),
+    ]);
+    if (requestId !== contextRequestRef.current) return;
+    if (weatherResult.status === 'fulfilled') {
+      setWeather(weatherResult.value);
+      setWeatherState('success');
+    } else {
+      setWeather(null);
+      setWeatherState(isDisabledMapFeature(weatherResult.reason) ? 'disabled' : 'error');
+    }
+    if (elevationResult.status === 'fulfilled') {
+      setElevation(elevationResult.value);
+      setElevationState(elevationResult.value.elevation_m === null ? 'empty' : 'success');
+    } else {
+      setElevation(null);
+      setElevationState(isDisabledMapFeature(elevationResult.reason) ? 'disabled' : 'error');
+    }
+    if (facilityResult.status === 'fulfilled') {
+      const response = facilityResult.value;
+      const nextFacilities = [
+        ...(response.shelters ?? []),
+        ...(response.hospitals ?? []),
+        ...(response.police ?? []),
+        ...(response.fire_stations ?? []),
+      ];
+      setFacilities(nextFacilities);
+      setFacilitiesState(nextFacilities.length === 0 ? 'empty' : 'success');
+    } else {
+      setFacilities([]);
+      setFacilitiesState(isDisabledMapFeature(facilityResult.reason) ? 'disabled' : 'error');
+    }
+    setContextLoading(false);
+  }, []);
+
+  const searchPlaces = async (event: FormEvent) => {
+    event.preventDefault();
+    if (query.trim().length < 2) return;
+    setSearchState('loading');
+    try {
+      const results = await api.autocompletePlaces(query.trim());
+      setSuggestions(results);
+      setSearchState('idle');
+    } catch (err) {
+      setSuggestions([]);
+      setSearchState(isDisabledMapFeature(err) ? 'disabled' : 'error');
+    }
+  };
+
+  const choosePlace = async (place: PlaceSuggestion) => {
+    setSearchState('loading');
+    try {
+      const details = await api.getPlace(place.place_id);
+      setQuery(details.formatted_address ?? details.name ?? place.description);
+      setSuggestions([]);
+      setSearchState('idle');
+      await loadPublicContext(details);
+    } catch (err) {
+      setSearchState(isDisabledMapFeature(err) ? 'disabled' : 'error');
+    }
+  };
+
+  const requestRoute = async (facility: EmergencyFacility) => {
+    const requestId = ++routeRequestRef.current;
+    if (!location) return;
+    setDestination(facility);
+    setRoute(null);
+    setRouteState('loading');
+    try {
+      const candidate = await api.getCandidateRoute(location, { latitude: facility.lat, longitude: facility.lon });
+      if (requestId !== routeRequestRef.current) return;
+      setRoute(candidate);
+      setRouteState('idle');
+    } catch (err) {
+      if (requestId !== routeRequestRef.current) return;
+      setRouteState(isDisabledMapFeature(err) ? 'disabled' : 'error');
+    }
+  };
+
   const stations = data?.stations ?? [];
-  const summary = data?.summary;
+  const visibleStations = useMemo(() => {
+    if (technicalSource === 'gauges') return [];
+    if (freshness === 'all') return stations;
+    const now = Date.now();
+    return stations.filter((station) => {
+      const stale = now - new Date(station.report_time_utc).getTime() > 4 * 60 * 60 * 1000;
+      return freshness === 'stale' ? stale : !stale;
+    });
+  }, [freshness, stations, technicalSource]);
+  const visibleGauges = useMemo(() => {
+    if (technicalSource === 'rainfall') return [];
+    if (freshness === 'all') return gauges;
+    return gauges.filter((gauge) => (freshness === 'stale' ? gauge.stale : !gauge.stale));
+  }, [freshness, gauges, technicalSource]);
 
-  // Categorise stations for the legend strip.
-  const counts = stations.reduce(
-    (acc, s) => {
-      const mm = s.rainfall_since_830am_mm ?? 0;
-      if (mm >= 100) acc.veryHeavy++;
-      else if (mm >= 50) acc.heavy++;
-      else if (mm >= 25) acc.moderate++;
-      else if (mm >= 5) acc.light++;
-      else if (mm > 0) acc.trace++;
-      else acc.dry++;
-      return acc;
-    },
-    { veryHeavy: 0, heavy: 0, moderate: 0, light: 0, trace: 0, dry: 0 },
-  );
+  const exportVisible = () => {
+    const rows: string[][] = [['kind', 'name', 'latitude', 'longitude', 'observed_at', 'value', 'unit', 'source']];
+    visibleStations.forEach((station) => rows.push([
+      'rainfall_station', station.name, String(station.latitude), String(station.longitude), station.report_time_utc,
+      String(station.rainfall_since_830am_mm ?? ''), 'mm', 'Sri Lanka Department of Meteorology',
+    ]));
+    visibleGauges.forEach((gauge) => rows.push([
+      'river_gauge', gauge.station, String(gauge.lat ?? ''), String(gauge.lon ?? ''), gauge.observed_at,
+      String(gauge.water_level_m ?? ''), 'm', 'Irrigation Department of Sri Lanka',
+    ]));
+    const csv = rows.map((row) => row.map((cell) => `"${cell.replaceAll('"', '""')}"`).join(',')).join('\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `floodwatch-visible-measured-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
-  const reportTimeLocal = summary?.report_time_utc
-    ? new Date(summary.report_time_utc).toLocaleString('en-LK', {
-        timeZone: 'Asia/Colombo',
-        hour: '2-digit',
-        minute: '2-digit',
-        day: 'numeric',
-        month: 'short',
-      })
+  const selectedWeather = (weather?.weather && typeof weather.weather === 'object' ? weather.weather : weather) as Record<string, unknown> | null;
+  const reportTime = data?.summary?.report_time_utc
+    ? new Date(data.summary.report_time_utc).toLocaleString('en-LK', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
     : null;
-
-  const onAlert = gauges.filter((g) => g.status === 'alert' || g.status === 'minor' || g.status === 'major').length;
-  const updated = lastFetched?.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit' });
 
   return (
     <div className={ui.page}>
-      {/* Header strip */}
-      <div className="bg-slate-800 border-b border-slate-700">
-        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4 lg:py-2">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className={`${ui.h1} flex items-center gap-2`}>
-                <span>🌧️</span>
-                <span>Rainfall &amp; rivers now</span>
-              </h1>
-              {/* Wide screens: hidden to give the map the height; the map credits name the same sources. */}
-              <p className={`${ui.intro} mt-0.5 lg:hidden`}>
-                Rainfall measured at {summary?.station_count ?? 0} stations of the{' '}
-                <a
-                  href="https://meteo.gov.lk"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={ui.link}
-                >
-                  Sri Lanka Department of Meteorology
-                </a>
-                {gauges.length > 0 && <>, and water levels at {gauges.length} Irrigation Department river gauges</>}.
-                {reportTimeLocal && (
-                  <span className="text-slate-400"> &middot; report {reportTimeLocal}</span>
-                )}
-              </p>
+      <header className="bg-slate-800 border-b border-slate-700">
+        <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-3 sm:py-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h1 className={ui.h1}>FloodWatch map</h1>
+              <p className={`${ui.intro} mt-1`}>{mode === 'public' ? 'Plan with model context and clearly labelled candidate facilities.' : 'Inspect measured rainfall and river-gauge observations.'}</p>
             </div>
-            <div className="flex flex-wrap gap-1.5 text-[11px]">
-              <Chip n={counts.veryHeavy} label="≥100mm" color="bg-red-600/20 text-red-300 border-red-700/50" dot="bg-red-600" />
-              <Chip n={counts.heavy} label="50-99mm" color="bg-orange-600/20 text-orange-300 border-orange-700/50" dot="bg-orange-500" />
-              <Chip n={counts.moderate} label="25-49mm" color="bg-yellow-600/20 text-yellow-300 border-yellow-700/50" dot="bg-yellow-500" />
-              <Chip n={counts.light} label="5-24mm" color="bg-blue-600/20 text-blue-300 border-blue-700/50" dot="bg-blue-500" />
-              <Chip n={counts.trace + counts.dry} label="0-5mm" color="bg-slate-700/40 text-slate-300 border-slate-600/50" dot="bg-slate-400" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className={`max-w-screen-2xl ${ui.container} lg:!pt-4 space-y-4`}>
-      {/* Sri Lanka is tall: on wide screens the map takes full height on the left and news sits beside it. */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-      <div className={`relative ${ui.card} overflow-hidden`}>
-        <div className="h-[max(360px,55vh)] sm:h-[clamp(420px,60vh,640px)] lg:h-[max(480px,calc(100dvh-10.5rem))]">
-          {loading && stations.length === 0 ? (
-            <div className="h-full w-full bg-slate-900 flex items-center justify-center">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-10 h-10 border-2 border-blue-700/50 border-t-blue-600 rounded-full animate-spin" />
-                <span className="text-sm text-slate-400">Loading measured rainfall...</span>
-              </div>
-            </div>
-          ) : stations.length === 0 ? (
-            <div className="h-full w-full bg-slate-900 flex items-center justify-center px-4">
-              <div className="text-center max-w-md">
-                <div className="text-2xl mb-2">📡</div>
-                <div className="font-semibold text-slate-200">No Met Department data available right now</div>
-                <div className="text-sm text-slate-400 mt-1">
-                  We only publish measured ground-gauge data. The upstream bulletin will refresh shortly.
-                </div>
-                {error && (
-                  <div className="mt-3 text-xs text-yellow-200 bg-yellow-900/40 border border-yellow-700/50 rounded p-2">
-                    {error}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <MetStationsMap
-              stations={stations}
-              selectedWmoId={selected?.wmo_id ?? null}
-              onStationSelect={setSelected}
-              gauges={gauges}
-            />
-          )}
-        </div>
-
-        {/* Floating details card for the selected station */}
-        {selected && (
-          <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-3 sm:bottom-3 sm:max-w-sm z-10">
-            <div className="bg-slate-800 rounded-xl shadow-2xl border border-slate-700 p-3 sm:p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="font-semibold text-white truncate">{selected.name}</div>
-                  <div className="text-[11px] text-slate-400 truncate">
-                    {selected.district} &middot; WMO {selected.wmo_id}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSelected(null)}
-                  className="text-slate-400 hover:text-slate-200 transition-colors flex-shrink-0"
-                  aria-label="Close"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+            <div role="group" aria-label="Map mode" className="grid grid-cols-2 gap-1 rounded-xl bg-slate-900 p-1">
+              {(['public', 'technical'] as const).map((value) => (
+                <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)} className={`${mode === value ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-700'} focus-ring min-h-[44px] rounded-lg px-4 text-sm font-semibold capitalize`}>
+                  {value === 'public' ? 'Public evacuation' : 'Technical monitoring'}
                 </button>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                <Stat label="Since 08:30" value={`${fmt(selected.rainfall_since_830am_mm)} mm`} highlight />
-                <Stat label="Last 3h" value={`${fmt(selected.rainfall_3h_mm)} mm`} />
-                <Stat
-                  label="Temperature"
-                  value={selected.temperature_c !== null ? `${fmt(selected.temperature_c)}°C` : '—'}
-                />
-                <Stat
-                  label="Humidity"
-                  value={
-                    selected.relative_humidity_pct !== null
-                      ? `${selected.relative_humidity_pct}%`
-                      : '—'
-                  }
-                />
-              </div>
-              {selected.weather_type && (
-                <div className="mt-3 text-[11px] text-slate-300">
-                  Conditions: <span className="font-medium text-slate-100">{selected.weather_type}</span>
-                </div>
-              )}
+              ))}
             </div>
           </div>
+        </div>
+      </header>
+
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-4 space-y-4">
+        {mode === 'public' ? (
+          <section className="space-y-4" aria-labelledby="public-map-heading">
+            <div className="rounded-xl border border-amber-600/60 bg-amber-950/50 p-3 text-sm text-amber-100" role="note">
+              <strong>Road safety:</strong> Candidate routes may be flooded, blocked, or outdated. Never enter floodwater. Follow official evacuation orders and local emergency services.
+            </div>
+            <div className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
+              <aside className={`${ui.card} ${ui.cardPad} space-y-4`}>
+                <div>
+                  <h2 id="public-map-heading" className={ui.h2}>Choose a location</h2>
+                  <p className={`${ui.meta} mt-1`}>Search when available, click a point, or pan the map and choose “Use map centre”.</p>
+                </div>
+                <form onSubmit={searchPlaces} className="space-y-2">
+                  <label htmlFor="place-search" className="block text-sm font-medium text-slate-200">Place search</label>
+                  <div className="flex gap-2">
+                    <input id="place-search" value={query} onChange={(event) => setQuery(event.target.value)} autoComplete="off" className="focus-ring min-h-[44px] min-w-0 flex-1 rounded-lg border border-slate-600 bg-slate-900 px-3 text-sm text-white" placeholder="Town or address" />
+                    <button type="submit" disabled={searchState === 'loading' || query.trim().length < 2} className="focus-ring min-h-[44px] rounded-lg bg-cyan-700 px-4 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">{searchState === 'loading' ? 'Searching…' : 'Search'}</button>
+                  </div>
+                  {searchState === 'disabled' && <p className="text-xs text-amber-300" role="status">Place search is unavailable because the server integration is not configured. Select the map instead.</p>}
+                  {searchState === 'error' && <p className="text-xs text-red-300" role="alert">Place search failed. Select the map or try again.</p>}
+                </form>
+                {suggestions.length > 0 && (
+                  <ul aria-label="Place suggestions" className="divide-y divide-slate-700 rounded-lg border border-slate-700">
+                    {suggestions.map((place) => <li key={place.place_id}><button type="button" onClick={() => choosePlace(place)} className="focus-ring min-h-[44px] w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700">{place.description}</button></li>)}
+                  </ul>
+                )}
+                {location ? (
+                  <div className="space-y-3" aria-live="polite">
+                    <div className={`${ui.inset} p-3`}>
+                      <div className="text-xs font-semibold uppercase tracking-wide text-cyan-300">Selected location</div>
+                      <div className="mt-1 font-mono text-sm">{location.latitude.toFixed(5)}, {location.longitude.toFixed(5)}</div>
+                    </div>
+                    <div className="min-h-[116px]" aria-busy={contextLoading}>
+                      {contextLoading ? (
+                        <div className="grid grid-cols-2 gap-2" role="status">
+                          <ContextStat label="24h model rain" value="Loading…" source="Open-Meteo model" />
+                          <ContextStat label="Elevation" value="Loading…" source="Elevation service" />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          <ContextStat label="24h model rain" value={weatherState === 'success' ? `${fmt(Number(selectedWeather?.rainfall_24h_mm))} mm` : sourceStateLabel(weatherState)} source="Open-Meteo model" />
+                          <ContextStat label="Elevation" value={elevationState === 'success' ? `${fmt(elevation?.elevation_m)} m` : sourceStateLabel(elevationState)} source={elevation?.source ?? 'Elevation service'} />
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">Nearby facility candidates</h3>
+                      <p className="mt-1 text-xs text-amber-300">Unverified OpenStreetMap data. Confirm availability before travel.</p>
+                    </div>
+                    {facilitiesState === 'error' || facilitiesState === 'disabled' ? (
+                      <p className={facilitiesState === 'disabled' ? 'text-xs text-amber-300' : 'text-xs text-red-300'} role={facilitiesState === 'error' ? 'alert' : 'status'}>
+                        Nearby facilities are {facilitiesState === 'disabled' ? 'not configured' : 'temporarily unavailable'}.
+                      </p>
+                    ) : facilitiesState === 'empty' ? (
+                      <p className={ui.meta} role="status">No nearby facility candidates were returned for this point.</p>
+                    ) : facilities.length > 0 ? (
+                      <ul className="max-h-64 space-y-2 overflow-y-auto">
+                        {facilities.map((facility) => (
+                          <li key={`${facility.type}-${facility.id}`} className={`${ui.inset} p-3`}>
+                            <div className="text-sm font-medium text-white">{facility.name}</div>
+                            <div className="text-xs text-slate-400">{facility.label}{facility.distance_km !== undefined ? ` · ${facility.distance_km.toFixed(1)} km` : ''}</div>
+                            <button type="button" onClick={() => requestRoute(facility)} className="focus-ring mt-2 min-h-[44px] w-full rounded-lg border border-cyan-700 px-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-950">Show candidate route</button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {!contextLoading && [weatherState, elevationState, facilitiesState].some((state) => state === 'error') && (
+                      <button type="button" onClick={() => loadPublicContext(location)} className="focus-ring min-h-[44px] rounded-lg border border-cyan-700 px-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-950">Retry unavailable context</button>
+                    )}
+                    {routeState === 'loading' && <p className={ui.meta} role="status">Loading candidate route…</p>}
+                    {routeState === 'disabled' && <p className="text-xs text-amber-300" role="status">Candidate routing is unavailable because the server integration is not configured.</p>}
+                    {routeState === 'error' && destination && <p className="text-xs text-red-300" role="alert">A candidate route could not be loaded. <button type="button" onClick={() => requestRoute(destination)} className="focus-ring min-h-[44px] underline">Retry route</button></p>}
+                    {route && destination && <div className="rounded-lg border border-cyan-800 bg-cyan-950/40 p-3 text-xs text-cyan-100"><strong>Candidate route to {destination.name}</strong><p className="mt-1">{route.safety_disclaimer}</p><p className="mt-1 text-cyan-300">Source: {route.source}</p></div>}
+                  </div>
+                ) : <p className={ui.meta}>No location selected. Search, click the map, or use the “Use map centre” control.</p>}
+              </aside>
+              <div className={`${ui.card} relative h-[55vh] min-h-[420px] overflow-hidden lg:h-[calc(100dvh-13rem)]`}>
+                <MetStationsMap mode="public" stations={[]} selectedWmoId={null} onStationSelect={() => {}} selectedLocation={location} onLocationSelect={loadPublicContext} facilities={facilities} route={route} />
+              </div>
+            </div>
+          </section>
+        ) : (
+          <section className="space-y-4" aria-labelledby="technical-map-heading">
+            <div className={`${ui.card} ${ui.cardPad} flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between`}>
+              <div><h2 id="technical-map-heading" className={ui.h2}>Measured monitoring</h2><p className={`${ui.meta} mt-1`}>Sources and observation freshness are explicit. Optional model overlays remain labelled in the map layer control.</p></div>
+              <div className="flex flex-wrap gap-3">
+                <FilterGroup label="Source" value={technicalSource} values={[['all', 'All measured'], ['rainfall', 'Rain stations'], ['gauges', 'River gauges']]} onChange={setTechnicalSource} />
+                <FilterGroup label="Freshness" value={freshness} values={[['all', 'All'], ['current', 'Current'], ['stale', 'Stale']]} onChange={setFreshness} />
+                <button type="button" onClick={exportVisible} disabled={visibleStations.length + visibleGauges.length === 0} className="focus-ring min-h-[44px] self-end rounded-lg bg-cyan-700 px-4 text-sm font-semibold text-white disabled:opacity-50">Export visible measured CSV</button>
+              </div>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+              <div className={`${ui.card} relative h-[max(420px,60vh)] overflow-hidden lg:h-[max(500px,calc(100dvh-12rem))]`}>
+                {loading && stations.length === 0 ? (
+                  <MapMessage text="Loading measured observations…" busy />
+                ) : error && stations.length === 0 && gauges.length === 0 ? (
+                  <MapMessage text={error} kind="error" actionLabel="Retry measured data" onAction={fetchData} />
+                ) : stations.length === 0 && gauges.length === 0 ? (
+                  <MapMessage text="No measured observations are available yet." kind="empty" actionLabel="Check again" onAction={fetchData} />
+                ) : (
+                  <MetStationsMap mode="technical" stations={visibleStations} selectedWmoId={selected?.wmo_id ?? null} onStationSelect={setSelected} gauges={visibleGauges} />
+                )}
+                {selected && <StationCard station={selected} onClose={() => setSelected(null)} />}
+              </div>
+              <div className="space-y-4 lg:max-h-[max(500px,calc(100dvh-12rem))] lg:overflow-y-auto">
+                <div className={`${ui.card} ${ui.cardPad} space-y-2 text-sm text-slate-300`}>
+                  <div><strong className="text-white">{visibleStations.length}</strong> measured rain stations · <strong className="text-white">{visibleGauges.length}</strong> measured river gauges</div>
+                  <div>Rainfall source: Sri Lanka Department of Meteorology {rainSourceState === 'error' ? '· temporarily unavailable' : reportTime ? `· report ${reportTime}` : rainSourceState === 'empty' ? '· no observations returned' : '· report time unavailable'}</div>
+                  <div>Gauge source: Irrigation Department of Sri Lanka · {gaugeSourceState === 'error' ? 'temporarily unavailable' : gaugeSourceState === 'empty' ? 'no observations returned' : `${visibleGauges.filter((gauge) => gauge.stale).length} stale visible`}</div>
+                  {lastFetched && <div>Interface refreshed {lastFetched.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit' })}</div>}
+                  {error && <div className="space-y-2" role="alert"><p className="text-red-300">{error}</p><button type="button" onClick={fetchData} className="focus-ring min-h-[44px] rounded-lg border border-cyan-700 px-3 font-semibold text-cyan-200 hover:bg-cyan-950">Retry unavailable sources</button></div>}
+                </div>
+                <LatestNews />
+              </div>
+            </div>
+            <BasinStatusTable stations={visibleGauges} />
+            <RainContext />
+            <ExternalFloodSources />
+            <p className={ui.muted}>CSV export includes only the currently visible measured Sri Lanka Department of Meteorology stations and Irrigation Department gauges. It never exports model, route, place, facility, or Google Flood Forecasting data.</p>
+          </section>
         )}
       </div>
-
-      <div className="space-y-4 lg:h-[max(480px,calc(100dvh-10.5rem))] lg:overflow-y-auto">
-      {/* Status strip */}
-      <div className={`${ui.card} ${ui.cardPad} flex flex-wrap items-center gap-x-4 gap-y-1 ${ui.body}`}>
-        <span>
-          <span className="font-semibold text-white">{gauges.length} gauges</span>
-          {gauges.length > 0 && (
-            <>
-              {' · '}
-              {onAlert === 0 ? (
-                <span className="text-emerald-300">all normal</span>
-              ) : (
-                <span className="text-amber-300">{onAlert} on alert</span>
-              )}
-            </>
-          )}
-        </span>
-        {reportTimeLocal && <span>Met rainfall {reportTimeLocal}</span>}
-        {updated && <span className="sm:ml-auto">Updated {updated}</span>}
-      </div>
-
-      <LatestNews />
-      </div>
-      </div>
-
-      <BasinStatusTable stations={gauges} />
-
-      <RainContext />
-
-      <p className={ui.muted}>
-        Measured rainfall from 24 Sri Lanka Department of Meteorology stations. The optional Rain forecast layer
-        is a model (Open-Meteo), not measured.
-      </p>
-      </div>
     </div>
   );
 }
 
-// --- small UI primitives -----------------------------------------------
-
-function Chip({
-  n,
-  label,
-  color,
-  dot,
-}: {
-  n: number;
-  label: string;
-  color: string;
-  dot: string;
-}) {
+function MapMessage({ text, busy = false, kind = 'empty', actionLabel, onAction }: { text: string; busy?: boolean; kind?: 'empty' | 'error'; actionLabel?: string; onAction?: () => void }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded border ${color}`}>
-      <span className={`w-2 h-2 rounded-full ${dot}`} />
-      <span className="font-semibold">{n}</span>
-      <span className="hidden sm:inline">{label}</span>
-    </span>
+    <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-slate-900 px-4 text-center text-sm text-slate-300" role={busy || kind === 'empty' ? 'status' : 'alert'} aria-busy={busy || undefined}>
+      <p>{text}</p>
+      {actionLabel && onAction && <button type="button" onClick={onAction} className="focus-ring min-h-[44px] rounded-lg border border-cyan-700 px-4 font-semibold text-cyan-200 hover:bg-cyan-950">{actionLabel}</button>}
+    </div>
   );
 }
 
-function Stat({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-lg p-2 border ${
-        highlight ? 'bg-slate-900 border-slate-600' : 'bg-slate-800 border-slate-700'
-      }`}
-    >
-      <div className="text-[10px] text-slate-400">{label}</div>
-      <div className="font-mono font-semibold text-white">{value}</div>
-    </div>
-  );
+function sourceStateLabel(state: ContextSourceState) {
+  if (state === 'disabled') return 'Not configured';
+  if (state === 'empty') return 'No data';
+  return 'Temporarily unavailable';
+}
+
+function ContextStat({ label, value, source }: { label: string; value: string; source: string }) {
+  return <div className={`${ui.inset} p-3`}><div className="text-xs text-slate-400">{label}</div><div className="font-mono font-semibold text-white">{value}</div><div className="mt-1 text-[10px] text-slate-400">{source}</div></div>;
+}
+
+function FilterGroup<T extends string>({ label, value, values, onChange }: { label: string; value: T; values: readonly (readonly [T, string])[]; onChange: (value: T) => void }) {
+  return <fieldset><legend className="mb-1 text-xs font-medium text-slate-300">{label}</legend><div className="flex flex-wrap gap-1" role="group">{values.map(([key, text]) => <button key={key} type="button" aria-pressed={value === key} onClick={() => onChange(key)} className={`${value === key ? 'bg-cyan-800 text-white' : 'bg-slate-900 text-slate-300 hover:bg-slate-700'} focus-ring min-h-[44px] min-w-[44px] rounded-lg border border-slate-700 px-3 text-xs font-medium`}>{text}</button>)}</div></fieldset>;
+}
+
+function StationCard({ station, onClose }: { station: MetStation; onClose: () => void }) {
+  return <div className="absolute inset-x-3 bottom-3 z-10 rounded-xl border border-slate-700 bg-slate-800 p-3 shadow-2xl sm:left-auto sm:max-w-sm"><div className="flex items-start justify-between gap-3"><div><div className="font-semibold text-white">{station.name}</div><div className="text-xs text-slate-400">{station.district} · measured · WMO {station.wmo_id}</div></div><button type="button" onClick={onClose} className="focus-ring min-h-[44px] min-w-[44px] rounded-lg text-slate-300 hover:bg-slate-700" aria-label="Close station details">×</button></div><dl className="mt-2 grid grid-cols-2 gap-2 text-xs"><div><dt className="text-slate-400">Since 08:30</dt><dd className="font-mono text-white">{fmt(station.rainfall_since_830am_mm)} mm</dd></div><div><dt className="text-slate-400">Last 3h</dt><dd className="font-mono text-white">{fmt(station.rainfall_3h_mm)} mm</dd></div></dl></div>;
 }

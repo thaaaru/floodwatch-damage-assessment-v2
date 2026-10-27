@@ -2,10 +2,10 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { IrrigationStation, MetStation } from '@/lib/api';
+import type { CandidateRoute, EmergencyFacility, IrrigationStation, MapCoordinate, MetStation } from '@/lib/api';
 import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 import { createForecastLayer } from '@/lib/forecast';
 import { createRainNormalLayer } from '@/lib/rainNormal';
@@ -14,19 +14,24 @@ import {
 } from '@/lib/gauges';
 
 interface MetStationsMapProps {
+  mode: 'public' | 'technical';
   stations: MetStation[];
   selectedWmoId: number | null;
   onStationSelect: (s: MetStation | null) => void;
-  /** Irrigation Dept river gauges (layer on by default; basins layer off). */
   gauges?: IrrigationStation[];
+  selectedLocation?: MapCoordinate | null;
+  onLocationSelect?: (location: MapCoordinate) => void;
+  facilities?: EmergencyFacility[];
+  route?: CandidateRoute | null;
 }
 
 /**
- * Map of Sri Lanka Department of Meteorology measured rainfall stations.
- *
- * Intentionally minimal: bright basemap, one rain-drop marker per WMO
- * station, label always showing measured mm. No modeled / forecast data.
+ * Dual-purpose map: public location context or technical measured monitoring.
+ * Model overlays stay optional and visibly labelled.
  */
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
+}
 
 // Color scale based on TODAY's accumulated rainfall (since 08:30 local).
 // Thresholds match Met Dept's daily-bulletin alert tiers.
@@ -154,9 +159,8 @@ function addFullscreenControl(map: L.Map) {
   const Control = L.Control.extend({
     onAdd() {
       const bar = L.DomUtil.create('div', 'leaflet-bar');
-      const btn = L.DomUtil.create('a', 'fw-fullscreen', bar) as HTMLAnchorElement;
-      btn.href = '#';
-      btn.setAttribute('role', 'button');
+      const btn = L.DomUtil.create('button', 'fw-fullscreen', bar) as HTMLButtonElement;
+      btn.type = 'button';
       const label = () => {
         const on = document.fullscreenElement === el;
         btn.title = on ? 'Exit full screen' : 'View larger map';
@@ -165,8 +169,7 @@ function addFullscreenControl(map: L.Map) {
       };
       label();
       L.DomEvent.disableClickPropagation(bar);
-      L.DomEvent.on(btn, 'click', (e) => {
-        L.DomEvent.preventDefault(e);
+      L.DomEvent.on(btn, 'click', () => {
         if (document.fullscreenElement === el) document.exitFullscreen();
         else el.requestFullscreen().catch(() => {});
       });
@@ -183,21 +186,55 @@ function addFullscreenControl(map: L.Map) {
   new Control({ position: 'topright' }).addTo(map);
 }
 
+function createLocationControl(map: L.Map, onSelect: (location: MapCoordinate) => void): L.Control {
+  const Control = L.Control.extend({
+    onAdd() {
+      const bar = L.DomUtil.create('div', 'leaflet-bar');
+      const button = L.DomUtil.create('button', 'fw-use-centre', bar) as HTMLButtonElement;
+      button.type = 'button';
+      button.textContent = 'Use map centre';
+      button.setAttribute('aria-label', 'Use map centre as selected location');
+      L.DomEvent.disableClickPropagation(bar);
+      L.DomEvent.on(button, 'click', () => {
+        const centre = map.getCenter();
+        onSelect({ latitude: centre.lat, longitude: centre.lng });
+      });
+      return bar;
+    },
+  });
+  return new Control({ position: 'topright' });
+}
+
+const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export default function MetStationsMap({
+  mode,
   stations,
   selectedWmoId,
   onStationSelect,
   gauges = [],
+  selectedLocation = null,
+  onLocationSelect,
+  facilities = [],
+  route = null,
 }: MetStationsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const controlRef = useRef<L.Control.Layers | null>(null);
+  const locationControlRef = useRef<L.Control | null>(null);
   const gaugeLayerRef = useRef<L.LayerGroup | null>(null);
   const restyleWaterRef = useRef<(() => void) | null>(null);
   const gaugeKeyRef = useRef('');
   const gaugesRef = useRef<IrrigationStation[]>(gauges);
+  const publicLayerRef = useRef<L.LayerGroup | null>(null);
+  const routeLayerRef = useRef<L.Polyline | null>(null);
+  const locationSelectRef = useRef(onLocationSelect);
+  locationSelectRef.current = onLocationSelect;
   gaugesRef.current = gauges;
+  const [basinError, setBasinError] = useState(false);
+  const [evidenceKeyOpen, setEvidenceKeyOpen] = useState(false);
+  const retryBasinsRef = useRef<(() => void) | null>(null);
 
   // --- one-time map init -------------------------------------------------
   useEffect(() => {
@@ -213,7 +250,13 @@ export default function MetStationsMap({
       zoomSnap: 0.25, // lets fitBounds fill the box instead of rounding down a whole level
     });
     const wheelOn = () => map.scrollWheelZoom.enable();
+    map.on('layeradd', ({ layer }) => {
+      if (layer instanceof L.Path) layer.getElement()?.setAttribute('tabindex', '-1');
+    });
     map.on('click focus', wheelOn);
+    map.on('click', (event: L.LeafletMouseEvent) => {
+      locationSelectRef.current?.({ latitude: event.latlng.lat, longitude: event.latlng.lng });
+    });
     map.on('mouseout blur', () => map.scrollWheelZoom.disable());
     // Fit the whole island whatever the box size.
     map.fitBounds([[5.9, 79.6], [9.85, 81.9]], { paddingBottomRight: [0, 48] }); // keep the south clear of the attribution
@@ -228,36 +271,60 @@ export default function MetStationsMap({
       )
       .addTo(map);
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
-    addSatelliteOption(L, controlRef.current);
-    // Open-Meteo rain forecast for the ~100 weather locations, off by default.
-    controlRef.current.addOverlay(createForecastLayer(map), 'Rain forecast');
-    // ERA5 month-to-date vs the 1996-2025 normal, off by default.
-    controlRef.current.addOverlay(createRainNormalLayer(map), 'Rainfall vs normal (this month)');
+    addSatelliteOption(L, controlRef.current, 'Context — Satellite (Esri)');
+    // Model context is deliberately optional and off by default.
+    controlRef.current.addOverlay(createForecastLayer(map), 'Modelled — Rain forecast (Open-Meteo)');
+    controlRef.current.addOverlay(createRainNormalLayer(map), 'Modelled — Rainfall vs normal (ERA5)');
     mapRef.current = map;
     // Basins + rivers: on by default; only flooding basins are filled, with a legend.
-    createWaterLayer(map, () => gaugesRef.current, 'alertsOnly')
-      .then(({ layer, restyle, setFillMode }) => {
-        if (mapRef.current !== map) return;
-        restyleWaterRef.current = restyle;
-        const legend = createBasinLegend();
-        const colourAll = createFillModeSwitch(setFillMode);
-        layer.on('add', () => { colourAll.addTo(map); legend.addTo(map); });
-        layer.on('remove', () => { colourAll.remove(); legend.remove(); });
-        layer.addTo(map);
-        controlRef.current?.addOverlay(layer, 'River basins &amp; rivers');
-      })
-      .catch((e) => console.error('Failed to load river basins/rivers:', e));
+    const loadBasins = () => {
+      setBasinError(false);
+      createWaterLayer(map, () => gaugesRef.current, 'alertsOnly')
+        .then(({ layer, restyle, setFillMode }) => {
+          if (mapRef.current !== map) return;
+          restyleWaterRef.current = restyle;
+          const legend = createBasinLegend();
+          const colourAll = createFillModeSwitch(setFillMode);
+          layer.on('add', () => { colourAll.addTo(map); legend.addTo(map); });
+          layer.on('remove', () => { colourAll.remove(); legend.remove(); });
+          layer.addTo(map);
+          controlRef.current?.addOverlay(layer, 'Context — River basins &amp; rivers');
+        })
+        .catch((error) => {
+          console.error('Failed to load river basins/rivers:', error);
+          if (mapRef.current === map) setBasinError(true);
+        });
+    };
+    retryBasinsRef.current = loadBasins;
+    loadBasins();
     return () => {
+      retryBasinsRef.current = null;
       map.remove();
       mapRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    locationControlRef.current?.remove();
+    locationControlRef.current = null;
+    if (mode === 'public' && locationSelectRef.current) {
+      locationControlRef.current = createLocationControl(map, (location) => locationSelectRef.current?.(location));
+      locationControlRef.current.addTo(map);
+    }
+    return () => {
+      locationControlRef.current?.remove();
+      locationControlRef.current = null;
+    };
+  }, [mode]);
 
   // --- markers ----------------------------------------------------------
   useEffect(() => {
     if (!mapRef.current) return;
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
+    if (mode !== 'technical') return;
 
     stations.forEach((s) => {
       const marker = L.marker([s.latitude, s.longitude], { icon: makeIcon(s) });
@@ -266,13 +333,14 @@ export default function MetStationsMap({
       marker.addTo(mapRef.current!);
       markersRef.current.push(marker);
     });
-  }, [stations, onStationSelect]);
+  }, [mode, stations, onStationSelect]);
 
   // --- river gauges (on by default) -------------------------------------
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const key = gaugesKey(gauges);
+    const visibleGauges = mode === 'technical' ? gauges : [];
+    const key = gaugesKey(visibleGauges);
     if (gaugeLayerRef.current && key === gaugeKeyRef.current) return;
     gaugeKeyRef.current = key;
     const wasOn = !gaugeLayerRef.current || map.hasLayer(gaugeLayerRef.current);
@@ -280,18 +348,60 @@ export default function MetStationsMap({
       controlRef.current?.removeLayer(gaugeLayerRef.current);
       gaugeLayerRef.current.remove();
     }
-    gaugeLayerRef.current = createGaugeLayer(gauges);
-    if (wasOn) gaugeLayerRef.current.addTo(map);
-    controlRef.current?.addOverlay(gaugeLayerRef.current, 'River gauges');
+    gaugeLayerRef.current = createGaugeLayer(visibleGauges);
+    if (wasOn && mode === 'technical') gaugeLayerRef.current.addTo(map);
+    if (mode === 'technical') {
+      controlRef.current?.addOverlay(gaugeLayerRef.current, 'Observed — Measured river gauges');
+    }
     restyleWaterRef.current?.();
-  }, [gauges]);
+  }, [mode, gauges]);
+
+  // --- public selection, unverified OSM candidates, and candidate route ---
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    publicLayerRef.current?.remove();
+    const layer = L.layerGroup();
+    publicLayerRef.current = layer;
+    if (mode !== 'public') return;
+    if (selectedLocation) {
+      L.circleMarker([selectedLocation.latitude, selectedLocation.longitude], {
+        radius: 9, color: '#0f172a', weight: 3, fillColor: '#38bdf8', fillOpacity: 1,
+      }).bindTooltip('Selected location').addTo(layer);
+    }
+    facilities.forEach((facility) => {
+      const name = escapeHtml(facility.name);
+      const label = escapeHtml(facility.label);
+      L.circleMarker([facility.lat, facility.lon], {
+        radius: 8, color: '#78350f', weight: 2, fillColor: '#fbbf24', fillOpacity: 0.95,
+      })
+        .bindPopup(`<strong>${name}</strong><br>${label}<br><em>Unverified OpenStreetMap candidate</em>`)
+        .addTo(layer);
+    });
+    layer.addTo(map);
+    if (selectedLocation) map.setView([selectedLocation.latitude, selectedLocation.longitude], 12, { animate: !prefersReducedMotion() });
+  }, [mode, selectedLocation, facilities]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    routeLayerRef.current?.remove();
+    routeLayerRef.current = null;
+    if (mode !== 'public' || !route?.polyline?.length) return;
+    const line = L.polyline(route.polyline.map((point) => [point.latitude, point.longitude]), {
+      color: '#0284c7', weight: 6, opacity: 0.9,
+    }).addTo(map);
+    routeLayerRef.current = line;
+    map.fitBounds(line.getBounds(), { padding: [32, 32], animate: !prefersReducedMotion() });
+  }, [mode, route]);
 
   // --- pan to selected station ------------------------------------------
   useEffect(() => {
     if (!mapRef.current || selectedWmoId === null) return;
     const s = stations.find((x) => x.wmo_id === selectedWmoId);
     if (s) {
-      mapRef.current.setView([s.latitude, s.longitude], 10, { animate: true, duration: 0.5 });
+      const animate = !prefersReducedMotion();
+      mapRef.current.setView([s.latitude, s.longitude], 10, { animate, duration: animate ? 0.5 : 0 });
     }
   }, [selectedWmoId, stations]);
 
@@ -309,11 +419,73 @@ export default function MetStationsMap({
         }
         .fw-fullscreen {
           font-size: 18px;
-          line-height: 30px;
           text-align: center;
         }
+        .fw-use-centre {
+          min-width: 44px;
+          min-height: 44px;
+          padding: 0 12px;
+          font: 600 12px/1.2 -apple-system, system-ui, sans-serif;
+          color: #0f172a;
+          white-space: nowrap;
+        }
       `}</style>
-      <div ref={containerRef} className="w-full h-full" />
+      <div
+        ref={containerRef}
+        className="w-full h-full"
+        role="region"
+        aria-label={mode === 'public'
+          ? 'Interactive flood map. Use arrow keys to pan, plus or minus to zoom, and the Use map centre button to select the current centre.'
+          : 'Interactive flood map. Use arrow keys to pan and plus or minus to zoom.'}
+      />
+      <section
+        className="absolute bottom-16 left-14 right-14 z-[999] mx-auto max-w-sm text-slate-100"
+        aria-label="Map evidence layers"
+      >
+        {evidenceKeyOpen && (
+          <div id="map-evidence-key" className="mb-2 rounded-xl border border-slate-600 bg-slate-950/95 p-3 shadow-xl backdrop-blur-sm">
+            <h2 className="text-sm font-semibold">Evidence on this map</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-300">Category shows how much confidence to place in each layer.</p>
+            <dl className="mt-2 space-y-2 text-xs leading-4">
+              <div>
+                <dt className="font-semibold text-sky-200">Observed <span className="font-normal text-slate-300">— {mode === 'technical' ? 'available now' : 'technical mode only'}</span></dt>
+                <dd className="text-slate-300">Rainfall and river gauges are direct measurements, but reports may be delayed.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-200">Detected <span className="font-normal text-slate-400">— unavailable</span></dt>
+                <dd className="text-slate-400">Satellite flood extent is not operational; no detected-flood layer is shown.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-violet-200">Modelled <span className="font-normal text-slate-300">— optional layers</span></dt>
+                <dd className="text-slate-300">Open-Meteo forecast and ERA5 rainfall-vs-normal are estimates, not observations.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-emerald-200">Context <span className="font-normal text-slate-300">— available now</span></dt>
+                <dd className="text-slate-300">Base map, rivers and basins provide reference geography, not proof of flooding.</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-amber-200">Planning <span className="font-normal text-slate-300">— {mode === 'public' ? 'shown when available' : 'public mode only'}</span></dt>
+                <dd className="text-slate-300">Selected places, unverified candidate facilities and candidate routes support decisions; verify locally.</dd>
+              </div>
+            </dl>
+          </div>
+        )}
+        <button
+          type="button"
+          className="focus-ring mx-auto flex min-h-[44px] items-center justify-center rounded-full border border-slate-600 bg-slate-950/95 px-4 text-sm font-semibold shadow-lg hover:bg-slate-800"
+          aria-expanded={evidenceKeyOpen}
+          aria-controls={evidenceKeyOpen ? 'map-evidence-key' : undefined}
+          onClick={() => setEvidenceKeyOpen((open) => !open)}
+        >
+          {evidenceKeyOpen ? 'Hide evidence key' : 'Show evidence key'}
+        </button>
+      </section>
+      {basinError && (
+        <div className="absolute inset-x-3 top-3 z-[1000] flex items-center justify-between gap-3 rounded-lg border border-amber-600 bg-amber-950/95 p-3 text-sm text-amber-100" role="status">
+          <span>River basin overlay is temporarily unavailable. The base map is still usable.</span>
+          <button type="button" onClick={() => retryBasinsRef.current?.()} className="focus-ring min-h-[44px] shrink-0 rounded-lg border border-amber-500 px-3 font-semibold hover:bg-amber-900">Retry overlay</button>
+        </div>
+      )}
     </>
   );
 }

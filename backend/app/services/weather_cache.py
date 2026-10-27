@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Optional
 import asyncio
 
+import httpx
+
 from .here_weather import here_weather_service, SRI_LANKA_LOCATIONS
 from .districts_service import get_all_districts
 from ..config import get_settings
@@ -21,6 +23,10 @@ logger = logging.getLogger(__name__)
 CACHE_DIR = Path(__file__).parent.parent.parent / "cache"
 CACHE_FILE = CACHE_DIR / "weather_data.json"
 CACHE_DURATION_MINUTES = 60  # Refresh every 60 minutes to reduce API calls
+# After a failed refresh, request-triggered (non-forced) refreshes wait this long.
+# Without it every page view on a stale cache queued another ~100-call sweep,
+# which kept the server IP permanently over Open-Meteo's rate limit (429).
+FAILURE_BACKOFF_MINUTES = 15
 
 # Weather source: "open_meteo" or "here"
 WEATHER_SOURCE = get_settings().weather_source.lower()
@@ -196,10 +202,15 @@ class WeatherCache:
             if not force and self.is_cache_valid():
                 logger.debug("Cache still valid, skipping refresh")
                 return True
+            if (not force and self._last_attempt_ok is False and self._last_attempt
+                    and datetime.now(timezone.utc) - self._last_attempt < timedelta(minutes=FAILURE_BACKOFF_MINUTES)):
+                logger.debug("Last refresh failed recently, backing off")
+                return False
 
             logger.info(f"Refreshing weather cache using {WEATHER_SOURCE}...")
             self._last_attempt = datetime.now(timezone.utc)
 
+            rate_limited = False
             try:
                 if WEATHER_SOURCE == "here":
                     new_cache = await self._fetch_here_weather()
@@ -224,19 +235,25 @@ class WeatherCache:
                                 "data": data,
                                 "fetched_at": datetime.now(timezone.utc).isoformat()
                             }
+                        except httpx.HTTPStatusError as e:
+                            if e.response.status_code == 429:
+                                # Rest of the sweep would 429 too and only extend the block.
+                                logger.error(f"Open-Meteo rate limit hit at {district['name']}, aborting sweep")
+                                rate_limited = True
+                                break
+                            logger.error(f"Failed to fetch weather for {district['name']}: {e}")
                         except Exception as e:
                             logger.error(f"Failed to fetch weather for {district['name']}: {e}")
-                        # Open-Meteo allows ~10k calls/day with no per-second
-                        # cap; 0.4s between calls gives ~150 req/min, well below
-                        # any practical limit and refreshes ~100 locations in
-                        # under a minute.
+                        # Open-Meteo free tier: 600/min, 5k/hour, 10k/day per IP.
+                        # 0.4s between calls refreshes ~100 locations in under a minute.
                         await asyncio.sleep(0.4)
 
                 if new_cache:
-                    self._cache = new_cache
+                    # Merge so a partial sweep doesn't drop districts it didn't reach.
+                    self._cache = {**self._cache, **new_cache}
                     self._last_update = datetime.now(timezone.utc)
                     self._save_cache_to_disk()
-                    self._last_attempt_ok = True
+                    self._last_attempt_ok = not rate_limited
                     logger.info(f"Weather cache refreshed: {len(new_cache)} locations updated via {WEATHER_SOURCE}")
                     return True
                 else:

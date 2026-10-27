@@ -110,7 +110,7 @@ async def get_met_stations():
     "report_time_utc" so the UI can display freshness.
     """
     stations = await met_department_service.get_stations()
-    summary = await met_department_service.get_summary()
+    summary = await met_department_service.get_summary(stations)
     return {
         "source": "Sri Lanka Department of Meteorology (https://meteo.gov.lk)",
         "source_type": "measured",

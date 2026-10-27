@@ -46,22 +46,26 @@ export default function StatusBanner() {
   if (delayed) {
     freshness = (
       <span className="font-semibold text-red-700">
-        ⚠ Data delayed{last && `, last updated ${colomboTime(last)}`}
+        Weather data delayed{last && <> · Last updated {colomboTime(last)}</>}
       </span>
     );
   } else if (!last) {
-    freshness = <span>Updating…</span>; // first load, before any successful fetch
+    freshness = <span>Checking weather data…</span>;
   } else {
-    freshness = <span>Updated {colomboTime(last)}</span>;
+    freshness = <span>Weather data · Last updated {colomboTime(last)}</span>;
   }
 
   const link = 'underline underline-offset-2 hover:text-amber-700';
   return (
-    <div role="note" className="bg-amber-100 text-amber-950 text-xs sm:text-sm px-4 py-1 text-center leading-snug">
-      <strong>Unofficial.</strong> For warnings follow the{' '}
-      <a href="https://www.dmc.gov.lk" target="_blank" rel="noopener noreferrer" className={link}>DMC</a> and the{' '}
-      <a href="https://meteo.gov.lk" target="_blank" rel="noopener noreferrer" className={link}>Met Department</a>{' '}
-      <span data-testid="data-last-updated" className="inline-block">· {freshness}</span>
+    <div role="note" className="bg-amber-100 text-amber-950 text-xs sm:text-sm px-4 py-1.5 leading-snug">
+      <div className="mx-auto flex max-w-screen-2xl flex-col items-center justify-between gap-x-6 gap-y-0.5 text-center sm:flex-row sm:text-left">
+        <span>
+          <strong>Unofficial.</strong> For warnings follow the{' '}
+          <a href="https://www.dmc.gov.lk" target="_blank" rel="noopener noreferrer" className={link}>DMC</a> and the{' '}
+          <a href="https://meteo.gov.lk" target="_blank" rel="noopener noreferrer" className={link}>Met Department</a>
+        </span>
+        <span data-testid="data-last-updated" className="shrink-0">{freshness}</span>
+      </div>
     </div>
   );
 }

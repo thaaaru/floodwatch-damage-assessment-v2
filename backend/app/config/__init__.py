@@ -38,6 +38,9 @@ class Settings(BaseSettings):
     tomtom_api_key: str = ""
     here_api_key: str = ""
     google_floods_api_key: str = ""
+    # Server-only key for Maps Platform web services. Keep separate from
+    # waitlist-gated Google Flood Forecasting and from any browser key.
+    google_maps_api_key: str = ""
     # ReliefWeb API v2 requires a pre-approved appname; empty = source disabled.
     reliefweb_appname: str = ""
 
@@ -53,6 +56,9 @@ class Settings(BaseSettings):
     debug: bool = False
     # Comma-separated list of additional CORS origins to whitelist (e.g. preview deploys, staging hosts)
     extra_cors_origins: str = ""
+    # Only immediate peers in these CIDRs may supply X-Forwarded-For.
+    trusted_proxy_cidrs: str = ""
+    map_context_client_daily_budget: int = 50
 
     # Region Configuration
     current_region: str = "srilanka"
