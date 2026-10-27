@@ -45,7 +45,7 @@ export function ActiveWarnings({ items }: { items: NewsItem[] | null }) {
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`focus-ring flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-4 py-2 text-sm hover:underline ${
+            className={`focus-ring flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-1.5 text-sm hover:underline ${
               critical ? 'border-red-500 bg-red-950/70 text-red-50' : 'border-amber-500 bg-amber-950/60 text-amber-50'
             }`}
           >

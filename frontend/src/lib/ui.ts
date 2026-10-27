@@ -4,8 +4,8 @@
 export const ui = {
   page: 'min-h-screen bg-slate-900 text-white',
   container: 'mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8',
-  card: 'bg-slate-800 rounded-2xl shadow-lg border border-slate-700',
-  cardPad: 'p-3 sm:p-4',
+  card: 'bg-slate-800 rounded-lg shadow border border-slate-700',
+  cardPad: 'p-2.5 sm:p-3',
   // Inner surface on a card (tiles, stat boxes, selected-item panels)
   inset: 'bg-slate-900 rounded-lg border border-slate-700',
   h1: 'text-lg sm:text-xl md:text-2xl font-bold',

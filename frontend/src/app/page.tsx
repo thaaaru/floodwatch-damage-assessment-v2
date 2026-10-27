@@ -251,7 +251,7 @@ export default function Dashboard() {
               <h1 className={ui.h1}>FloodWatch map</h1>
               <p className={`${ui.intro} mt-1 hidden sm:block`}>{mode === 'public' ? 'Plan with model context and clearly labelled candidate facilities.' : 'Inspect measured rainfall and river-gauge observations.'}</p>
             </div>
-            <div role="group" aria-label="Map mode" className="grid grid-cols-2 gap-1 rounded-xl bg-slate-900 p-1">
+            <div role="group" aria-label="Map mode" className="grid grid-cols-2 gap-1 rounded-lg bg-slate-900 p-1">
               {(['public', 'technical'] as const).map((value) => (
                 <button key={value} type="button" aria-pressed={mode === value} onClick={() => setMode(value)} className={`${mode === value ? 'bg-cyan-700 text-white' : 'text-slate-300 hover:bg-slate-700'} focus-ring min-h-[44px] rounded-lg px-4 text-sm font-semibold capitalize`}>
                   {value === 'public' ? 'Public evacuation' : 'Technical monitoring'}
@@ -262,15 +262,15 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-4 space-y-4">
+      <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-3 space-y-3">
         <ActiveWarnings items={news} />
         {mode === 'public' ? (
-          <section className="space-y-4" aria-labelledby="public-map-heading">
-            <div className="rounded-xl border border-amber-600/60 bg-amber-950/50 p-3 text-sm text-amber-100" role="note">
+          <section className="space-y-3" aria-labelledby="public-map-heading">
+            <div className="rounded-lg border border-amber-600/60 bg-amber-950/50 p-3 text-sm text-amber-100" role="note">
               <strong>Road safety:</strong> Candidate routes may be flooded, blocked, or outdated. Never enter floodwater. Follow official evacuation orders and local emergency services.
             </div>
-            <div className="grid gap-4 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
-              <aside className={`${ui.card} ${ui.cardPad} space-y-4`}>
+            <div className="grid gap-3 lg:grid-cols-[minmax(280px,360px)_minmax(0,1fr)]">
+              <aside className={`${ui.card} ${ui.cardPad} space-y-3`}>
                 <div>
                   <h2 id="public-map-heading" className={ui.h2}>Choose a location</h2>
                   <p className={`${ui.meta} mt-1`}>Search when available, click a point, or pan the map and choose “Use map centre”.</p>
@@ -355,9 +355,9 @@ export default function Dashboard() {
             </div>
           </section>
         ) : (
-          <section className="flex flex-col gap-4" aria-labelledby="technical-map-heading">
+          <section className="flex flex-col gap-3" aria-labelledby="technical-map-heading">
             {sourceOutage && (
-              <div className="order-1 rounded-xl border border-amber-500 bg-amber-950/60 p-3 text-sm text-amber-50 lg:order-none" role="alert">
+              <div className="order-1 rounded-lg border border-amber-500 bg-amber-950/60 p-3 text-sm text-amber-50 lg:order-none" role="alert">
                 <strong>{sourceOutage}</strong> Missing markers do not mean no rain or normal rivers. Check the DMC and Met Department, and the aggregator sources further down.
               </div>
             )}
@@ -369,7 +369,7 @@ export default function Dashboard() {
                 <button type="button" onClick={exportVisible} disabled={visibleStations.length + visibleGauges.length === 0} className="focus-ring min-h-[44px] self-end rounded-lg border border-cyan-700 px-4 text-sm font-semibold text-cyan-200 hover:bg-cyan-950 disabled:opacity-50">Export visible measured CSV</button>
               </div>
             </div>
-            <div className="order-2 grid gap-4 lg:order-none lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="order-2 grid gap-3 lg:order-none lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className={`${ui.card} relative h-[max(420px,60vh)] overflow-hidden lg:h-[max(500px,calc(100dvh-12rem))]`}>
                 <a href="#rivers" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[1001] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-slate-900">Skip map to river status table</a>
                 {loading && stations.length === 0 && gauges.length === 0 ? (
@@ -383,7 +383,7 @@ export default function Dashboard() {
                 )}
                 {selected && <StationCard station={selected} onClose={() => setSelected(null)} />}
               </div>
-              <div className="space-y-4 lg:max-h-[max(500px,calc(100dvh-12rem))] lg:overflow-y-auto">
+              <div className="space-y-3 lg:max-h-[max(500px,calc(100dvh-12rem))] lg:overflow-y-auto">
                 <div className={`${ui.card} ${ui.cardPad} space-y-2 text-sm text-slate-300`}>
                   <div><strong className="text-white">{visibleStations.length}</strong> measured rain stations · <strong className="text-white">{visibleGauges.length}</strong> measured river gauges</div>
                   <div>Rainfall source: Sri Lanka Department of Meteorology {rainSourceState === 'error' ? '· temporarily unavailable' : reportTime ? `· report ${reportTime}` : rainSourceState === 'empty' ? '· no observations returned' : '· report time unavailable'}</div>
@@ -394,7 +394,7 @@ export default function Dashboard() {
                 <LatestNews items={news} />
               </div>
             </div>
-            <div className="order-4 space-y-4 lg:order-none">
+            <div className="order-4 space-y-3 lg:order-none">
               <BasinStatusTable stations={visibleGauges} />
               <RainContext />
               <ExternalFloodSources />
@@ -431,5 +431,5 @@ function FilterGroup<T extends string>({ label, value, values, onChange }: { lab
 }
 
 function StationCard({ station, onClose }: { station: MetStation; onClose: () => void }) {
-  return <div className="absolute inset-x-3 bottom-3 z-10 rounded-xl border border-slate-700 bg-slate-800 p-3 shadow-2xl sm:left-auto sm:max-w-sm"><div className="flex items-start justify-between gap-3"><div><div className="font-semibold text-white">{station.name}</div><div className="text-xs text-slate-400">{station.district} · measured · WMO {station.wmo_id}</div></div><button type="button" onClick={onClose} className="focus-ring min-h-[44px] min-w-[44px] rounded-lg text-slate-300 hover:bg-slate-700" aria-label="Close station details">×</button></div><dl className="mt-2 grid grid-cols-2 gap-2 text-xs"><div><dt className="text-slate-400">Since 08:30</dt><dd className="font-mono text-white">{fmt(station.rainfall_since_830am_mm)} mm</dd></div><div><dt className="text-slate-400">Last 3h</dt><dd className="font-mono text-white">{fmt(station.rainfall_3h_mm)} mm</dd></div></dl></div>;
+  return <div className="absolute inset-x-3 bottom-3 z-10 rounded-lg border border-slate-700 bg-slate-800 p-3 shadow-2xl sm:left-auto sm:max-w-sm"><div className="flex items-start justify-between gap-3"><div><div className="font-semibold text-white">{station.name}</div><div className="text-xs text-slate-400">{station.district} · measured · WMO {station.wmo_id}</div></div><button type="button" onClick={onClose} className="focus-ring min-h-[44px] min-w-[44px] rounded-lg text-slate-300 hover:bg-slate-700" aria-label="Close station details">×</button></div><dl className="mt-2 grid grid-cols-2 gap-2 text-xs"><div><dt className="text-slate-400">Since 08:30</dt><dd className="font-mono text-white">{fmt(station.rainfall_since_830am_mm)} mm</dd></div><div><dt className="text-slate-400">Last 3h</dt><dd className="font-mono text-white">{fmt(station.rainfall_3h_mm)} mm</dd></div></dl></div>;
 }
