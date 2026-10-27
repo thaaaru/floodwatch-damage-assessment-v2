@@ -73,24 +73,26 @@ export default function Dashboard() {
     setLoading(true);
     setRainSourceState('loading');
     setGaugeSourceState('loading');
-    const [rainResult, gaugeResult] = await Promise.allSettled([
-      api.getMetStations(),
-      api.getIrrigationData(),
-    ]);
-    if (requestId !== monitoringRequestRef.current) return;
-    if (rainResult.status === 'fulfilled') {
-      setData(rainResult.value);
-      setRainSourceState(rainResult.value.stations.length === 0 ? 'empty' : 'success');
-    } else {
-      setRainSourceState('error');
-    }
-    if (gaugeResult.status === 'fulfilled') {
-      const nextGauges = gaugeResult.value?.stations ?? [];
+    // Apply each source as it lands so a slow feed doesn't hold the map back.
+    const rainRequest = api.getMetStations();
+    const gaugeRequest = api.getIrrigationData();
+    rainRequest.then((value) => {
+      if (requestId !== monitoringRequestRef.current) return;
+      setData(value);
+      setRainSourceState(value.stations.length === 0 ? 'empty' : 'success');
+    }, () => {
+      if (requestId === monitoringRequestRef.current) setRainSourceState('error');
+    });
+    gaugeRequest.then((value) => {
+      if (requestId !== monitoringRequestRef.current) return;
+      const nextGauges = value?.stations ?? [];
       setGauges(nextGauges);
       setGaugeSourceState(nextGauges.length === 0 ? 'empty' : 'success');
-    } else {
-      setGaugeSourceState('error');
-    }
+    }, () => {
+      if (requestId === monitoringRequestRef.current) setGaugeSourceState('error');
+    });
+    const [rainResult, gaugeResult] = await Promise.allSettled([rainRequest, gaugeRequest]);
+    if (requestId !== monitoringRequestRef.current) return;
     const failed = rainResult.status === 'rejected' || gaugeResult.status === 'rejected';
     setError(failed ? 'One or more measured monitoring sources are temporarily unavailable.' : null);
     if (rainResult.status === 'fulfilled' || gaugeResult.status === 'fulfilled') setLastFetched(new Date());
@@ -369,7 +371,7 @@ export default function Dashboard() {
             </div>
             <div className="order-2 grid gap-4 lg:order-none lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className={`${ui.card} relative h-[max(420px,60vh)] overflow-hidden lg:h-[max(500px,calc(100dvh-12rem))]`}>
-                {loading && stations.length === 0 ? (
+                {loading && stations.length === 0 && gauges.length === 0 ? (
                   <MapMessage text="Loading measured observations…" busy />
                 ) : error && stations.length === 0 && gauges.length === 0 ? (
                   <MapMessage text={error} kind="error" actionLabel="Retry measured data" onAction={fetchData} />

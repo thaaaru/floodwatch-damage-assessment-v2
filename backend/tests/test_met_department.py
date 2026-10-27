@@ -55,3 +55,17 @@ def test_failed_fetch_uses_bundled_measured_bulletin(tmp_path):
 
     assert stations == [station]
     assert service.fetch_count == 1
+
+
+def test_failed_fetch_backs_off_instead_of_retrying_every_request():
+    service = FailingMetDepartmentService()
+
+    async def load_twice():
+        await service.get_stations()
+        await service.get_stations()
+
+    asyncio.run(load_twice())
+    assert service.fetch_count == 1
+
+    asyncio.run(service.get_stations(force_refresh=True))
+    assert service.fetch_count == 2

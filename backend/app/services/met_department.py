@@ -143,6 +143,9 @@ class MetDepartmentService:
     # without hammering their server.
     CACHE_TTL_SECONDS = 15 * 60
     REQUEST_TIMEOUT = 8.0
+    # After a failed fetch, serve what we have for this long instead of making
+    # every request wait out REQUEST_TIMEOUT against a dead upstream.
+    FAILURE_BACKOFF_SECONDS = 5 * 60
     FALLBACK_BULLETIN_PATH: Optional[Path] = (
         Path(__file__).resolve().parents[2] / "data" / "met_department_3hourly.xlsx"
     )
@@ -154,6 +157,7 @@ class MetDepartmentService:
         self._cache_at: Optional[datetime] = None
         self._cache_lock = asyncio.Lock()
         self._last_report_time: Optional[datetime] = None
+        self._failed_at: Optional[datetime] = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None:
@@ -177,10 +181,12 @@ class MetDepartmentService:
             self._client = None
 
     def _is_cache_fresh(self) -> bool:
+        now = datetime.now(timezone.utc)
+        if self._failed_at is not None and (now - self._failed_at).total_seconds() < self.FAILURE_BACKOFF_SECONDS:
+            return True
         if self._cache_at is None:
             return False
-        age = (datetime.now(timezone.utc) - self._cache_at).total_seconds()
-        return age < self.CACHE_TTL_SECONDS
+        return (now - self._cache_at).total_seconds() < self.CACHE_TTL_SECONDS
 
     async def get_stations(self, force_refresh: bool = False) -> list[MetStation]:
         """Return the latest measured readings from all 24 Met Dept stations.
@@ -199,6 +205,7 @@ class MetDepartmentService:
             try:
                 stations = await self._fetch_and_parse()
             except Exception as exc:
+                self._failed_at = datetime.now(timezone.utc)
                 logger.warning(
                     "Met Dept fetch failed (%s); serving stale cache of %d stations",
                     exc, len(self._cache),
@@ -216,7 +223,8 @@ class MetDepartmentService:
                 logger.warning(
                     "Serving bundled measured Met Dept bulletin from %s", path
                 )
-
+            else:
+                self._failed_at = None
             self._cache = stations
             self._cache_at = datetime.now(timezone.utc)
             if stations:
