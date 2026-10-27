@@ -153,6 +153,42 @@ function createFillModeSwitch(setFillMode: (mode: BasinFillMode) => void): L.Con
 
 // Full-screen toggle using the browser Fullscreen API (no plugin). Hidden where
 // element full-screen is unsupported (e.g. iPhone Safari).
+const ISLAND: L.LatLngBoundsExpression = [[5.9, 79.6], [9.85, 81.9]];
+const FLOODING: IrrigationStation['status'][] = ['alert', 'minor', 'major'];
+const fitIsland = (map: L.Map) => map.fitBounds(ISLAND, { paddingBottomRight: [0, 48] }); // keep the south clear of the attribution
+
+// "Flood area" zooms to the gauges at alert or worse; "Whole island" resets the view.
+function addViewControl(map: L.Map, getGauges: () => IrrigationStation[]) {
+  const Control = L.Control.extend({
+    onAdd() {
+      const bar = L.DomUtil.create('div', 'fw-view-switch');
+      bar.setAttribute('role', 'group');
+      bar.setAttribute('aria-label', 'Map view');
+      const make = (text: string, onClick: (btn: HTMLButtonElement) => void) => {
+        const btn = L.DomUtil.create('button', '', bar) as HTMLButtonElement;
+        btn.type = 'button';
+        btn.textContent = text;
+        L.DomEvent.on(btn, 'click', () => onClick(btn));
+        return btn;
+      };
+      make('Flood area', (btn) => {
+        const pts = getGauges().filter((g) => FLOODING.includes(g.status) && g.lat !== null && g.lon !== null)
+          .map((g) => [g.lat, g.lon] as [number, number]);
+        if (pts.length === 0) {
+          btn.textContent = 'No gauges at alert';
+          setTimeout(() => { btn.textContent = 'Flood area'; }, 2000);
+          return;
+        }
+        map.fitBounds(L.latLngBounds(pts).pad(0.3), { maxZoom: 10, animate: !prefersReducedMotion() });
+      });
+      make('Whole island', () => fitIsland(map));
+      L.DomEvent.disableClickPropagation(bar);
+      return bar;
+    },
+  });
+  new Control({ position: 'topleft' }).addTo(map);
+}
+
 function addFullscreenControl(map: L.Map) {
   const el = map.getContainer();
   if (!document.fullscreenEnabled || !el.requestFullscreen) return;
@@ -259,7 +295,7 @@ export default function MetStationsMap({
     });
     map.on('mouseout blur', () => map.scrollWheelZoom.disable());
     // Fit the whole island whatever the box size.
-    map.fitBounds([[5.9, 79.6], [9.85, 81.9]], { paddingBottomRight: [0, 48] }); // keep the south clear of the attribution
+    fitIsland(map);
     L.control.zoom({ position: 'topright' }).addTo(map);
     addFullscreenControl(map);
     L.control
@@ -273,7 +309,10 @@ export default function MetStationsMap({
     addSatelliteOption(L, controlRef.current, 'Context — Satellite (Esri)');
     // Model context is deliberately optional and off by default.
     controlRef.current.addOverlay(createForecastLayer(map), 'Modelled — Rain forecast (Open-Meteo)');
-    controlRef.current.addOverlay(createRainNormalLayer(map), 'Modelled — Rainfall vs normal (ERA5)');
+    const rainNormal = createRainNormalLayer(map);
+    controlRef.current.addOverlay(rainNormal, 'Modelled — Rainfall vs normal (ERA5)');
+    if (mode === 'technical') rainNormal.addTo(map); // labelled as modelled in its legend and popups
+    addViewControl(map, () => gaugesRef.current);
     mapRef.current = map;
     // Basins + rivers: on by default; only flooding basins are filled, with a legend.
     const loadBasins = () => {
@@ -296,7 +335,7 @@ export default function MetStationsMap({
         });
     };
     retryBasinsRef.current = loadBasins;
-    void addBasemap(map).finally(loadBasins); // Paint the base map before downloading optional context overlays.
+    void addBasemap(map, 'dark').finally(loadBasins); // Paint the base map before downloading optional context overlays.
     return () => {
       retryBasinsRef.current = null;
       map.remove();

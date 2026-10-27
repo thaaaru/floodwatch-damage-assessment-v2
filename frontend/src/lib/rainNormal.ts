@@ -21,11 +21,13 @@ function popup(r: RainVsNormal): string {
   </div>`;
 }
 
-// Above the rain-station markers (600) so a switched-on overlay stays clickable where they overlap.
+// Below the gauge and rain-station markers (600) so they stay on top where they overlap.
 const PANE = 'fw-rain-normal';
+// Dark text on the light middle bands, white on the strong ends.
+const textOn = (pct: number) => (pct >= 50 && pct < 150 ? '#0f172a' : '#ffffff');
 
 export function createRainNormalLayer(map: L.Map): L.LayerGroup {
-  if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '620';
+  if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '450';
   const layer = L.layerGroup();
   let data: RainVsNormal[] | null = null;
 
@@ -33,8 +35,15 @@ export function createRainNormalLayer(map: L.Map): L.LayerGroup {
     layer.clearLayers();
     for (const r of data ?? []) {
       if (r.pct_of_normal == null || !r.as_of) continue;
-      L.circleMarker([r.lat, r.lon], {
-        pane: PANE, radius: 9, weight: 1.5, color: '#0f172a', fillColor: pctColor(r.pct_of_normal), fillOpacity: 0.95,
+      L.marker([r.lat, r.lon], {
+        pane: PANE,
+        title: `${r.district}: ${r.pct_of_normal}% of usual rain this month (modelled)`,
+        icon: L.divIcon({
+          className: '',
+          html: `<div class="fw-rain-bubble" style="background:${pctColor(r.pct_of_normal)};color:${textOn(r.pct_of_normal)}" aria-hidden="true">${r.pct_of_normal}%</div>`,
+          iconSize: [34, 34],
+          iconAnchor: [17, 17],
+        }),
       }).bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260 }).addTo(layer);
     }
   };

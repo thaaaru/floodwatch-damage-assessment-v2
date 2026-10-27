@@ -17,13 +17,21 @@ const esc = (v: unknown) =>
 
 const m = (v: number | null) => (v === null || v === undefined ? '&mdash;' : `${v.toFixed(2)} m`);
 
+// Size grows with severity so the eye lands on flooding gauges first; the trend
+// glyph only fits (and only matters at a glance) from alert upwards.
+const SIZE: Record<GaugeStatus, number> = { unknown: 12, normal: 14, alert: 20, minor: 24, major: 28 };
+const SHOWS_TREND: GaugeStatus[] = ['alert', 'minor', 'major'];
+
 function gaugeIcon(g: IrrigationStation): L.DivIcon {
+  const size = SIZE[g.status];
+  const halo = g.status === 'minor' || g.status === 'major' ? ' fw-gauge-halo' : '';
+  const hit = Math.max(size, 24); // small dots keep a 24 px tap target
   return L.divIcon({
-    className: '',
-    html: `<div class="fw-gauge${g.stale ? ' fw-gauge-stale' : ''}" style="background:${STATUS_COLOR[g.status]};color:${STATUS_TEXT[g.status]}"
-      aria-hidden="true">${trendArrow(g.trend)}</div>`,
-    iconSize: [26, 26],
-    iconAnchor: [13, 13],
+    className: 'fw-gauge-wrap',
+    html: `<div class="fw-gauge${halo}${g.stale ? ' fw-gauge-stale' : ''}" style="width:${size}px;height:${size}px;background:${STATUS_COLOR[g.status]};color:${STATUS_TEXT[g.status]};--fw-halo:${STATUS_COLOR[g.status]}"
+      aria-hidden="true">${SHOWS_TREND.includes(g.status) ? trendArrow(g.trend) : ''}</div>`,
+    iconSize: [hit, hit],
+    iconAnchor: [hit / 2, hit / 2],
   });
 }
 
@@ -79,7 +87,11 @@ export function createGaugeLayer(gauges: IrrigationStation[], onSelect?: (g: Irr
   gauges.forEach((g) => {
     if (g.lat === null || g.lon === null) return;
     const label = `${g.station} river gauge: ${STATUS_LABEL[g.status].toLowerCase()}${g.trend ? `, ${g.trend}` : ''}${g.water_level_m !== null ? `, ${g.water_level_m.toFixed(2)} m` : ''}${g.stale ? ', stale' : ''}`;
-    const marker = L.marker([g.lat, g.lon], { icon: gaugeIcon(g), zIndexOffset: 1000, title: label });
+    // Worse status draws on top where markers overlap.
+    const marker = L.marker([g.lat, g.lon], { icon: gaugeIcon(g), zIndexOffset: 1000 + SIZE[g.status] * 10, title: label });
+    marker.bindTooltip(`<b>${esc(g.station)}</b> ${m(g.water_level_m)} ${trendArrow(g.trend)}`, {
+      direction: 'right', offset: [SIZE[g.status] / 2, 0], className: 'fw-gauge-tip',
+    });
     marker.bindPopup(gaugePopup(g), { className: 'fw-light-popup', maxWidth: 260 });
     marker.on('popupopen', (e) => {
       const el = (e as L.PopupEvent).popup.getElement()?.querySelector('.fw-gauge-chart');
