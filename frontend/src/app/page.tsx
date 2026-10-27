@@ -19,7 +19,7 @@ import type {
 } from '@/lib/api';
 import { ui } from '@/lib/ui';
 import BasinStatusTable from '@/components/BasinStatusTable';
-import LatestNews from '@/components/LatestNews';
+import LatestNews, { ActiveWarnings, useNews } from '@/components/LatestNews';
 import RainContext from '@/components/RainContext';
 import ExternalFloodSources from '@/components/ExternalFloodSources';
 
@@ -48,6 +48,7 @@ export default function Dashboard() {
   const [rainSourceState, setRainSourceState] = useState<ContextSourceState>('loading');
   const [gaugeSourceState, setGaugeSourceState] = useState<ContextSourceState>('loading');
   const [freshness, setFreshness] = useState<Freshness>('all');
+  const news = useNews();
 
   const [location, setLocation] = useState<MapCoordinate | null>(null);
   const [query, setQuery] = useState('');
@@ -228,6 +229,12 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
+  const outageLabel = (state: ContextSourceState) => (state === 'error' ? 'unavailable' : state === 'empty' ? 'returning no observations' : null);
+  const sourceOutage = [
+    outageLabel(rainSourceState) && `Rainfall feed (Department of Meteorology) is ${outageLabel(rainSourceState)}.`,
+    outageLabel(gaugeSourceState) && `River gauge feed (Irrigation Department) is ${outageLabel(gaugeSourceState)}.`,
+  ].filter(Boolean).join(' ');
+
   const selectedWeather = (weather?.weather && typeof weather.weather === 'object' ? weather.weather : weather) as Record<string, unknown> | null;
   const reportTime = data?.summary?.report_time_utc
     ? new Date(data.summary.report_time_utc).toLocaleString('en-LK', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
@@ -240,7 +247,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h1 className={ui.h1}>FloodWatch map</h1>
-              <p className={`${ui.intro} mt-1`}>{mode === 'public' ? 'Plan with model context and clearly labelled candidate facilities.' : 'Inspect measured rainfall and river-gauge observations.'}</p>
+              <p className={`${ui.intro} mt-1 hidden sm:block`}>{mode === 'public' ? 'Plan with model context and clearly labelled candidate facilities.' : 'Inspect measured rainfall and river-gauge observations.'}</p>
             </div>
             <div role="group" aria-label="Map mode" className="grid grid-cols-2 gap-1 rounded-xl bg-slate-900 p-1">
               {(['public', 'technical'] as const).map((value) => (
@@ -254,6 +261,7 @@ export default function Dashboard() {
       </header>
 
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-4 space-y-4">
+        <ActiveWarnings items={news} />
         {mode === 'public' ? (
           <section className="space-y-4" aria-labelledby="public-map-heading">
             <div className="rounded-xl border border-amber-600/60 bg-amber-950/50 p-3 text-sm text-amber-100" role="note">
@@ -345,16 +353,21 @@ export default function Dashboard() {
             </div>
           </section>
         ) : (
-          <section className="space-y-4" aria-labelledby="technical-map-heading">
-            <div className={`${ui.card} ${ui.cardPad} flex flex-col gap-3 xl:flex-row xl:items-end xl:justify-between`}>
-              <div><h2 id="technical-map-heading" className={ui.h2}>Measured monitoring</h2><p className={`${ui.meta} mt-1`}>Sources and observation freshness are explicit. Optional model overlays remain labelled in the map layer control.</p></div>
+          <section className="flex flex-col gap-4" aria-labelledby="technical-map-heading">
+            {sourceOutage && (
+              <div className="order-1 rounded-xl border border-amber-500 bg-amber-950/60 p-3 text-sm text-amber-50 lg:order-none" role="alert">
+                <strong>{sourceOutage}</strong> Missing markers do not mean no rain or normal rivers. Check the DMC and Met Department, and the aggregator sources further down.
+              </div>
+            )}
+            <div className={`${ui.card} ${ui.cardPad} order-3 flex flex-col gap-3 lg:order-none xl:flex-row xl:items-start xl:justify-between`}>
+              <div><h2 id="technical-map-heading" className={ui.h2}>Measured monitoring</h2><p className={`${ui.meta} mt-1`}>Measured observations only. Model overlays are labelled in the map layer control.</p></div>
               <div className="flex flex-wrap gap-3">
                 <FilterGroup label="Source" value={technicalSource} values={[['all', 'All measured'], ['rainfall', 'Rain stations'], ['gauges', 'River gauges']]} onChange={setTechnicalSource} />
                 <FilterGroup label="Freshness" value={freshness} values={[['all', 'All'], ['current', 'Current'], ['stale', 'Stale']]} onChange={setFreshness} />
-                <button type="button" onClick={exportVisible} disabled={visibleStations.length + visibleGauges.length === 0} className="focus-ring min-h-[44px] self-end rounded-lg bg-cyan-700 px-4 text-sm font-semibold text-white disabled:opacity-50">Export visible measured CSV</button>
+                <button type="button" onClick={exportVisible} disabled={visibleStations.length + visibleGauges.length === 0} className="focus-ring min-h-[44px] self-end rounded-lg border border-cyan-700 px-4 text-sm font-semibold text-cyan-200 hover:bg-cyan-950 disabled:opacity-50">Export visible measured CSV</button>
               </div>
             </div>
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <div className="order-2 grid gap-4 lg:order-none lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className={`${ui.card} relative h-[max(420px,60vh)] overflow-hidden lg:h-[max(500px,calc(100dvh-12rem))]`}>
                 {loading && stations.length === 0 ? (
                   <MapMessage text="Loading measured observations…" busy />
@@ -375,13 +388,15 @@ export default function Dashboard() {
                   {lastFetched && <div>Interface refreshed {lastFetched.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit' })}</div>}
                   {error && <div className="space-y-2" role="alert"><p className="text-red-300">{error}</p><button type="button" onClick={fetchData} className="focus-ring min-h-[44px] rounded-lg border border-cyan-700 px-3 font-semibold text-cyan-200 hover:bg-cyan-950">Retry unavailable sources</button></div>}
                 </div>
-                <LatestNews />
+                <LatestNews items={news} />
               </div>
             </div>
-            <BasinStatusTable stations={visibleGauges} />
-            <RainContext />
-            <ExternalFloodSources />
-            <p className={ui.muted}>CSV export includes only the currently visible measured Sri Lanka Department of Meteorology stations and Irrigation Department gauges. It never exports model, route, place, facility, or Google Flood Forecasting data.</p>
+            <div className="order-4 space-y-4 lg:order-none">
+              <BasinStatusTable stations={visibleGauges} />
+              <RainContext />
+              <ExternalFloodSources />
+              <p className={ui.muted}>CSV export includes only the currently visible measured Sri Lanka Department of Meteorology stations and Irrigation Department gauges. It never exports model, route, place, facility, or Google Flood Forecasting data.</p>
+            </div>
           </section>
         )}
       </div>

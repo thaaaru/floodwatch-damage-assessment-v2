@@ -6,16 +6,17 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { ui } from '@/lib/ui';
-import { NewsItem } from '@/lib/newsService';
-import NewsRow from '@/components/NewsRow';
+import { NewsItem, formatRelativeTime } from '@/lib/newsService';
+import NewsRow, { isOfficialWarning } from '@/components/NewsRow';
 
 const SHOW = 6;
+const WARNING_WINDOW_MS = 48 * 60 * 60 * 1000;
 const ts = (i: NewsItem) => (i.publishedAt ? Date.parse(i.publishedAt) : 0);
 
-// Newest items from the backend's 15-minute news snapshot; the full list is on /news.
-export default function LatestNews() {
+// Newest items from the backend's 15-minute news snapshot, refreshed every 5 minutes.
+// null = still loading.
+export function useNews() {
   const [items, setItems] = useState<NewsItem[] | null>(null);
-
   useEffect(() => {
     const load = () =>
       api.getNews().then((d) => setItems(d?.items ?? []), () => setItems((prev) => prev ?? []));
@@ -23,7 +24,46 @@ export default function LatestNews() {
     const id = setInterval(load, 5 * 60 * 1000);
     return () => clearInterval(id);
   }, []);
+  return items;
+}
 
+// Official warnings/advisories from the last 48 h, pinned above the map so they don't sit among news.
+export function ActiveWarnings({ items }: { items: NewsItem[] | null }) {
+  const now = Date.now();
+  const active = (items ?? [])
+    .filter((i) => isOfficialWarning(i) && now - ts(i) < WARNING_WINDOW_MS)
+    .sort((a, b) => (b.severity === 'critical' ? 1 : 0) - (a.severity === 'critical' ? 1 : 0) || ts(b) - ts(a))
+    .slice(0, 3);
+  if (active.length === 0) return null;
+  return (
+    <section aria-label="Active official warnings" className="space-y-2">
+      {active.map((item) => {
+        const critical = item.severity === 'critical';
+        return (
+          <a
+            key={item.id}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`focus-ring flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-4 py-2 text-sm hover:underline ${
+              critical ? 'border-red-500 bg-red-950/70 text-red-50' : 'border-amber-500 bg-amber-950/60 text-amber-50'
+            }`}
+          >
+            <span className={`rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${critical ? 'bg-red-600 text-white' : 'bg-amber-400 text-amber-950'}`}>
+              {item.kind ?? 'Warning'}
+            </span>
+            <strong className="font-semibold">{item.title}</strong>
+            <span className="text-xs opacity-80">
+              {item.source}{item.publishedAt ? ` · ${formatRelativeTime(item.publishedAt)}` : ''}
+            </span>
+          </a>
+        );
+      })}
+    </section>
+  );
+}
+
+export default function LatestNews({ items }: { items: NewsItem[] | null }) {
   const latest = (items ?? []).slice().sort((a, b) => ts(b) - ts(a)).slice(0, SHOW);
 
   return (

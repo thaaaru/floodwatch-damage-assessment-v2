@@ -455,15 +455,15 @@
 
 /* River gauge markers (lib/gauges.ts): colour = status, glyph = trend */
 .fw-gauge {
-  width: 22px;
-  height: 22px;
+  width: 26px;
+  height: 26px;
   border-radius: 9999px;
   border: 2px solid #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #ffffff;
-  font: 700 13px/1 system-ui, sans-serif;
+  font: 700 14px/1 system-ui, sans-serif;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.45);
 }
 /* Stale (> 6 h): faded with a dashed dark ring */
@@ -511,6 +511,11 @@
   align-items: center;
   gap: 6px;
 }
+.fw-basin-legend p {
+  margin: 4px 0 0;
+  padding-top: 4px;
+  border-top: 1px solid #e5e7eb;
+}
 .fw-basin-legend span {
   width: 12px;
   height: 12px;
@@ -529,8 +534,13 @@
   display: block;
   padding: 0;
   border: 0;
-  background: inherit;
+  border-radius: 4px;
+  background: #ffffff; /* was inherit: .leaflet-bar is transparent, so it read as disabled */
+  color: #0f172a;
   cursor: pointer;
+}
+.fw-fullscreen:hover {
+  background: #f4f4f4;
 }
 
 /* Home-map "Colour all basins" switch (MetStationsMap createFillModeSwitch) */

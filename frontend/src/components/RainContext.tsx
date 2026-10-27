@@ -85,7 +85,7 @@ function Details({ d }: { d: RainHistoryResponse }) {
         <h3 className="text-sm font-semibold text-white">Usual rain by month (1996–2025 average)</h3>
         {d.pct_of_normal != null && (
           <p className={`${ui.body} mt-1`}>
-            {MONTHS[month - 1]} so far (1 to {fmtDay(d.as_of as string)}): <b className="text-white">{d.mtd_mm} mm</b>,{' '}
+            {MONTHS[month - 1]} so far (ERA5 data through {fmtDay(d.as_of as string)}): <b className="text-white">{d.mtd_mm} mm</b>,{' '}
             {d.pct_of_normal}% of the usual {d.normal_to_date_mm} mm for these days.
           </p>
         )}

@@ -22,8 +22,8 @@ function gaugeIcon(g: IrrigationStation): L.DivIcon {
     className: '',
     html: `<div class="fw-gauge${g.stale ? ' fw-gauge-stale' : ''}" style="background:${STATUS_COLOR[g.status]}"
       title="${esc(g.station)}${g.stale ? ' (stale)' : ''}">${trendArrow(g.trend)}</div>`,
-    iconSize: [22, 22],
-    iconAnchor: [11, 11],
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
   });
 }
 
@@ -269,7 +269,8 @@ export function createBasinLegend(): L.Control {
     const el = L.DomUtil.create('details', 'fw-basin-legend');
     if (wide) el.setAttribute('open', '');
     el.innerHTML = `<summary>Basin colour = highest river gauge status</summary>` +
-      FLOODING.map((s) => `<div><span style="background:${STATUS_COLOR[s]}"></span>${STATUS_LABEL[s].charAt(0)}${STATUS_LABEL[s].slice(1).toLowerCase()}</div>`).join('');
+      FLOODING.map((s) => `<div><span style="background:${STATUS_COLOR[s]}"></span>${STATUS_LABEL[s].charAt(0)}${STATUS_LABEL[s].slice(1).toLowerCase()}</div>`).join('') +
+      `<p>Dot colour = gauge status · ↑ rising ↓ falling → steady · faded = stale</p>`;
     L.DomEvent.disableClickPropagation(el);
     return el;
   };

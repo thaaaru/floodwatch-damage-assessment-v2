@@ -6,10 +6,12 @@ import { NewsItem, formatColombo, formatRelativeTime } from '@/lib/newsService';
 // Official warning sources whose warnings/advisories get a coloured left edge.
 const OFFICIAL = new Set(['SL Met', 'IMD RSMC', 'GDACS']);
 
+export const isOfficialWarning = (item: NewsItem) =>
+  OFFICIAL.has(item.source) && (item.kind === 'Warning' || item.kind === 'Advisory');
+
 // compact: title + meta only, for the home page panel.
 export default function NewsRow({ item, compact = false }: { item: NewsItem; compact?: boolean }) {
-  const flagged =
-    OFFICIAL.has(item.source) && (item.kind === 'Warning' || item.kind === 'Advisory');
+  const flagged = isOfficialWarning(item);
   // On an inner wrapper: the list's divide-y border colour would override it on the <li>.
   const edge = !flagged ? '' : item.severity === 'critical' ? 'border-l-4 border-red-500 pl-3' : 'border-l-4 border-amber-400 pl-3';
 
