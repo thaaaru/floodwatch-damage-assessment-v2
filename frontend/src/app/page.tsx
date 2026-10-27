@@ -37,7 +37,7 @@ const fmt = (value: number | null | undefined, digits = 1) =>
   value === null || value === undefined || Number.isNaN(Number(value)) ? '—' : Number(value).toFixed(digits);
 
 export default function Dashboard() {
-  const [mode, setMode] = useState<Mode>('public');
+  const [mode, setMode] = useState<Mode>('technical');
   const [data, setData] = useState<MetStationsResponse | null>(null);
   const [selected, setSelected] = useState<MetStation | null>(null);
   const [loading, setLoading] = useState(true);
