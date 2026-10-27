@@ -126,48 +126,7 @@ function Details({ d }: { d: RainHistoryResponse }) {
             ))}
           </ol>
         </div>
-        <Trend d={d} />
       </div>
-    </div>
-  );
-}
-
-function Trend({ d }: { d: RainHistoryResponse }) {
-  const pts = d.annual_totals ?? [];
-  const t = d.trend;
-  if (pts.length < 10 || !t) {
-    return (
-      <div className={`${ui.inset} p-3`}>
-        <h3 className="text-sm font-semibold text-white">Yearly totals</h3>
-        <p className={`${ui.body} mt-1`}>Not enough complete years yet.</p>
-      </div>
-    );
-  }
-  const W = 260, H = 70;
-  const ys = pts.map((p) => p.mm);
-  const lo = Math.min(...ys), hi = Math.max(...ys);
-  const x0 = pts[0].year, x1 = pts[pts.length - 1].year;
-  const sx = (x: number) => ((x - x0) / (x1 - x0 || 1)) * W;
-  const sy = (y: number) => H - ((y - lo) / (hi - lo || 1)) * H;
-  const perDecade = Math.round(t.slope_mm_per_year * 10);
-
-  return (
-    <div className={`${ui.inset} p-3`}>
-      <h3 className="text-sm font-semibold text-white">Yearly totals {x0}–{x1}</h3>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16 mt-2" role="img"
-        aria-label={`Yearly totals from ${Math.round(lo)} to ${Math.round(hi)} mm`}>
-        <polyline fill="none" stroke="#94a3b8" strokeWidth="1.5"
-          points={pts.map((p) => `${sx(p.year)},${sy(p.mm)}`).join(' ')} />
-        {t.significant && (
-          <line x1={sx(x0)} y1={sy(t.intercept + t.slope_mm_per_year * x0)} x2={sx(x1)}
-            y2={sy(t.intercept + t.slope_mm_per_year * x1)} stroke="#22d3ee" strokeWidth="2" />
-        )}
-      </svg>
-      <p className={`${ui.body} mt-1`}>
-        {t.significant
-          ? `Yearly rain ${perDecade > 0 ? 'rose' : 'fell'} by about ${Math.abs(perDecade)} mm per decade (95% range ${Math.round(t.ci_low * 10)} to ${Math.round(t.ci_high * 10)} mm per decade).`
-          : 'No clear trend in yearly rain over this period.'}
-      </p>
     </div>
   );
 }

@@ -17,10 +17,6 @@ const STATUS_STYLE: Record<ExternalFloodSource['status'], string> = {
   error: 'border-red-700/60 bg-red-950/40 text-red-300',
 };
 
-const HEALTH_LABELS: Array<[ExternalFloodSource['status'], string]> = [
-  ['ok', 'Healthy'], ['stale', 'Delayed or stale'], ['partial', 'Partial'], ['disabled', 'Disabled'], ['error', 'Error'],
-];
-
 function formatSourceTime(value: string | null) {
   return value
     ? new Date(value.replace(' ', 'T')).toLocaleString('en-LK', { timeZone: 'Asia/Colombo', dateStyle: 'medium', timeStyle: 'short' })
@@ -99,24 +95,9 @@ export default function ExternalFloodSources() {
           Separate community, aggregated and forecast signals. These records are not merged into the official measured map layers.
         </p>
       </div>
-      <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-3" aria-label="External source health summary">
-        <dl className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-          {HEALTH_LABELS.map(([status, label]) => (
-            <div key={status}>
-              <dt className="text-xs text-slate-400">{label}</dt>
-              <dd className="text-lg font-semibold text-white">{snapshot.source_status_counts[status] ?? 0}</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="mt-2 text-xs text-slate-300">
-          Source-reported update range for usable sources: oldest {formatSourceTime(snapshot.oldest_usable_update_at)}; newest {formatSourceTime(snapshot.newest_usable_update_at)}. This describes source freshness, not live status or accuracy.
-        </p>
-      </div>
-      <p role="note" className="rounded-lg border border-amber-800/60 bg-amber-950/30 px-3 py-2 text-sm text-amber-100">
-        Operational limitation: this information supports situational awareness only. Do not use it for official emergency decisions; follow authorities and emergency services.
-      </p>
       <div className="grid gap-3 md:grid-cols-3">
-        {snapshot.sources.map((source) => <SourceCard key={source.id} source={source} />)}
+        {/* A disabled source (e.g. Google without an API key) has nothing to show. */}
+        {snapshot.sources.filter((source) => source.status !== 'disabled').map((source) => <SourceCard key={source.id} source={source} />)}
       </div>
     </section>
   );

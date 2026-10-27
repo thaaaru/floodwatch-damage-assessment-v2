@@ -3,7 +3,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { api, isDisabledMapFeature } from '@/lib/api';
 import type {
@@ -30,7 +30,6 @@ const MetStationsMap = dynamic(() => import('@/components/MetStationsMap'), {
 
 type Mode = 'public' | 'technical';
 type TechnicalSource = 'all' | 'rainfall' | 'gauges';
-type Freshness = 'all' | 'current' | 'stale';
 type ContextSourceState = 'idle' | 'loading' | 'success' | 'empty' | 'disabled' | 'error';
 
 const fmt = (value: number | null | undefined, digits = 1) =>
@@ -47,7 +46,6 @@ export default function Dashboard() {
   const [technicalSource, setTechnicalSource] = useState<TechnicalSource>('all');
   const [rainSourceState, setRainSourceState] = useState<ContextSourceState>('loading');
   const [gaugeSourceState, setGaugeSourceState] = useState<ContextSourceState>('loading');
-  const [freshness, setFreshness] = useState<Freshness>('all');
   const news = useNews();
 
   const [location, setLocation] = useState<MapCoordinate | null>(null);
@@ -85,7 +83,9 @@ export default function Dashboard() {
     });
     gaugeRequest.then((value) => {
       if (requestId !== monitoringRequestRef.current) return;
-      const nextGauges = value?.stations ?? [];
+      // A 0.00 m reading on a gauge with no thresholds is a feed placeholder, not a measurement.
+      const nextGauges = (value?.stations ?? []).map((gauge) =>
+        gauge.water_level_m === 0 && gauge.status === 'unknown' ? { ...gauge, water_level_m: null } : gauge);
       setGauges(nextGauges);
       setGaugeSourceState(nextGauges.length === 0 ? 'empty' : 'success');
     }, () => {
@@ -197,20 +197,10 @@ export default function Dashboard() {
   };
 
   const stations = data?.stations ?? [];
-  const visibleStations = useMemo(() => {
-    if (technicalSource === 'gauges') return [];
-    if (freshness === 'all') return stations;
-    const now = Date.now();
-    return stations.filter((station) => {
-      const stale = now - new Date(station.report_time_utc).getTime() > 4 * 60 * 60 * 1000;
-      return freshness === 'stale' ? stale : !stale;
-    });
-  }, [freshness, stations, technicalSource]);
-  const visibleGauges = useMemo(() => {
-    if (technicalSource === 'rainfall') return [];
-    if (freshness === 'all') return gauges;
-    return gauges.filter((gauge) => (freshness === 'stale' ? gauge.stale : !gauge.stale));
-  }, [freshness, gauges, technicalSource]);
+  // The filter is hidden when a feed is empty, so a stale choice must not blank the other layer.
+  const source = stations.length > 0 && gauges.length > 0 ? technicalSource : 'all';
+  const visibleStations = source === 'gauges' ? [] : stations;
+  const visibleGauges = source === 'rainfall' ? [] : gauges;
 
   const exportVisible = () => {
     const rows: string[][] = [['kind', 'name', 'latitude', 'longitude', 'observed_at', 'value', 'unit', 'source']];
@@ -363,11 +353,10 @@ export default function Dashboard() {
             )}
             <div className={`${ui.card} ${ui.cardPad} order-3 flex flex-col gap-3 lg:order-none xl:flex-row xl:items-start xl:justify-between`}>
               <div><h2 id="technical-map-heading" className={ui.h2}>Measured monitoring</h2><p className={`${ui.meta} mt-1`}>Measured observations only. Model overlays are labelled in the map layer control.</p></div>
-              <div className="flex flex-wrap gap-3">
+              {/* The source filter only means something while both feeds have markers. */}
+              {stations.length > 0 && gauges.length > 0 && (
                 <FilterGroup label="Source" value={technicalSource} values={[['all', 'All measured'], ['rainfall', 'Rain stations'], ['gauges', 'River gauges']]} onChange={setTechnicalSource} />
-                <FilterGroup label="Freshness" value={freshness} values={[['all', 'All'], ['current', 'Current'], ['stale', 'Stale']]} onChange={setFreshness} />
-                <button type="button" onClick={exportVisible} disabled={visibleStations.length + visibleGauges.length === 0} className="focus-ring min-h-[44px] self-end rounded-lg border border-cyan-700 px-4 text-sm font-semibold text-cyan-200 hover:bg-cyan-950 disabled:opacity-50">Export visible measured CSV</button>
-              </div>
+              )}
             </div>
             <div className="order-2 grid gap-3 lg:order-none lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className={`${ui.card} relative h-[max(420px,60vh)] overflow-hidden lg:h-[max(500px,calc(100dvh-12rem))]`}>
@@ -384,21 +373,24 @@ export default function Dashboard() {
                 {selected && <StationCard station={selected} onClose={() => setSelected(null)} />}
               </div>
               <div className="space-y-3 lg:max-h-[max(500px,calc(100dvh-12rem))] lg:overflow-y-auto">
-                <div className={`${ui.card} ${ui.cardPad} space-y-2 text-sm text-slate-300`}>
-                  <div><strong className="text-white">{visibleStations.length}</strong> measured rain stations · <strong className="text-white">{visibleGauges.length}</strong> measured river gauges</div>
-                  <div>Rainfall source: Sri Lanka Department of Meteorology {rainSourceState === 'error' ? '· temporarily unavailable' : reportTime ? `· report ${reportTime}` : rainSourceState === 'empty' ? '· no observations returned' : '· report time unavailable'}</div>
-                  <div>Gauge source: Irrigation Department of Sri Lanka · {gaugeSourceState === 'error' ? 'temporarily unavailable' : gaugeSourceState === 'empty' ? 'no observations returned' : `${visibleGauges.filter((gauge) => gauge.stale).length} stale visible`}</div>
-                  {lastFetched && <div>Interface refreshed {lastFetched.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit' })}</div>}
-                  {error && <div className="space-y-2" role="alert"><p className="text-red-300">{error}</p><button type="button" onClick={fetchData} className="focus-ring min-h-[44px] rounded-lg border border-cyan-700 px-3 font-semibold text-cyan-200 hover:bg-cyan-950">Retry unavailable sources</button></div>}
-                </div>
+                {/* Feed outages are explained by the banner above; this is just the count and freshness. */}
+                <p className={ui.meta}>
+                  <strong className="text-white">{visibleGauges.length}</strong> river gauges (Irrigation Dept)
+                  {stations.length > 0 && <> · <strong className="text-white">{visibleStations.length}</strong> rain stations (Met Dept{reportTime ? `, ${reportTime}` : ''})</>}
+                  {lastFetched && ` · refreshed ${lastFetched.toLocaleTimeString('en-GB', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit' })}`}
+                </p>
+                {error && <div className="space-y-2 text-sm" role="alert"><p className="text-red-300">{error}</p><button type="button" onClick={fetchData} className="focus-ring min-h-[44px] rounded-lg border border-cyan-700 px-3 font-semibold text-cyan-200 hover:bg-cyan-950">Retry unavailable sources</button></div>}
                 <LatestNews items={news} />
               </div>
             </div>
             <div className="order-4 space-y-3 lg:order-none">
               <BasinStatusTable stations={visibleGauges} />
+              <div className="flex flex-wrap items-center gap-3">
+                <button type="button" onClick={exportVisible} disabled={visibleStations.length + visibleGauges.length === 0} className={`${ui.btn} disabled:opacity-50`}>Export measured CSV</button>
+                <p className={ui.muted}>Visible Met Dept stations and Irrigation Dept gauges only; never model, route, place or facility data.</p>
+              </div>
               <RainContext />
               <ExternalFloodSources />
-              <p className={ui.muted}>CSV export includes only the currently visible measured Sri Lanka Department of Meteorology stations and Irrigation Department gauges. It never exports model, route, place, facility, or Google Flood Forecasting data.</p>
             </div>
           </section>
         )}

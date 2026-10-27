@@ -28,12 +28,16 @@ export function useNews() {
 }
 
 // Official warnings/advisories from the last 48 h, pinned above the map so they don't sit among news.
-export function ActiveWarnings({ items }: { items: NewsItem[] | null }) {
+const activeWarnings = (items: NewsItem[] | null) => {
   const now = Date.now();
-  const active = (items ?? [])
+  return (items ?? [])
     .filter((i) => isOfficialWarning(i) && now - ts(i) < WARNING_WINDOW_MS)
     .sort((a, b) => (b.severity === 'critical' ? 1 : 0) - (a.severity === 'critical' ? 1 : 0) || ts(b) - ts(a))
     .slice(0, 3);
+};
+
+export function ActiveWarnings({ items }: { items: NewsItem[] | null }) {
+  const active = activeWarnings(items);
   if (active.length === 0) return null;
   return (
     <section aria-label="Active official warnings" className="space-y-2">
@@ -64,7 +68,9 @@ export function ActiveWarnings({ items }: { items: NewsItem[] | null }) {
 }
 
 export default function LatestNews({ items }: { items: NewsItem[] | null }) {
-  const latest = (items ?? []).slice().sort((a, b) => ts(b) - ts(a)).slice(0, SHOW);
+  // Warnings already pinned in the strip above the map aren't repeated here.
+  const pinned = new Set(activeWarnings(items).map((i) => i.id));
+  const latest = (items ?? []).filter((i) => !pinned.has(i.id)).sort((a, b) => ts(b) - ts(a)).slice(0, SHOW);
 
   return (
     <section aria-labelledby="latest-news" className={`${ui.card} ${ui.cardPad}`}>
