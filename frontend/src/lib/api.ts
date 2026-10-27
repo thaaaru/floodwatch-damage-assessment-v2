@@ -165,6 +165,7 @@ export interface PlaceSuggestion {
   place_id: string;
   description: string;
   text?: string;
+  source?: string;
 }
 
 export interface PlaceDetails extends MapCoordinate {
@@ -363,7 +364,10 @@ class ApiClient {
   }
 
   async autocompletePlaces(input: string): Promise<PlaceSuggestion[]> {
-    const response = await this.fetch<{ suggestions?: Array<{ place_id: string; text: string }> }>(
+    const response = await this.fetch<{
+      suggestions?: Array<{ place_id: string; text: string }>;
+      source?: string;
+    }>(
       '/api/map-context/places/autocomplete',
       { method: 'POST', body: JSON.stringify({ input }) },
     );
@@ -371,6 +375,7 @@ class ApiClient {
       place_id: place.place_id,
       description: place.text,
       text: place.text,
+      source: response.source,
     }));
   }
 

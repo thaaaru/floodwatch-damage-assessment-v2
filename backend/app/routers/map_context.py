@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from ..config import get_settings
 from ..config.rate_limit import get_client_identity, limiter
-from ..services.map_context import GoogleMapsService, PointWeatherService
+from ..services.map_context import GoogleMapsService, NominatimPlaceService, PointWeatherService
 from ..services.open_meteo import OpenMeteoService
 
 router = APIRouter(prefix="/api/map-context", tags=["map-context"])
@@ -18,6 +18,7 @@ google_maps_service = GoogleMapsService(
     settings.google_maps_api_key,
     client_daily_budget=settings.map_context_client_daily_budget,
 )
+nominatim_place_service = NominatimPlaceService()
 _PLACE_ID = re.compile(r"^[A-Za-z0-9_-]{1,256}$")
 
 
@@ -61,6 +62,16 @@ async def _google_call(awaitable):
     except (httpx.HTTPError, ValueError) as exc:
         raise HTTPException(status_code=502, detail="Google Maps upstream unavailable") from exc
 
+async def _nominatim_call(awaitable):
+    try:
+        return await awaitable
+    except LookupError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (httpx.HTTPError, ValueError) as exc:
+        raise HTTPException(status_code=502, detail="OpenStreetMap place search unavailable") from exc
+
 
 @router.get("/weather")
 @limiter.limit("60/minute")
@@ -78,13 +89,14 @@ async def weather(
 @router.post("/places/autocomplete")
 @limiter.limit("30/minute")
 async def autocomplete(request: Request, body: AutocompleteRequest):
-    _require_google()
-    return await _google_call(
-        google_maps_service.autocomplete(
-            body.input,
-            get_client_identity(request, settings.trusted_proxy_cidrs),
+    if settings.google_maps_api_key:
+        return await _google_call(
+            google_maps_service.autocomplete(
+                body.input,
+                get_client_identity(request, settings.trusted_proxy_cidrs),
+            )
         )
-    )
+    return await _nominatim_call(nominatim_place_service.search(body.input))
 
 
 @router.get("/places/{place_id}")
@@ -95,6 +107,8 @@ async def place(
 ):
     if not _PLACE_ID.fullmatch(place_id):
         raise HTTPException(status_code=422, detail="invalid place_id")
+    if place_id.startswith("osm_"):
+        return await _nominatim_call(nominatim_place_service.place(place_id))
     _require_google()
     return await _google_call(
         google_maps_service.place(

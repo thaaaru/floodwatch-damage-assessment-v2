@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Bounded server-side adapters for Google Maps Platform map context."""
 import asyncio
+import base64
 import json
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -36,6 +37,138 @@ class PointWeatherService:
             }
             self._cache[key] = (now + self.CACHE_TTL_SECONDS, value)
             return value
+
+
+class NominatimPlaceService:
+    """Key-free, submit-only Sri Lanka place search via OpenStreetMap Nominatim."""
+
+    SEARCH_URL = "https://nominatim.openstreetmap.org/search"
+    CACHE_TTL_SECONDS = 300
+    MAX_RESPONSE_BYTES = 256 * 1024
+    MAX_CACHE_ENTRIES = 512
+    MIN_REQUEST_INTERVAL_SECONDS = 1.0
+
+    def __init__(self, client: Optional[httpx.AsyncClient] = None):
+        self._client = client
+        self._owns_client = client is None
+        self._cache: dict[str, tuple[float, dict]] = {}
+        self._request_lock = asyncio.Lock()
+        self._last_request_at = 0.0
+
+    async def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(8.0, connect=3.0),
+                follow_redirects=False,
+                headers={
+                    "User-Agent": "FloodWatch-LK/1.0 (+https://floodwatch.teklab.dev)",
+                    "Accept": "application/json",
+                },
+            )
+            self._owns_client = True
+        return self._client
+
+    async def aclose(self) -> None:
+        if self._owns_client and self._client is not None and not self._client.is_closed:
+            await self._client.aclose()
+
+    async def search(self, input_text: str) -> dict:
+        key = input_text.casefold()
+        now = datetime.now(timezone.utc).timestamp()
+        cached = self._cache.get(key)
+        if cached and cached[0] > now:
+            return cached[1]
+
+        if self._request_lock.locked():
+            raise RuntimeError("place search is busy")
+        async with self._request_lock:
+            cached = self._cache.get(key)
+            if cached and cached[0] > datetime.now(timezone.utc).timestamp():
+                return cached[1]
+
+            loop = asyncio.get_running_loop()
+            delay = self.MIN_REQUEST_INTERVAL_SECONDS - (loop.time() - self._last_request_at)
+            if delay > 0:
+                await asyncio.sleep(delay)
+            client = await self._get_client()
+            async with client.stream(
+                "GET",
+                self.SEARCH_URL,
+                params={
+                    "q": input_text,
+                    "format": "jsonv2",
+                    "countrycodes": "lk",
+                    "addressdetails": "0",
+                    "limit": "8",
+                },
+                headers={
+                    "User-Agent": "FloodWatch-LK/1.0 (+https://floodwatch.teklab.dev)",
+                    "Accept": "application/json",
+                },
+            ) as response:
+                self._last_request_at = loop.time()
+                response.raise_for_status()
+                content = bytearray()
+                async for chunk in response.aiter_bytes():
+                    if len(content) + len(chunk) > self.MAX_RESPONSE_BYTES:
+                        raise ValueError("Nominatim response too large")
+                    content.extend(chunk)
+            payload = json.loads(content)
+            if not isinstance(payload, list):
+                raise ValueError("Nominatim response must be a list")
+
+            suggestions = []
+            for item in payload[:8]:
+                if not isinstance(item, dict):
+                    continue
+                try:
+                    latitude = float(item["lat"])
+                    longitude = float(item["lon"])
+                    text = str(item["display_name"])
+                except (KeyError, TypeError, ValueError):
+                    continue
+                if not (5.7 <= latitude <= 10.2 and 79.3 <= longitude <= 82.2 and text):
+                    continue
+                coordinates = f"{latitude:.6f},{longitude:.6f}".encode()
+                token = base64.urlsafe_b64encode(coordinates).decode().rstrip("=")
+                suggestions.append({"place_id": f"osm_{token}", "text": text})
+
+            value = {
+                "suggestions": suggestions,
+                "source": "OpenStreetMap Nominatim",
+                "source_type": "community",
+            }
+            expires_at = datetime.now(timezone.utc).timestamp() + self.CACHE_TTL_SECONDS
+            self._cache = {
+                cache_key: cached_value
+                for cache_key, cached_value in self._cache.items()
+                if cached_value[0] > now
+            }
+            while len(self._cache) >= self.MAX_CACHE_ENTRIES:
+                self._cache.pop(next(iter(self._cache)))
+            self._cache[key] = (expires_at, value)
+            return value
+
+    async def place(self, place_id: str) -> dict:
+        if not place_id.startswith("osm_"):
+            raise LookupError("place not found")
+        encoded = place_id[4:]
+        try:
+            padding = "=" * (-len(encoded) % 4)
+            latitude_text, longitude_text = base64.urlsafe_b64decode(encoded + padding).decode().split(",", 1)
+            latitude = float(latitude_text)
+            longitude = float(longitude_text)
+        except (ValueError, UnicodeDecodeError):
+            raise LookupError("place not found") from None
+        if not (5.7 <= latitude <= 10.2 and 79.3 <= longitude <= 82.2):
+            raise LookupError("place not found")
+        return {
+            "place_id": place_id,
+            "formatted_address": None,
+            "location": {"latitude": latitude, "longitude": longitude},
+            "source": "OpenStreetMap Nominatim",
+            "source_type": "community",
+        }
 
 
 class GoogleMapsService:

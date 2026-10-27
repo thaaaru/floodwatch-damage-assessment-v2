@@ -81,8 +81,15 @@ const ROWS: Row[] = [
     credit: 'ODbL. © OpenStreetMap contributors',
   },
   {
-    source: 'Google Maps Platform: Places, Routes and Elevation',
-    feeds: 'Optional public-mode place search, candidate routes and elevation context',
+    source: 'OpenStreetMap Nominatim',
+    feeds: 'Public-mode Sri Lanka place search',
+    how: 'Requested only after a person submits a search; cached for 5 minutes',
+    trust: 'Crowd-sourced location context. Search results may be incomplete or outdated.',
+    credit: 'ODbL. © OpenStreetMap contributors',
+  },
+  {
+    source: 'Google Maps Platform: Places, Routes and Elevation (optional)',
+    feeds: 'Enhanced place search, candidate routes and elevation context',
     how: 'Requested only after a person searches, selects a location, or asks for a route; unavailable when the server key is not configured',
     trust: 'Third-party context only. Candidate routes are not flood-safety assessments.',
     credit: 'Google Maps Platform attribution is shown with returned data.',

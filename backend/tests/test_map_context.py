@@ -5,7 +5,7 @@ from fastapi import Request
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services.map_context import GoogleMapsService
+from app.services.map_context import GoogleMapsService, NominatimPlaceService
 from app.config.rate_limit import get_client_identity
 
 
@@ -43,9 +43,8 @@ def test_google_maps_service_uses_official_hosts_fields_and_disclaimers():
     assert seen[2].headers["x-goog-fieldmask"] == "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline"
 
 
-def test_google_endpoints_are_disabled_without_dedicated_key():
+def test_paid_google_endpoints_are_disabled_without_dedicated_key():
     client = TestClient(app)
-    assert client.post("/api/map-context/places/autocomplete", json={"input": "Colombo"}).status_code == 503
     assert client.get("/api/map-context/places/abc").status_code == 503
     assert client.post("/api/map-context/route", json={
         "origin": {"latitude": 6.9, "longitude": 79.8},
@@ -60,6 +59,7 @@ def test_map_context_rejects_invalid_coordinates_and_inputs_before_upstream():
     assert client.get("/api/map-context/elevation?lat=6.9&lon=181").status_code == 422
     assert client.post("/api/map-context/places/autocomplete", json={"input": " "}).status_code == 422
     assert client.get("/api/map-context/places/$").status_code == 422
+    assert client.get("/api/map-context/places/osm_bad").status_code == 404
 
 
 def test_map_context_weather_is_open_meteo_model(monkeypatch):
@@ -184,6 +184,60 @@ def test_paid_budget_is_shared_across_endpoints_and_isolated_by_client():
             raise AssertionError("one client must not exceed its cross-endpoint budget")
         assert (await service.elevation(7.0, 80.0, "client-b"))["elevation_meters"] == 10
         assert len(calls) == 3
+        await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_nominatim_place_search_works_without_a_google_key():
+    requests = []
+
+    def upstream(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json=[{
+            "display_name": "Colombo, Sri Lanka",
+            "lat": "6.9271",
+            "lon": "79.8612",
+        }])
+
+    async def scenario():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(upstream))
+        service = NominatimPlaceService(client=client)
+        result = await service.search("Colombo")
+        assert result["source"] == "OpenStreetMap Nominatim"
+        assert result["suggestions"][0]["text"] == "Colombo, Sri Lanka"
+
+        place = await service.place(result["suggestions"][0]["place_id"])
+        assert place["location"] == {"latitude": 6.9271, "longitude": 79.8612}
+
+        assert len(requests) == 1
+        assert requests[0].url.host == "nominatim.openstreetmap.org"
+        assert requests[0].url.params["countrycodes"] == "lk"
+        assert requests[0].headers["user-agent"].startswith("FloodWatch-LK/")
+        await client.aclose()
+
+    asyncio.run(scenario())
+
+
+def test_nominatim_cache_has_a_hard_entry_limit():
+    def upstream(request: httpx.Request) -> httpx.Response:
+        query = request.url.params["q"]
+        return httpx.Response(200, json=[{
+            "display_name": f"{query}, Sri Lanka",
+            "lat": "6.9271",
+            "lon": "79.8612",
+        }])
+
+    async def scenario():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(upstream))
+        service = NominatimPlaceService(client=client)
+        service.MAX_CACHE_ENTRIES = 2
+        service.MIN_REQUEST_INTERVAL_SECONDS = 0
+        await service.search("Colombo")
+        await service.search("Kandy")
+        await service.search("Galle")
+        assert len(service._cache) == 2
+        assert "colombo" not in service._cache
         await client.aclose()
 
     asyncio.run(scenario())

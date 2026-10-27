@@ -67,6 +67,11 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Error closing Google Maps HTTP client: {e}")
 
+    try:
+        await map_context.nominatim_place_service.aclose()
+    except Exception as e:
+        logger.warning(f"Error closing Nominatim HTTP client: {e}")
+
     # Close the shared Open-Meteo Flood HTTP client (if it was ever initialized).
     try:
         from .services.open_meteo_flood import open_meteo_flood_service

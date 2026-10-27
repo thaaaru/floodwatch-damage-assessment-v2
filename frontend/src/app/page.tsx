@@ -96,10 +96,11 @@ export default function Dashboard() {
     setLoading(false);
   }, []);
   useEffect(() => {
+    if (mode !== 'technical') return;
     fetchData();
     const interval = setInterval(fetchData, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, [fetchData, mode]);
 
   const loadPublicContext = useCallback(async (point: MapCoordinate) => {
     const requestId = ++contextRequestRef.current;
@@ -274,9 +275,14 @@ export default function Dashboard() {
                   {searchState === 'error' && <p className="text-xs text-red-300" role="alert">Place search failed. Select the map or try again.</p>}
                 </form>
                 {suggestions.length > 0 && (
-                  <ul aria-label="Place suggestions" className="divide-y divide-slate-700 rounded-lg border border-slate-700">
-                    {suggestions.map((place) => <li key={place.place_id}><button type="button" onClick={() => choosePlace(place)} className="focus-ring min-h-[44px] w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700">{place.description}</button></li>)}
-                  </ul>
+                  <div className="space-y-1">
+                    <ul aria-label="Place suggestions" className="divide-y divide-slate-700 rounded-lg border border-slate-700">
+                      {suggestions.map((place) => <li key={place.place_id}><button type="button" onClick={() => choosePlace(place)} className="focus-ring min-h-[44px] w-full px-3 py-2 text-left text-sm text-slate-200 hover:bg-slate-700">{place.description}</button></li>)}
+                    </ul>
+                    {suggestions[0].source === 'OpenStreetMap Nominatim' && (
+                      <p className="text-xs text-slate-400">Search data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">OpenStreetMap contributors</a></p>
+                    )}
+                  </div>
                 )}
                 {location ? (
                   <div className="space-y-3" aria-live="polite">
@@ -313,6 +319,11 @@ export default function Dashboard() {
                           <li key={`${facility.type}-${facility.id}`} className={`${ui.inset} p-3`}>
                             <div className="text-sm font-medium text-white">{facility.name}</div>
                             <div className="text-xs text-slate-400">{facility.label}{facility.distance_km !== undefined ? ` · ${facility.distance_km.toFixed(1)} km` : ''}</div>
+                            {facility.phone && (
+                              <a href={`tel:${facility.phone.split(';', 1)[0].replace(/[^\d+]/g, '')}`} className="focus-ring mt-2 inline-flex min-h-[44px] items-center rounded-lg px-1 text-sm font-semibold text-cyan-200 underline underline-offset-2" aria-label={`Call ${facility.name} at ${facility.phone}`}>
+                                Call {facility.phone}
+                              </a>
+                            )}
                             <button type="button" onClick={() => requestRoute(facility)} className="focus-ring mt-2 min-h-[44px] w-full rounded-lg border border-cyan-700 px-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-950">Show candidate route</button>
                           </li>
                         ))}
