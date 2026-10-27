@@ -62,12 +62,18 @@ function pmtilesSource(url: string): Promise<Source | null> {
  * be read, falls back to OSM raster tiles.
  */
 export async function addBasemap(map: Leaflet.Map, flavor: BasemapFlavor = 'light'): Promise<Leaflet.Layer | null> {
-  const L = (await import('leaflet')).default;
-  const srcs = await Promise.all(TIERS.map((t) => pmtilesSource(t.url)));
-  const lka = srcs[srcs.length - 1];
+  const vectorRenderer = import('protomaps-leaflet').catch((error) => {
+    console.warn('Self-hosted vector renderer unavailable.', error);
+    return null;
+  });
+  const [L, srcs] = await Promise.all([
+    import('leaflet').then((module) => module.default),
+    Promise.all(TIERS.map((tier) => pmtilesSource(tier.url))),
+  ]);
+  const [lka, renderer] = [srcs[srcs.length - 1], await vectorRenderer];
   let layer: Leaflet.Layer;
-  if (lka) {
-    const { leafletLayer } = await import('protomaps-leaflet');
+  if (lka && renderer) {
+    const { leafletLayer } = renderer;
     const vector = (src: Source, extra: object) => leafletLayer({
       url: src.pmtiles,
       flavor,

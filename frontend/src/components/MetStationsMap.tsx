@@ -262,7 +262,6 @@ export default function MetStationsMap({
     map.fitBounds([[5.9, 79.6], [9.85, 81.9]], { paddingBottomRight: [0, 48] }); // keep the south clear of the attribution
     L.control.zoom({ position: 'topright' }).addTo(map);
     addFullscreenControl(map);
-    addBasemap(map); // carries its own OSM/Protomaps attribution
     L.control
       .attribution({ position: 'bottomright' })
       .addAttribution(
@@ -278,6 +277,7 @@ export default function MetStationsMap({
     mapRef.current = map;
     // Basins + rivers: on by default; only flooding basins are filled, with a legend.
     const loadBasins = () => {
+      if (mapRef.current !== map) return;
       setBasinError(false);
       createWaterLayer(map, () => gaugesRef.current, 'alertsOnly')
         .then(({ layer, restyle, setFillMode }) => {
@@ -296,7 +296,7 @@ export default function MetStationsMap({
         });
     };
     retryBasinsRef.current = loadBasins;
-    loadBasins();
+    void addBasemap(map).finally(loadBasins); // Paint the base map before downloading optional context overlays.
     return () => {
       retryBasinsRef.current = null;
       map.remove();
