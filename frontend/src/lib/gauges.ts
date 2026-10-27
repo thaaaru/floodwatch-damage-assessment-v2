@@ -8,6 +8,7 @@
 import L from 'leaflet';
 import { api, GaugeReading, GaugeStatus, IrrigationStation } from '@/lib/api';
 import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, STATUS_TEXT, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
+import { COLORS } from '@/lib/mapColors';
 
 export { BASIN_CREDIT, GAUGE_CREDIT };
 
@@ -17,19 +18,27 @@ const esc = (v: unknown) =>
 
 const m = (v: number | null) => (v === null || v === undefined ? '&mdash;' : `${v.toFixed(2)} m`);
 
-// Size grows with severity so the eye lands on flooding gauges first; the trend
-// glyph only fits (and only matters at a glance) from alert upwards.
-const SIZE: Record<GaugeStatus, number> = { unknown: 12, normal: 14, alert: 20, minor: 24, major: 28 };
+// Severity is coded by shape and size as well as colour, so it survives colour blindness and
+// greyscale: dot (normal / no threshold) → diamond (alert) → triangle (minor) → bigger pulsing
+// triangle (major). The trend glyph only fits, and only matters at a glance, from alert upwards.
+const SIZE: Record<GaugeStatus, number> = { unknown: 7, normal: 7, alert: 14, minor: 16, major: 18 };
 const SHOWS_TREND: GaugeStatus[] = ['alert', 'minor', 'major'];
+
+function shape(status: GaugeStatus, s: number): string {
+  if (status === 'alert') return `<polygon points="${s / 2},1 ${s - 1},${s / 2} ${s / 2},${s - 1} 1,${s / 2}"/>`;
+  if (status === 'minor' || status === 'major') return `<polygon points="${s / 2},1 ${s - 1},${s - 1} 1,${s - 1}"/>`;
+  return `<circle cx="${s / 2}" cy="${s / 2}" r="${s / 2 - 0.75}"/>`;
+}
 
 function gaugeIcon(g: IrrigationStation): L.DivIcon {
   const size = SIZE[g.status];
-  const halo = g.status === 'minor' || g.status === 'major' ? ' fw-gauge-halo' : '';
-  const hit = Math.max(size, 24); // small dots keep a 24 px tap target
+  const hit = 24; // small markers keep a 24 px tap target
+  const tri = g.status === 'minor' || g.status === 'major';
   return L.divIcon({
-    className: 'fw-gauge-wrap',
-    html: `<div class="fw-gauge${halo}${g.stale ? ' fw-gauge-stale' : ''}" style="width:${size}px;height:${size}px;background:${STATUS_COLOR[g.status]};color:${STATUS_TEXT[g.status]};--fw-halo:${STATUS_COLOR[g.status]}"
-      aria-hidden="true">${SHOWS_TREND.includes(g.status) ? trendArrow(g.trend) : ''}</div>`,
+    className: `fw-gauge-wrap fw-gauge-${g.status}${g.stale ? ' fw-gauge-stale' : ''}`,
+    html: `${g.status === 'major' ? `<span class="fw-gauge-pulse" style="border-color:${COLORS.status.major}" aria-hidden="true"></span>` : ''}<svg class="fw-gauge" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"
+      fill="${STATUS_COLOR[g.status]}" stroke="${COLORS.outline}" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">${shape(g.status, size)}</svg>${
+      SHOWS_TREND.includes(g.status) && g.trend ? `<span class="fw-gauge-trend${tri ? ' fw-gauge-trend-tri' : ''}" aria-hidden="true">${trendArrow(g.trend)}</span>` : ''}`,
     iconSize: [hit, hit],
     iconAnchor: [hit / 2, hit / 2],
   });
@@ -125,25 +134,46 @@ export type BasinFillMode = 'always' | 'alertsOnly';
 const FLOODING: GaugeStatus[] = ['alert', 'minor', 'major'];
 
 // `getGauges` is read at style/popup time so the layer follows data refreshes via setStyle().
+// Fill and stroke get heavier with severity; major adds a 45° hatch so it stays the most
+// prominent thing on the map in greyscale too.
+const HATCH_ID = 'fw-hatch-major';
+const BASIN_STYLE: Partial<Record<GaugeStatus, L.PathOptions>> = {
+  alert: { color: COLORS.status.alert, weight: 1.5, opacity: 1, fillColor: COLORS.status.alert, fillOpacity: 0.25 },
+  minor: { color: COLORS.status.minor, weight: 2, opacity: 1, fillColor: COLORS.status.minor, fillOpacity: 0.35 },
+  // The pattern carries the 0.50 fill plus 0.35 stripes, so the path itself draws it opaque.
+  major: { color: COLORS.status.major, weight: 3, opacity: 1, fillColor: `url(#${HATCH_ID})`, fillOpacity: 1 },
+};
+
+// fill="url(#id)" resolves against any SVG in the document, so one hidden <defs> serves every renderer.
+function ensureHatch() {
+  if (document.getElementById(HATCH_ID)) return;
+  const c = COLORS.status.major;
+  document.body.insertAdjacentHTML('beforeend', `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <pattern id="${HATCH_ID}" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="${c}" fill-opacity="0.5"/><rect width="3" height="8" fill="${c}" fill-opacity="0.35"/>
+    </pattern></defs></svg>`);
+}
+
 export function createBasinLayer(
   data: GeoJSON.FeatureCollection,
   getGauges: () => IrrigationStation[],
   getFillMode: () => BasinFillMode,
 ): L.GeoJSON {
+  ensureHatch();
   const inside = (f?: GeoJSON.Feature) => {
     const names: string[] = f?.properties?.gauges ?? [];
     return getGauges().filter((g) => names.includes(g.station));
   };
   const style = (f?: GeoJSON.Feature): L.PathOptions => {
     const worst = worstStatus(inside(f));
-    if (getFillMode() === 'alertsOnly') {
-      return worst && FLOODING.includes(worst)
-        ? { color: STATUS_COLOR[worst], weight: 2, opacity: 0.9, fillColor: STATUS_COLOR[worst], fillOpacity: 0.35 }
-        : { color: '#64748b', weight: 1, opacity: 0.6, fillOpacity: 0 }; // fillOpacity 0 keeps the area clickable
+    const flood = worst && BASIN_STYLE[worst];
+    if (flood) return flood;
+    if (getFillMode() === 'always' && worst) {
+      // "Colour all basins" opt-in: normal / no-threshold basins get a faint tint of their gauge colour.
+      return { color: STATUS_COLOR[worst], weight: 1, opacity: 0.6, fillColor: STATUS_COLOR[worst], fillOpacity: 0.12 };
     }
-    return worst
-      ? { color: STATUS_COLOR[worst], weight: 1.5, fillColor: STATUS_COLOR[worst], fillOpacity: 0.22 }
-      : { color: '#64748b', weight: 1, fillOpacity: 0, dashArray: '4 3' };
+    // fillOpacity 0 keeps the area clickable
+    return { color: COLORS.basinIdle, weight: 1, opacity: 0.6, fillOpacity: 0, dashArray: getFillMode() === 'always' ? '4 3' : undefined };
   };
   return L.geoJSON(data, {
     style,
@@ -169,11 +199,10 @@ export function createBasinLayer(
 }
 
 // ---------------------------------------------------------------------------
-// Rivers (HOT OSM via HDX) - drawn above basin fills, below gauge markers
+// Rivers (HOT OSM via HDX) - context only, so muted and drawn under the basin fills
 // ---------------------------------------------------------------------------
 
-export const RIVER_COLOR = '#2563eb';
-const RIVER_PANE = 'fw-rivers'; // z 450: above overlayPane (basins, 400), below markerPane (600)
+const RIVER_PANE = 'fw-rivers'; // z 350: above the basemap (200), below overlayPane (basins, 400)
 const LABEL_MIN_ZOOM = 11;
 
 let riversPromise: Promise<GeoJSON.FeatureCollection> | null = null;
@@ -197,27 +226,15 @@ function labelPoint(geom: GeoJSON.MultiLineString): L.LatLngExpression | null {
   return mid ? [mid[1], mid[0]] : null;
 }
 
-function createRiverLayer(
-  map: L.Map,
-  data: GeoJSON.FeatureCollection,
-  basinGauges: Map<number, string[]>,
-  getGauges: () => IrrigationStation[],
-) {
-  if (!map.getPane(RIVER_PANE)) map.createPane(RIVER_PANE).style.zIndex = '450';
-  // A river takes the worst alert-or-higher status of the gauges in its basin_ids, which
-  // scripts/build_rivers.py sets only on a strict name match AND a line that enters the
-  // basin polygon. No name or geometry matching happens here; otherwise plain blue.
-  const style = (f?: GeoJSON.Feature): L.PathOptions => {
-    const names = new Set(((f?.properties?.basin_ids ?? []) as number[]).flatMap((id) => basinGauges.get(id) ?? []));
-    const worst = names.size ? worstStatus(getGauges().filter((g) => names.has(g.station))) : null;
-    const flagged = worst === 'alert' || worst === 'minor' || worst === 'major';
-    return {
-      pane: RIVER_PANE,
-      color: flagged ? STATUS_COLOR[worst] : RIVER_COLOR,
-      weight: flagged ? 2.5 : f?.properties?.name ? 1.5 : 1,
-      opacity: f?.properties?.name ? 0.85 : 0.55,
-    };
-  };
+function createRiverLayer(map: L.Map, data: GeoJSON.FeatureCollection) {
+  if (!map.getPane(RIVER_PANE)) map.createPane(RIVER_PANE).style.zIndex = '350';
+  // Flood status lives on the basin fill above; rivers stay one muted colour. Named = main river.
+  const style = (f?: GeoJSON.Feature): L.PathOptions => ({
+    pane: RIVER_PANE,
+    color: COLORS.river,
+    weight: f?.properties?.name ? 1.5 : 1,
+    opacity: 0.55,
+  });
   const lines = L.geoJSON(data, {
     pane: RIVER_PANE,
     style,
@@ -230,8 +247,8 @@ function createRiverLayer(
       .filter((f) => f.properties?.name && f.geometry.type === 'MultiLineString')
       .map((f) => {
         const at = labelPoint(f.geometry as GeoJSON.MultiLineString);
+        // Default marker pane, so the names stay readable over basin fills.
         return at && L.marker(at, {
-          pane: RIVER_PANE,
           interactive: false,
           icon: L.divIcon({ className: 'fw-river-label', html: esc(f.properties?.name), iconSize: undefined }),
         });
@@ -245,10 +262,10 @@ function createRiverLayer(
   };
   group.on('add', () => { map.on('zoomend', syncLabels); syncLabels(); });
   group.on('remove', () => map.off('zoomend', syncLabels));
-  return { group, lines, style };
+  return group;
 }
 
-// Basins + rivers as one switchable overlay. restyle() re-applies gauge status colours.
+// Basins + rivers as one switchable overlay. restyle() re-applies gauge status colours to basins.
 export async function createWaterLayer(
   map: L.Map,
   getGauges: () => IrrigationStation[],
@@ -256,16 +273,9 @@ export async function createWaterLayer(
 ) {
   const [basinData, riverData] = await Promise.all([loadBasins(), loadRivers()]);
   const basins = createBasinLayer(basinData, getGauges, () => fillMode);
-  const basinGauges = new Map<number, string[]>(
-    basinData.features.map((f) => [f.properties?.id as number, (f.properties?.gauges ?? []) as string[]]),
-  );
-  const rivers = createRiverLayer(map, riverData, basinGauges, getGauges);
   return {
-    layer: L.layerGroup([basins, rivers.group]),
-    restyle: () => {
-      basins.resetStyle();
-      rivers.lines.setStyle(rivers.style as L.StyleFunction);
-    },
+    layer: L.layerGroup([basins, createRiverLayer(map, riverData)]),
+    restyle: () => basins.resetStyle(),
     setFillMode: (mode: BasinFillMode) => {
       fillMode = mode;
       basins.resetStyle();
@@ -281,9 +291,16 @@ export function createBasinLegend(): L.Control {
   legend.onAdd = () => {
     const el = L.DomUtil.create('details', 'fw-basin-legend');
     if (wide) el.setAttribute('open', '');
-    el.innerHTML = `<summary>Basin colour = highest river gauge status</summary>` +
-      FLOODING.map((s) => `<div><span style="background:${STATUS_COLOR[s]}"></span>${STATUS_LABEL[s].charAt(0)}${STATUS_LABEL[s].slice(1).toLowerCase()}</div>`).join('') +
-      `<p>Dot colour = gauge status · ↑ rising ↓ falling → steady · faded = stale</p>`;
+    // Per status: the gauge marker shape, then the basin fill it produces (none for normal).
+    const row = (s: GaugeStatus) => {
+      const b = BASIN_STYLE[s];
+      const fill = b ? `background:${b.fillColor === `url(#${HATCH_ID})` ? `repeating-linear-gradient(45deg, ${COLORS.status.major} 0 3px, color-mix(in srgb, ${COLORS.status.major} 60%, transparent) 3px 8px)` : `color-mix(in srgb, ${b.fillColor} ${(b.fillOpacity ?? 0) * 100}%, transparent)`};border:${b.weight}px solid ${b.color}` : 'border:1px dashed transparent';
+      return `<div><b aria-hidden="true"><svg width="${SIZE[s]}" height="${SIZE[s]}" viewBox="0 0 ${SIZE[s]} ${SIZE[s]}" fill="${STATUS_COLOR[s]}" stroke="${COLORS.outline}" stroke-width="1.5">${shape(s, SIZE[s])}</svg></b>` +
+        `<i style="${fill}" aria-hidden="true"></i>${STATUS_LABEL[s].charAt(0)}${STATUS_LABEL[s].slice(1).toLowerCase()}</div>`;
+    };
+    el.innerHTML = `<summary>River gauge status (marker · basin)</summary>` +
+      (['major', 'minor', 'alert', 'normal', 'unknown'] as GaugeStatus[]).map(row).join('') +
+      `<p>Basin = highest gauge status inside it · ↑ rising ↓ falling → steady · faded = stale</p>`;
     L.DomEvent.disableClickPropagation(el);
     return el;
   };

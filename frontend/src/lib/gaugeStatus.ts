@@ -4,25 +4,20 @@
 // so server-rendered pages can use it.
 
 import { GaugeStatus, IrrigationStation } from '@/lib/api';
+import { COLORS } from '@/lib/mapColors';
 
 export const GAUGE_CREDIT = 'Water levels: Irrigation Department of Sri Lanka';
 export const BASIN_CREDIT = 'River basins: Irrigation Department of Sri Lanka';
 
-export const STATUS_COLOR: Record<GaugeStatus, string> = {
-  major: '#dc2626',
-  minor: '#f97316',
-  alert: '#eab308',
-  normal: '#16a34a',
-  unknown: '#94a3b8',
-};
+export const STATUS_COLOR: Record<GaugeStatus, string> = COLORS.status;
 
-// Text/glyph colour on a STATUS_COLOR background: white only reaches 4.5:1 on red.
+// Text colour on a STATUS_COLOR background: dark passes 4.5:1 on every status (white fails on all).
 export const STATUS_TEXT: Record<GaugeStatus, string> = {
-  major: '#ffffff',
-  minor: '#0f172a',
-  alert: '#0f172a',
-  normal: '#0f172a',
-  unknown: '#0f172a',
+  major: COLORS.outline,
+  minor: COLORS.outline,
+  alert: COLORS.outline,
+  normal: COLORS.outline,
+  unknown: COLORS.outline,
 };
 
 export const STATUS_LABEL: Record<GaugeStatus, string> = {

@@ -453,25 +453,49 @@
 }
 
 
-/* River gauge markers (lib/gauges.ts): colour = status, size = severity, glyph = trend (alert+) */
-.fw-gauge {
-  border-radius: 9999px;
-  border: 2px solid #0f172a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  font: 700 14px/1 system-ui, sans-serif;
-  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.45);
-}
+/* River gauge markers (lib/gauges.ts): colour + shape + size = status, glyph = trend (alert+) */
+/* Leaflet already positions the icon absolutely, so the glyph and pulse anchor to it */
 .fw-gauge-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-/* Minor/major flood: a soft ring in the status colour */
-.fw-gauge-halo {
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--fw-halo) 35%, transparent);
+.fw-gauge-wrap .fw-gauge {
+  z-index: auto; /* leaflet.css gives every map svg z-index 200, which would cover the trend glyph */
+  overflow: visible;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+}
+/* White arrow with a 1px black outline, centred on the marker (triangles: on the centroid) */
+.fw-gauge-trend {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font: 700 10px/1 system-ui, sans-serif;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  pointer-events: none;
+}
+.fw-gauge-trend-tri {
+  padding-top: 3px;
+}
+/* Major flood: pulsing ring in the status colour; a steady ring when motion is reduced */
+.fw-gauge-pulse {
+  position: absolute;
+  width: 26px;
+  height: 26px;
+  border-radius: 9999px;
+  border: 2px solid;
+  animation: fw-pulse 1.6s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes fw-pulse {
+  from { transform: scale(0.7); opacity: 0.9; }
+  to { transform: scale(1.5); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fw-gauge-pulse { animation: none; opacity: 0.7; }
 }
 /* Hover label: name, level, trend */
 .leaflet-tooltip.fw-gauge-tip {
@@ -486,10 +510,13 @@
 .leaflet-tooltip-right.fw-gauge-tip::before {
   display: none;
 }
-/* Stale (> 6 h): faded with a dashed light ring */
+/* Stale (> 6 h): faded with a dashed light edge */
 .fw-gauge-stale {
   opacity: 0.5;
-  border: 2px dashed #f8fafc;
+}
+.fw-gauge-stale .fw-gauge {
+  stroke: #f8fafc;
+  stroke-dasharray: 2 2;
 }
 .fw-light-popup .leaflet-popup-content-wrapper,
 .fw-light-popup .leaflet-popup-tip {
@@ -506,16 +533,16 @@
   font-size: 11px;
 }
 .fw-river-label {
-  color: #1e3a8a;
+  color: #c7d4e2;
   font: italic 600 11px/1 system-ui, sans-serif;
   white-space: nowrap;
-  text-shadow: 0 0 3px #ffffff, 0 0 3px #ffffff;
+  text-shadow: 0 0 3px #1e2124, 0 0 3px #1e2124;
 }
 
-/* Home-map basin legend (lib/gauges.ts createBasinLegend) */
+/* Home-map basin legend (lib/gauges.ts createBasinLegend); map panels share the dark legend tone */
 .fw-basin-legend {
-  background: rgba(255, 255, 255, 0.95);
-  color: #1f2937;
+  background: rgba(30, 34, 40, 0.92);
+  color: #e8eaed;
   border-radius: 8px;
   padding: 6px 10px;
   font: 11px/1.5 system-ui, sans-serif;
@@ -534,13 +561,18 @@
 .fw-basin-legend p {
   margin: 4px 0 0;
   padding-top: 4px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #3a4048;
 }
-.fw-basin-legend span {
-  width: 12px;
+.fw-basin-legend b {
+  width: 18px;
+  display: flex;
+  justify-content: center;
+}
+.fw-basin-legend i {
+  width: 14px;
   height: 12px;
   border-radius: 2px;
-  opacity: 0.8;
+  box-sizing: border-box;
 }
 
 .leaflet-control-zoom a,
@@ -563,17 +595,16 @@
   background: #f4f4f4;
 }
 
-/* Rainfall vs normal bubbles (lib/rainNormal.ts): modelled, so muted and under the gauges */
+/* Rainfall vs normal (lib/rainNormal.ts): size, fill, ring and text colour set inline per band */
 .fw-rain-bubble {
-  width: 34px;
-  height: 34px;
+  box-sizing: border-box;
   border-radius: 9999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.65;
-  font: 700 9px/1 ui-monospace, monospace;
-  border: 1px solid rgba(15, 23, 42, 0.6);
+  font: 700 11px/1 system-ui, sans-serif;
+  letter-spacing: -0.03em;
+  text-shadow: 0 0 2px var(--fw-halo), 0 0 2px var(--fw-halo), 0 0 1px var(--fw-halo);
 }
 
 /* Home-map "Flood area / Whole island" buttons (MetStationsMap addViewControl) */
@@ -606,8 +637,8 @@
   gap: 6px;
   min-height: 44px;
   padding: 6px 10px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #1f2937;
+  background: rgba(30, 34, 40, 0.92);
+  color: #e8eaed;
   border-radius: 8px;
   font: 600 11px/1.3 system-ui, sans-serif;
   box-shadow: 0 1px 4px rgba(15, 23, 42, 0.35);
@@ -621,8 +652,8 @@
 
 /* Home-map rain forecast legend + 24/48 h switch (lib/forecast.ts) */
 .fw-forecast-legend {
-  background: rgba(255, 255, 255, 0.95);
-  color: #1f2937;
+  background: rgba(30, 34, 40, 0.92);
+  color: #e8eaed;
   border-radius: 8px;
   padding: 6px 10px;
   font: 11px/1.5 system-ui, sans-serif;
@@ -663,10 +694,10 @@
   width: 12px;
   height: 12px;
   border-radius: 9999px;
-  border: 1px solid #1e293b;
+  border: 1px solid #3a4048;
 }
 .fw-forecast-note {
   margin-top: 4px;
   font-size: 10px;
-  color: #6b7280;
+  color: #aab1ba;
 }
