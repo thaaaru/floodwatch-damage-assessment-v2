@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { IBM_Plex_Mono, Inter, Public_Sans } from 'next/font/google';
 import Script from 'next/script';
 import Header from '@/components/Header';
 import { ui } from '@/lib/ui';
@@ -13,6 +13,9 @@ const inter = Inter({
   display: 'swap',
   variable: '--font-inter',
 });
+// Map UI text and numbers (MetStationsMap).
+const publicSans = Public_Sans({ subsets: ['latin'], display: 'swap', variable: '--font-public-sans' });
+const plexMono = IBM_Plex_Mono({ subsets: ['latin'], weight: ['500', '600'], display: 'swap', variable: '--font-plex-mono' });
 
 export const metadata: Metadata = {
   title: 'FloodWatch LK - Sri Lanka Flood Monitoring System',
@@ -22,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${publicSans.variable} ${plexMono.variable}`}>
       <head>
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-X70YJR4WSV"

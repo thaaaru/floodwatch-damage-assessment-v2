@@ -4,20 +4,25 @@
 // so server-rendered pages can use it.
 
 import { GaugeStatus, IrrigationStation } from '@/lib/api';
-import { COLORS } from '@/lib/mapColors';
+import { PALETTES } from '@/lib/mapPalette';
 
 export const GAUGE_CREDIT = 'Water levels: Irrigation Department of Sri Lanka';
 export const BASIN_CREDIT = 'River basins: Irrigation Department of Sri Lanka';
 
-export const STATUS_COLOR: Record<GaugeStatus, string> = COLORS.status;
+// Page UI (dark slate) uses the dark map palette's status fills.
+const DARK = PALETTES.dark.status;
+export const STATUS_COLOR: Record<GaugeStatus, string> = {
+  major: DARK.major.fill, minor: DARK.minor.fill, alert: DARK.alert.fill, normal: DARK.normal.fill, unknown: DARK.none.fill,
+};
+const TEXT_ON = '#0F172A';
 
 // Text colour on a STATUS_COLOR background: dark passes 4.5:1 on every status (white fails on all).
 export const STATUS_TEXT: Record<GaugeStatus, string> = {
-  major: COLORS.outline,
-  minor: COLORS.outline,
-  alert: COLORS.outline,
-  normal: COLORS.outline,
-  unknown: COLORS.outline,
+  major: TEXT_ON,
+  minor: TEXT_ON,
+  alert: TEXT_ON,
+  normal: TEXT_ON,
+  unknown: TEXT_ON,
 };
 
 export const STATUS_LABEL: Record<GaugeStatus, string> = {

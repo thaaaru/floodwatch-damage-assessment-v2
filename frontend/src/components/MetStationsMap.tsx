@@ -12,6 +12,22 @@ import { createRainNormalLayer } from '@/lib/rainNormal';
 import {
   BASIN_CREDIT, BasinFillMode, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey,
 } from '@/lib/gauges';
+import { PALETTES, Palette, Theme, cssVars } from '@/lib/mapPalette';
+import { createPlaceLabels } from '@/lib/places';
+
+// The map theme is a per-viewer preference; storage can be unavailable (private mode), so it is optional.
+const THEME_KEY = 'fw-map-theme';
+const readTheme = (): Theme => {
+  try { return window.localStorage.getItem(THEME_KEY) === 'dark' ? 'dark' : 'light'; } catch { return 'light'; }
+};
+const saveTheme = (t: Theme) => {
+  try { window.localStorage.setItem(THEME_KEY, t); } catch { /* not persisted */ }
+};
+const LAND_PANE = 'fw-land'; // z 210
+const basemapStyle = (theme: Theme, p: Palette) => ({
+  base: theme === 'light' ? 'grayscale' as const : 'dark' as const,
+  land: p.land, water: p.water, coast: p.coast, waterLabel: p.waterLabel, pane: LAND_PANE,
+});
 
 interface MetStationsMapProps {
   mode: 'public' | 'technical';
@@ -155,10 +171,14 @@ function createFillModeSwitch(setFillMode: (mode: BasinFillMode) => void): L.Con
 // element full-screen is unsupported (e.g. iPhone Safari).
 const ISLAND: L.LatLngBoundsExpression = [[5.9, 79.6], [9.85, 81.9]];
 const FLOODING: IrrigationStation['status'][] = ['alert', 'minor', 'major'];
-const fitIsland = (map: L.Map) => map.fitBounds(ISLAND, { paddingBottomRight: [0, 48] }); // keep the south clear of the attribution
+// Keep the south clear of the credits and, on wide maps, the west coast (Colombo) clear of the gauge legend.
+const fitIsland = (map: L.Map) => map.fitBounds(ISLAND, {
+  paddingTopLeft: [map.getSize().x >= 700 ? 200 : 0, 0],
+  paddingBottomRight: [0, 48],
+});
 
-// "Flood area" zooms to the gauges at alert or worse; "Whole island" resets the view.
-function addViewControl(map: L.Map, getGauges: () => IrrigationStation[]) {
+// "Flood area" zooms to the gauges at alert or worse; "Whole island" resets the view; the third button flips the theme.
+function addViewControl(map: L.Map, getGauges: () => IrrigationStation[], getTheme: () => Theme, toggleTheme: () => void) {
   const Control = L.Control.extend({
     onAdd() {
       const bar = L.DomUtil.create('div', 'fw-view-switch');
@@ -182,6 +202,13 @@ function addViewControl(map: L.Map, getGauges: () => IrrigationStation[]) {
         map.fitBounds(L.latLngBounds(pts).pad(0.3), { maxZoom: 10, animate: !prefersReducedMotion() });
       });
       make('Whole island', () => fitIsland(map));
+      const themeBtn = make('', () => { toggleTheme(); syncTheme(); });
+      const syncTheme = () => {
+        const dark = getTheme() === 'dark';
+        themeBtn.textContent = 'Dark map';
+        themeBtn.setAttribute('aria-pressed', String(dark));
+      };
+      syncTheme();
       L.DomEvent.disableClickPropagation(bar);
       return bar;
     },
@@ -260,7 +287,13 @@ export default function MetStationsMap({
   const controlRef = useRef<L.Control.Layers | null>(null);
   const locationControlRef = useRef<L.Control | null>(null);
   const gaugeLayerRef = useRef<L.LayerGroup | null>(null);
+  const renderGaugesRef = useRef<(() => void) | null>(null);
   const restyleWaterRef = useRef<(() => void) | null>(null);
+  const [theme, setTheme] = useState<Theme>(readTheme);
+  const themeRef = useRef(theme);
+  const palRef = useRef<Palette>(PALETTES[theme]);
+  const basemapRef = useRef<L.Layer | null>(null);
+  const reThemeRef = useRef<(() => void)[]>([]); // legends and the rain layer redraw for the new palette
   const gaugeKeyRef = useRef('');
   const gaugesRef = useRef<IrrigationStation[]>(gauges);
   const publicLayerRef = useRef<L.LayerGroup | null>(null);
@@ -275,6 +308,7 @@ export default function MetStationsMap({
   // --- one-time map init -------------------------------------------------
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+    const getPal = () => palRef.current;
     const map = L.map(containerRef.current, {
       center: [7.8731, 80.7718],
       zoom: 8,
@@ -309,23 +343,31 @@ export default function MetStationsMap({
     addSatelliteOption(L, controlRef.current, 'Context — Satellite (Esri)');
     // Model context is deliberately optional and off by default.
     controlRef.current.addOverlay(createForecastLayer(map), 'Modelled — Rain forecast (Open-Meteo)');
-    const rainNormal = createRainNormalLayer(map);
-    controlRef.current.addOverlay(rainNormal, 'Modelled — Rainfall vs normal (ERA5)');
-    if (mode === 'technical') rainNormal.addTo(map); // labelled as modelled in its legend and popups
-    addViewControl(map, () => gaugesRef.current);
+    const rainNormal = createRainNormalLayer(map, getPal);
+    reThemeRef.current.push(rainNormal.redraw);
+    controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
+    if (mode === 'technical') rainNormal.layer.addTo(map); // labelled as modelled in its legend and popups
+    addViewControl(map, () => gaugesRef.current, () => themeRef.current,
+      () => {
+        themeRef.current = themeRef.current === 'dark' ? 'light' : 'dark';
+        setTheme(themeRef.current);
+      });
+    createPlaceLabels(map).addTo(map);
+    map.createPane(LAND_PANE).style.zIndex = '210';
     mapRef.current = map;
     // Basins + rivers: on by default; only flooding basins are filled, with a legend.
     const loadBasins = () => {
       if (mapRef.current !== map) return;
       setBasinError(false);
-      createWaterLayer(map, () => gaugesRef.current, 'alertsOnly')
+      createWaterLayer(map, () => gaugesRef.current, getPal, 'alertsOnly')
         .then(({ layer, restyle, setFillMode }) => {
           if (mapRef.current !== map) return;
           restyleWaterRef.current = restyle;
-          const legend = createBasinLegend();
+          const legend = createBasinLegend(getPal);
+          reThemeRef.current.push(legend.render);
           const colourAll = createFillModeSwitch(setFillMode);
-          layer.on('add', () => { colourAll.addTo(map); legend.addTo(map); });
-          layer.on('remove', () => { colourAll.remove(); legend.remove(); });
+          layer.on('add', () => { colourAll.addTo(map); legend.control.addTo(map); });
+          layer.on('remove', () => { colourAll.remove(); legend.control.remove(); });
           layer.addTo(map);
           controlRef.current?.addOverlay(layer, 'Context — River basins &amp; rivers');
         })
@@ -335,7 +377,10 @@ export default function MetStationsMap({
         });
     };
     retryBasinsRef.current = loadBasins;
-    void addBasemap(map, 'dark').finally(loadBasins); // Paint the base map before downloading optional context overlays.
+    // Paint the base map before downloading optional context overlays.
+    void addBasemap(map, 'light', basemapStyle(themeRef.current, getPal()))
+      .then((layer) => { basemapRef.current = layer; })
+      .finally(loadBasins);
     return () => {
       retryBasinsRef.current = null;
       map.remove();
@@ -387,13 +432,40 @@ export default function MetStationsMap({
       controlRef.current?.removeLayer(gaugeLayerRef.current);
       gaugeLayerRef.current.remove();
     }
-    gaugeLayerRef.current = createGaugeLayer(visibleGauges);
-    if (wasOn && mode === 'technical') gaugeLayerRef.current.addTo(map);
+    const { layer, render } = createGaugeLayer(map, visibleGauges, () => palRef.current);
+    gaugeLayerRef.current = layer;
+    renderGaugesRef.current = render;
+    if (wasOn && mode === 'technical') layer.addTo(map);
     if (mode === 'technical') {
-      controlRef.current?.addOverlay(gaugeLayerRef.current, 'Observed — Measured river gauges');
+      controlRef.current?.addOverlay(layer, 'Observed — Measured river gauges');
     }
     restyleWaterRef.current?.();
   }, [mode, gauges]);
+
+  // --- theme: panel tokens, basemap colours, then every layer redraws from the new palette ---
+  useEffect(() => {
+    const map = mapRef.current;
+    const pal = PALETTES[theme];
+    palRef.current = pal;
+    themeRef.current = theme;
+    saveTheme(theme);
+    const el = containerRef.current;
+    if (el) {
+      Object.entries(cssVars(pal)).forEach(([k, v]) => el.style.setProperty(k, v));
+      el.dataset.theme = theme;
+    }
+    if (!map) return;
+    restyleWaterRef.current?.();
+    renderGaugesRef.current?.();
+    reThemeRef.current.forEach((f) => f());
+    const old = basemapRef.current;
+    if (!old) return; // first paint: the init effect adds the basemap
+    void addBasemap(map, 'light', basemapStyle(theme, pal)).then((layer) => {
+      if (!layer) return;
+      old.remove();
+      basemapRef.current = layer;
+    });
+  }, [theme]);
 
   // --- public selection, unverified OSM candidates, and candidate route ---
   useEffect(() => {
@@ -471,18 +543,18 @@ export default function MetStationsMap({
       `}</style>
       <div
         ref={containerRef}
-        className="w-full h-full"
+        className="fw-map w-full h-full"
         role="region"
         aria-label={mode === 'public'
           ? 'Interactive flood map. Use arrow keys to pan, plus or minus to zoom, and the Use map centre button to select the current centre.'
           : 'Interactive flood map. Use arrow keys to pan and plus or minus to zoom.'}
       />
       <section
-        className="absolute bottom-16 left-14 right-14 z-[999] mx-auto max-w-sm text-slate-100"
+        className="absolute bottom-16 left-14 right-14 z-[999] mx-auto flex max-w-sm flex-col text-slate-100 sm:bottom-auto sm:left-auto sm:right-16 sm:top-3 sm:mx-0 sm:w-64 sm:items-end sm:flex-col-reverse"
         aria-label="Map evidence layers"
       >
         {evidenceKeyOpen && (
-          <div id="map-evidence-key" className="mb-2 rounded-xl border border-slate-600 bg-slate-950/95 p-3 shadow-xl backdrop-blur-sm">
+          <div id="map-evidence-key" className="mb-2 sm:mb-0 sm:mt-2 rounded-xl border border-slate-600 bg-slate-950/95 p-3 shadow-xl backdrop-blur-sm">
             <h2 className="text-sm font-semibold">Evidence on this map</h2>
             <p className="mt-1 text-xs leading-5 text-slate-300">Category shows how much confidence to place in each layer.</p>
             <dl className="mt-2 space-y-2 text-xs leading-4">

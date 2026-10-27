@@ -33,6 +33,19 @@ export const OSM_RASTER_ATTRIBUTION =
 
 export type BasemapFlavor = 'light' | 'dark';
 
+/**
+ * A recoloured basemap (home map): a Protomaps flavour with land/water/coast overridden and
+ * only the sea labels kept, because place labels are drawn as DOM markers above the data.
+ */
+export interface BasemapStyle {
+  base: 'grayscale' | 'dark';
+  land: string;
+  water: string;
+  coast: string;
+  waterLabel: string;
+  pane?: string;
+}
+
 type Source = { pmtiles: PMTiles; maxDataZoom: number };
 const sources = new Map<string, Promise<Source | null>>();
 
@@ -61,25 +74,43 @@ function pmtilesSource(url: string): Promise<Source | null> {
  * Missing context/region archives are skipped; if the Sri Lanka archive cannot
  * be read, falls back to OSM raster tiles.
  */
-export async function addBasemap(map: Leaflet.Map, flavor: BasemapFlavor = 'light'): Promise<Leaflet.Layer | null> {
+export async function addBasemap(
+  map: Leaflet.Map,
+  flavor: BasemapFlavor = 'light',
+  style?: BasemapStyle,
+): Promise<Leaflet.Layer | null> {
   const vectorRenderer = import('protomaps-leaflet').catch((error) => {
     console.warn('Self-hosted vector renderer unavailable.', error);
     return null;
   });
-  const [L, srcs] = await Promise.all([
+  const [L, srcs, flavors] = await Promise.all([
     import('leaflet').then((module) => module.default),
     Promise.all(TIERS.map((tier) => pmtilesSource(tier.url))),
+    style ? import('@protomaps/basemaps').catch(() => null) : null,
   ]);
   const [lka, renderer] = [srcs[srcs.length - 1], await vectorRenderer];
   let layer: Leaflet.Layer;
   if (lka && renderer) {
-    const { leafletLayer } = renderer;
+    const { leafletLayer, paintRules, labelRules, LineSymbolizer } = renderer;
+    let look: object = { flavor, lang: 'en' }; // protomaps-leaflet renders one label language per layer
+    if (style && flavors) {
+      const f = {
+        ...flavors.namedFlavor(style.base),
+        background: style.water, earth: style.land, water: style.water, ocean_label: style.waterLabel,
+      };
+      look = {
+        // Coastline: the water polygons' edge (tiles are clipped per canvas, so no tile seams show).
+        paintRules: [...paintRules(f), { dataLayer: 'water', symbolizer: new LineSymbolizer({ color: style.coast, width: 1 }) }],
+        labelRules: labelRules(f, 'en').filter((r) => r.dataLayer === 'water'),
+        backgroundColor: style.water,
+      };
+    }
     const vector = (src: Source, extra: object) => leafletLayer({
       url: src.pmtiles,
-      flavor,
-      lang: 'en', // protomaps-leaflet renders one label language per layer
+      ...look,
       maxDataZoom: src.maxDataZoom,
       maxZoom: BASEMAP_MAX_ZOOM,
+      ...(style?.pane && { pane: style.pane }),
       ...extra,
     }) as unknown as Leaflet.Layer;
     const layers = TIERS.flatMap((t, i) => {

@@ -6,8 +6,9 @@
 
 import L from 'leaflet';
 import { api, RainVsNormal } from '@/lib/api';
-import { COLORS } from '@/lib/mapColors';
-import { MONTHS, PCT_BANDS, RAIN_HISTORY_LABEL, fmtDay, pctBand } from '@/lib/rainHistory';
+import { NARROW } from '@/lib/gauges';
+import { RAIN_BANDS, rainBand, type Palette } from '@/lib/mapPalette';
+import { MONTHS, RAIN_HISTORY_LABEL, fmtDay } from '@/lib/rainHistory';
 
 const esc = (v: unknown) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
@@ -22,50 +23,68 @@ function popup(r: RainVsNormal): string {
   </div>`;
 }
 
-// Above basin fills (400), below the gauge and rain-station markers (600).
-const PANE = 'fw-rain-normal';
+const PANE = 'fw-rain-normal'; // z 610: above basins, below gauges (620) and place labels (640)
+const OFFSET = 17; // badge centre sits up-right of the station, joined by a leader line
 
-// Fill, ring and haloed label for one band; >150% is bigger with a white ring so it reads first.
-function bubble(pct: number): { html: string; size: number } {
-  const band = pctBand(pct);
-  const c = COLORS.rain[band];
-  const size = band === 'gt150' ? 34 : 28;
-  return {
-    size,
-    html: `<div class="fw-rain-bubble" style="width:${size}px;height:${size}px;background:color-mix(in srgb, ${c.fill} 85%, transparent);border:${band === 'gt150' ? 2 : 1}px solid ${c.stroke};color:${c.text};--fw-halo:${c.halo}" aria-hidden="true">${pct}%</div>`,
-  };
-}
+export interface RainNormalLayer { layer: L.LayerGroup; redraw: () => void; setShowPct: (on: boolean) => void }
 
-export function createRainNormalLayer(map: L.Map): L.LayerGroup {
-  if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '450';
+export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNormalLayer {
+  if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '610';
   const layer = L.layerGroup();
   let data: RainVsNormal[] | null = null;
+  let showPct = true;
 
   const draw = () => {
     layer.clearLayers();
+    const pal = getPal();
     for (const r of data ?? []) {
       if (r.pct_of_normal == null || !r.as_of) continue;
-      const { html, size } = bubble(r.pct_of_normal);
+      const band = rainBand(r.pct_of_normal);
+      const b = pal.rain[band];
+      const big = band === RAIN_BANDS.length - 1; // ≥150%
+      const radius = showPct ? (big ? 15 : 13) : (big ? 9 : 7);
+      const shadow = `${b.ring ? `0 0 0 3px ${b.ring}, ` : ''}0 1px 3px rgba(0, 0, 0, 0.28)`;
+      const html = `<svg class="fw-rain-leader" width="${OFFSET}" height="${OFFSET}" style="top:${-OFFSET}px" aria-hidden="true">
+          <line x1="0" y1="${OFFSET}" x2="${OFFSET}" y2="0" stroke="${pal.label}" stroke-opacity="0.55" stroke-width="1"/></svg>
+        <span class="fw-rain-dot" style="background:${b.fill}" aria-hidden="true"></span>
+        <span class="fw-rain-badge" style="left:${OFFSET - radius}px;top:${-OFFSET - radius}px;width:${radius * 2}px;height:${radius * 2}px;background:${b.fill};border:${b.borderWidth}px solid ${b.border};color:${b.text};box-shadow:${shadow}" aria-hidden="true">${showPct ? `${r.pct_of_normal}%` : ''}</span>`;
       L.marker([r.lat, r.lon], {
         pane: PANE,
         title: `${r.district}: ${r.pct_of_normal}% of usual rain this month (modelled)`,
-        icon: L.divIcon({ className: '', html, iconSize: [size, size], iconAnchor: [size / 2, size / 2] }),
-      }).bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260 }).addTo(layer);
+        icon: L.divIcon({ className: 'fw-rain-wrap', html, iconSize: [0, 0] }),
+      })
+        .bindTooltip(`<b>${esc(r.district)}</b> &mdash; Rainfall ${r.pct_of_normal}% of normal &middot; ${RAIN_BANDS[band].label}`, {
+          direction: 'right', offset: [OFFSET + radius, -OFFSET], className: 'fw-gauge-tip',
+        })
+        .bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260, offset: [OFFSET, -OFFSET] })
+        .addTo(layer);
     }
   };
 
-  const legend = new L.Control({ position: 'bottomright' });
-  legend.onAdd = () => {
-    const el = L.DomUtil.create('details', 'fw-forecast-legend');
-    if (window.innerWidth >= 640) el.setAttribute('open', '');
+  // Top-right under the zoom control on narrow screens, where the bottom edge holds the credits.
+  const wide = window.innerWidth >= NARROW;
+  const legend = new L.Control({ position: wide ? 'bottomright' : 'topright' });
+  let legendEl: HTMLElement | null = null;
+  const renderLegend = () => {
+    if (!legendEl) return;
+    const pal = getPal();
     const shown = (data ?? []).filter((r) => r.pct_of_normal != null).length;
-    el.innerHTML = `<summary class="fw-forecast-title">Rainfall vs normal (this month)</summary>
-      ${PCT_BANDS.map((b) => `<div class="fw-forecast-row"><span style="background:${COLORS.rain[b.key].fill};border-color:${COLORS.rain[b.key].stroke}"></span>${b.label}</div>`).join('')}
-      ${data && shown < data.length ? `<div class="fw-forecast-note">${shown} of ${data.length} districts loaded so far</div>` : ''}
-      <div class="fw-forecast-note">${RAIN_HISTORY_LABEL}</div>`;
-    L.DomEvent.disableClickPropagation(el);
-    return el;
+    legendEl.innerHTML = `<summary>Rainfall vs normal (this month)</summary>
+      ${RAIN_BANDS.map((band, i) => `<div class="fw-legend-row"><span class="fw-legend-dot" style="background:${pal.rain[i].fill};border:${pal.rain[i].borderWidth}px solid ${pal.rain[i].border}${pal.rain[i].ring ? `;box-shadow:0 0 0 2px ${pal.rain[i].ring}` : ''}"></span>${band.label}</div>`).join('')}
+      <label class="fw-legend-check"><input type="checkbox"${showPct ? ' checked' : ''}> Show % on circles</label>
+      ${data && shown < data.length ? `<p>${shown} of ${data.length} districts loaded so far</p>` : ''}
+      <p>${RAIN_HISTORY_LABEL}</p>`;
+    legendEl.querySelector('input')?.addEventListener('change', (e) => setShowPct((e.target as HTMLInputElement).checked));
   };
+  legend.onAdd = () => {
+    legendEl = L.DomUtil.create('details', 'fw-panel fw-rain-legend');
+    if (wide) legendEl.setAttribute('open', '');
+    renderLegend();
+    L.DomEvent.disableClickPropagation(legendEl);
+    return legendEl;
+  };
+  const redraw = () => { draw(); renderLegend(); };
+  const setShowPct = (on: boolean) => { showPct = on; draw(); };
 
   layer.on('add', () => {
     if (data) {
@@ -83,5 +102,5 @@ export function createRainNormalLayer(map: L.Map): L.LayerGroup {
       .catch((e) => console.error('Failed to load rainfall vs normal:', e));
   });
   layer.on('remove', () => legend.remove());
-  return layer;
+  return { layer, redraw, setShowPct };
 }
