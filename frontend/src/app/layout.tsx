@@ -38,13 +38,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Script>
       </head>
       <body className={`${inter.className} antialiased bg-slate-900 text-white`}>
+        <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:font-semibold focus:text-slate-900">Skip to main content</a>
         <div className="min-h-screen flex flex-col">
           {/* Sticky wrapper keeps the disclaimer visible on every page. */}
           <div id="site-sticky-header" className="sticky top-0 z-50">
             <Header />
             <StatusBanner />
           </div>
-          <main className="flex-grow">{children}</main>
+          <main id="main" tabIndex={-1} className="flex-grow scroll-mt-32 outline-none">{children}</main>
           <footer className="bg-slate-900 text-white py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col md:flex-row justify-between items-center gap-4">

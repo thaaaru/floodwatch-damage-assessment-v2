@@ -16,6 +16,15 @@ export const STATUS_COLOR: Record<GaugeStatus, string> = {
   unknown: '#94a3b8',
 };
 
+// Text/glyph colour on a STATUS_COLOR background: white only reaches 4.5:1 on red.
+export const STATUS_TEXT: Record<GaugeStatus, string> = {
+  major: '#ffffff',
+  minor: '#0f172a',
+  alert: '#0f172a',
+  normal: '#0f172a',
+  unknown: '#0f172a',
+};
+
 export const STATUS_LABEL: Record<GaugeStatus, string> = {
   major: 'MAJOR FLOOD',
   minor: 'MINOR FLOOD',

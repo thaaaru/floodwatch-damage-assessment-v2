@@ -4,7 +4,7 @@
 
 import { useEffect, useRef } from 'react';
 import { GaugeStatus, IrrigationStation } from '@/lib/api';
-import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, worstStatus } from '@/lib/gaugeStatus';
+import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, STATUS_TEXT, worstStatus } from '@/lib/gaugeStatus';
 import { ui } from '@/lib/ui';
 
 const ORDER: GaugeStatus[] = ['major', 'minor', 'alert', 'normal', 'unknown'];
@@ -36,7 +36,7 @@ const BASIN_NAME_SI: Record<string, string> = {
 
 function StatusPill({ status }: { status: GaugeStatus }) {
   return (
-    <span className="px-2 py-0.5 rounded text-xs font-bold text-white whitespace-nowrap" style={{ background: STATUS_COLOR[status] }}>
+    <span className="px-2 py-0.5 rounded text-xs font-bold whitespace-nowrap" style={{ background: STATUS_COLOR[status], color: STATUS_TEXT[status] }}>
       {STATUS_LABEL[status]}
     </span>
   );

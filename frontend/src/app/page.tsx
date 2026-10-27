@@ -371,6 +371,7 @@ export default function Dashboard() {
             </div>
             <div className="order-2 grid gap-4 lg:order-none lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
               <div className={`${ui.card} relative h-[max(420px,60vh)] overflow-hidden lg:h-[max(500px,calc(100dvh-12rem))]`}>
+                <a href="#rivers" className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[1001] focus:rounded-lg focus:bg-white focus:px-4 focus:py-3 focus:text-sm focus:font-semibold focus:text-slate-900">Skip map to river status table</a>
                 {loading && stations.length === 0 && gauges.length === 0 ? (
                   <MapMessage text="Loading measured observations…" busy />
                 ) : error && stations.length === 0 && gauges.length === 0 ? (

@@ -57,7 +57,7 @@ export default function StatusBanner() {
 
   const link = 'underline underline-offset-2 hover:text-amber-700';
   return (
-    <div role="note" className="bg-amber-100 text-amber-950 text-xs sm:text-sm px-4 py-1.5 leading-snug">
+    <aside aria-label="Disclaimer and data freshness" className="bg-amber-100 text-amber-950 text-xs sm:text-sm px-4 py-1.5 leading-snug">
       <div className="mx-auto flex max-w-screen-2xl flex-col items-center justify-between gap-x-6 gap-y-0.5 text-center sm:flex-row sm:text-left">
         <span>
           <strong>Unofficial.</strong> For warnings follow the{' '}
@@ -66,6 +66,6 @@ export default function StatusBanner() {
         </span>
         <span data-testid="data-last-updated" className="shrink-0">{freshness}</span>
       </div>
-    </div>
+    </aside>
   );
 }

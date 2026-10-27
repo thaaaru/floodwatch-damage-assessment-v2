@@ -7,7 +7,7 @@
 
 import L from 'leaflet';
 import { api, GaugeReading, GaugeStatus, IrrigationStation } from '@/lib/api';
-import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
+import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, STATUS_TEXT, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
 
 export { BASIN_CREDIT, GAUGE_CREDIT };
 
@@ -20,8 +20,8 @@ const m = (v: number | null) => (v === null || v === undefined ? '&mdash;' : `${
 function gaugeIcon(g: IrrigationStation): L.DivIcon {
   return L.divIcon({
     className: '',
-    html: `<div class="fw-gauge${g.stale ? ' fw-gauge-stale' : ''}" style="background:${STATUS_COLOR[g.status]}"
-      title="${esc(g.station)}${g.stale ? ' (stale)' : ''}">${trendArrow(g.trend)}</div>`,
+    html: `<div class="fw-gauge${g.stale ? ' fw-gauge-stale' : ''}" style="background:${STATUS_COLOR[g.status]};color:${STATUS_TEXT[g.status]}"
+      aria-hidden="true">${trendArrow(g.trend)}</div>`,
     iconSize: [26, 26],
     iconAnchor: [13, 13],
   });
@@ -33,10 +33,10 @@ function gaugePopup(g: IrrigationStation): string {
     <div class="fw-gauge-popup">
       <div style="font-weight:700;font-size:14px">${esc(g.station)}</div>
       <div style="color:#6b7280;font-size:11px;margin-bottom:6px">${esc(g.basin ?? g.river)}</div>
-      <span style="background:${c};color:#fff;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">${STATUS_LABEL[g.status]}</span>
+      <span style="background:${c};color:${STATUS_TEXT[g.status]};padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700">${STATUS_LABEL[g.status]}</span>
       ${g.trend ? `<span style="margin-left:6px;font-size:11px;color:#374151">${trendArrow(g.trend)} ${g.trend}</span>` : ''}
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px;margin-top:8px">
-        <div style="color:#6b7280">Level</div><div style="font-weight:700;color:${c}">${m(g.water_level_m)}</div>
+        <div style="color:#6b7280">Level</div><div style="font-weight:700"><span style="color:${c}" aria-hidden="true">&#9679;</span> ${m(g.water_level_m)}</div>
         <div style="color:#6b7280">Alert</div><div>${m(g.alert_level_m)}</div>
         <div style="color:#6b7280">Minor flood</div><div>${m(g.minor_flood_level_m)}</div>
         <div style="color:#6b7280">Major flood</div><div>${m(g.major_flood_level_m)}</div>
@@ -78,7 +78,8 @@ export function createGaugeLayer(gauges: IrrigationStation[], onSelect?: (g: Irr
   const group = L.layerGroup();
   gauges.forEach((g) => {
     if (g.lat === null || g.lon === null) return;
-    const marker = L.marker([g.lat, g.lon], { icon: gaugeIcon(g), zIndexOffset: 1000 });
+    const label = `${g.station} river gauge: ${STATUS_LABEL[g.status].toLowerCase()}${g.trend ? `, ${g.trend}` : ''}${g.water_level_m !== null ? `, ${g.water_level_m.toFixed(2)} m` : ''}${g.stale ? ', stale' : ''}`;
+    const marker = L.marker([g.lat, g.lon], { icon: gaugeIcon(g), zIndexOffset: 1000, title: label });
     marker.bindPopup(gaugePopup(g), { className: 'fw-light-popup', maxWidth: 260 });
     marker.on('popupopen', (e) => {
       const el = (e as L.PopupEvent).popup.getElement()?.querySelector('.fw-gauge-chart');
@@ -138,7 +139,7 @@ export function createBasinLayer(
       layer.bindPopup(() => {
         const p = f.properties ?? {};
         const rows = inside(f)
-          .map((g) => `<tr><td>${esc(g.station)}</td><td style="color:${STATUS_COLOR[g.status]};font-weight:700">${m(g.water_level_m)}</td>
+          .map((g) => `<tr><td>${esc(g.station)}</td><td style="font-weight:700"><span style="color:${STATUS_COLOR[g.status]}" aria-hidden="true">&#9679;</span> ${m(g.water_level_m)} <span style="font-weight:400;font-size:10px">${STATUS_LABEL[g.status].toLowerCase()}</span></td>
             <td>${trendArrow(g.trend)}${g.stale ? ' <span style="color:#b91c1c">stale</span>' : ''}</td></tr>`)
           .join('');
         return `<div class="fw-gauge-popup">
