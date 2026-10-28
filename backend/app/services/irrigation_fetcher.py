@@ -16,6 +16,7 @@ All levels and thresholds are stored in metres; stations whose unit is "ft"
 (Nagalagam Street) are converted on ingest.
 """
 import logging
+import statistics
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -37,6 +38,9 @@ FT_TO_M = 0.3048
 STALE_AFTER = timedelta(hours=6)
 TREND_DEADBAND_M = 0.02
 RETENTION = timedelta(days=30)
+RATE_WINDOW = timedelta(hours=6)  # rate of rise: least-squares over readings this close to the latest
+RATE_READINGS = 6                 # ... at most this many, at least 3
+ETA_MAX_H = 48                    # beyond this a straight-line extrapolation means nothing
 PAGE_SIZE = 1000  # layer maxRecordCount
 
 # Station metadata with flood thresholds and coordinates
@@ -490,6 +494,30 @@ def compute_trend(levels_newest_first: list) -> Optional[str]:
     return "steady"
 
 
+def rise_rate(readings_newest_first: list) -> Optional[float]:
+    """m/h: least-squares slope over the last 3-6 (observed_at, level) readings within RATE_WINDOW of the latest."""
+    pts = [(_utc(t), l) for t, l in readings_newest_first[:RATE_READINGS] if t is not None and l is not None]
+    if not pts:
+        return None
+    pts = [((t - pts[0][0]).total_seconds() / 3600, l) for t, l in pts if pts[0][0] - t <= RATE_WINDOW]
+    if len(pts) < 3:
+        return None
+    xs, ys = zip(*pts)
+    return statistics.linear_regression(xs, ys).slope  # x distinct: readings are unique per observed_at
+
+
+def eta_next_threshold(level: Optional[float], rate: Optional[float], thresholds: dict) -> Optional[dict]:
+    """Next threshold above the level and hours to reach it at a constant rate; None past major or > ETA_MAX_H."""
+    if level is None or rate is None or rate <= 0:
+        return None
+    for key in ("alert", "minor", "major"):
+        t = thresholds.get(key)
+        if t is not None and level < t:
+            hours = (t - level) / rate
+            return {"level": key, "hours": round(hours, 1)} if hours <= ETA_MAX_H else None
+    return None
+
+
 def is_stale(observed_at: Optional[datetime], now: Optional[datetime] = None) -> bool:
     if observed_at is None:
         return True
@@ -628,14 +656,14 @@ class IrrigationFetcher:
     # ------------------------------------------------------------------
 
     def get_gauges(self) -> list[dict]:
-        """Latest reading per gauge with status, trend and stale flag."""
+        """Latest reading per gauge with status, trend, stale flag and, when rising, time to the next threshold."""
         ranked = select(
             *GaugeReading.__table__.c,
             func.row_number().over(partition_by=GaugeReading.gauge,
                                    order_by=GaugeReading.observed_at.desc()).label("rn"),
         ).subquery()
         with self.engine.connect() as conn:
-            rows = conn.execute(select(ranked).where(ranked.c.rn <= 3)
+            rows = conn.execute(select(ranked).where(ranked.c.rn <= RATE_READINGS)
                                 .order_by(ranked.c.gauge, ranked.c.rn)).mappings().all()
             stations = {r["gauge"]: dict(r) for r in conn.execute(select(GaugeStation.__table__)).mappings()}
 
@@ -656,6 +684,10 @@ class IrrigationFetcher:
             lon = (station or {}).get("lon") or (meta or {}).get("lon")
             district_ids = (meta or {}).get("district_ids", [])
             pct = lambda t: round(level / t * 100, 1) if (level is not None and t) else None
+            trend = compute_trend([r["level_m"] for r in recent])
+            stale = is_stale(observed, now)
+            rate = rise_rate([(r["observed_at"], r["level_m"]) for r in recent]) if trend == "rising" and not stale else None
+            rate = rate if rate is not None and rate > 0 else None
             out.append({
                 "station": name,
                 "basin": latest["basin"] or (station or {}).get("basin"),
@@ -670,13 +702,15 @@ class IrrigationFetcher:
                 "minor_flood_level_m": th["minor"],
                 "major_flood_level_m": th["major"],
                 "status": compute_status(level, th),
-                "trend": compute_trend([r["level_m"] for r in recent]),
-                "stale": is_stale(observed, now),
+                "trend": trend,
+                "stale": stale,
                 "observed_at": observed.isoformat(),
                 "last_updated": observed.isoformat(),
                 "pct_to_alert": pct(th["alert"]),
                 "pct_to_minor_flood": pct(th["minor"]),
                 "pct_to_major_flood": pct(th["major"]),
+                "rise_rate_m_per_h": round(rate, 3) if rate is not None else None,
+                "eta_next_threshold": eta_next_threshold(level, rate, th),
             })
         return sorted(out, key=lambda g: g["station"])
 

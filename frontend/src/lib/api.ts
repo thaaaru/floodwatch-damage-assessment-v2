@@ -880,6 +880,10 @@ export interface IrrigationStation {
   pct_to_alert: number | null;
   pct_to_minor_flood: number | null;
   pct_to_major_flood: number | null;
+  // Set only for a fresh, rising gauge: least-squares rate over the last few readings, and the
+  // straight-line time to the next threshold at that rate (null past major or beyond 48 h).
+  rise_rate_m_per_h?: number | null;
+  eta_next_threshold?: { level: 'alert' | 'minor' | 'major'; hours: number } | null;
 }
 
 export interface IrrigationResponse {

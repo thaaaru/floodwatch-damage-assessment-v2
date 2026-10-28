@@ -255,6 +255,19 @@ function createLocationControl(map: L.Map, onSelect: (location: MapCoordinate) =
   return new Control({ position: 'topright' });
 }
 
+// "Gauges updated N min ago" from the newest gauge reading; old (> 1 h) shows in the theme's warn colour.
+function useGaugeFreshness(gauges: IrrigationStation[]) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  const newest = Math.max(...gauges.map((g) => Date.parse(g.observed_at)).filter(Number.isFinite));
+  if (!Number.isFinite(newest)) return null;
+  const min = Math.max(0, Math.round((now - newest) / 60_000));
+  return { text: `Gauges updated ${min < 60 ? `${min} min` : `${Math.round(min / 60)} h`} ago`, old: min > 60 };
+}
+
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 export default function MetStationsMap({
@@ -294,6 +307,16 @@ export default function MetStationsMap({
   const [basinError, setBasinError] = useState(false);
   const [evidenceKeyOpen, setEvidenceKeyOpen] = useState(false);
   const retryBasinsRef = useRef<(() => void) | null>(null);
+  const fresh = useGaugeFreshness(mode === 'technical' ? gauges : []);
+  // Toolbar from 560 px; below that it would push the toolbar past one row, so it sits under the map.
+  const freshNote = (where: string) => fresh && (
+    <span
+      className={`${where} w-fit whitespace-nowrap rounded-full border px-2 py-1 text-[11px] font-medium`}
+      style={{ background: 'var(--fw-panel)', borderColor: 'var(--fw-panel-border)', color: fresh.old ? 'var(--fw-warn)' : 'var(--fw-panel-muted)' }}
+    >
+      {fresh.text}
+    </span>
+  );
 
   // --- one-time map init -------------------------------------------------
   useEffect(() => {
@@ -542,6 +565,7 @@ export default function MetStationsMap({
       <div ref={shellRef} className="fw-map fw-map-shell flex flex-col">
         <div className="fw-dock fw-dock-top" role="group" aria-label="Map controls">
           <div ref={topDockRef} className="contents" />
+          {freshNote('ml-auto hidden min-[560px]:inline min-[560px]:[&+button]:ml-0')}
           <button
             type="button"
             className="focus-ring fw-dock-btn ml-auto flex shrink-0 items-center justify-center rounded-full border border-slate-600 bg-slate-950/95 px-3 text-xs font-semibold text-slate-100 shadow-lg hover:bg-slate-800"
@@ -599,6 +623,7 @@ export default function MetStationsMap({
           )}
         </div>
         <div ref={legendDockRef} className="fw-dock fw-dock-bottom" role="group" aria-label="Map legends" />
+        {freshNote('mx-2 mb-2 block min-[560px]:hidden')}
       </div>
     </>
   );

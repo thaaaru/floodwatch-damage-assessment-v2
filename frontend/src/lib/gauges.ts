@@ -43,6 +43,14 @@ function shapeSvg(status: GaugeStatus, s: number, pal: Palette): string {
   return `<svg class="fw-gauge" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" stroke-linejoin="round" aria-hidden="true">${halo}<g fill="${c.fill}" stroke="${c.stroke}" stroke-width="${sw}">${body}</g></svg>`;
 }
 
+// Stale (no reading for 6 h+): a dashed ring round the shape; the wrapper also fades it (globals.css .fw-gauge-stale).
+const staleRing = (size: number, pal: Palette) =>
+  `<span style="position:absolute;width:${size + 8}px;height:${size + 8}px;box-sizing:border-box;border-radius:9999px;border:1.5px dashed ${pal.staleRing};pointer-events:none" aria-hidden="true"></span>`;
+
+const LEVEL_NAME = { alert: 'Alert level', minor: 'Minor flood level', major: 'Major flood level' } as const;
+const aboutHours = (h: number) => (h < 1 ? 'under 1 h' : `about ${Math.round(h)} h`);
+const hoursAgo = (iso: string) => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 3_600_000));
+
 // Marker = shape centred in a box, trend badge on its top-right corner, optional count pill bottom-right.
 function markerIcon(status: GaugeStatus, size: number, pal: Palette, opts: { trend?: IrrigationStation['trend']; count?: number; stale?: boolean }): L.DivIcon {
   const box = isFlooding(status) ? 36 : 24; // small dots keep a 24 px tap target
@@ -52,10 +60,11 @@ function markerIcon(status: GaugeStatus, size: number, pal: Palette, opts: { tre
   const red = opts.trend === 'rising' && (status === 'minor' || status === 'major') ? `;color:${PALETTES.light.status.major.fill}` : '';
   const trend = opts.trend && isFlooding(status)
     ? `<span class="fw-trend" style="left:${c + size / 2 - 5}px;top:${c - size / 2 - 9}px${red}" aria-hidden="true">${trendArrow(opts.trend)}</span>` : '';
+  const ring = opts.stale ? staleRing(size, pal) : '';
   const pill = opts.count ? `<span class="fw-count" style="left:${c + size / 2 - 4}px;top:${c + size / 2 - 8}px" aria-hidden="true">${opts.count}</span>` : '';
   return L.divIcon({
     className: `fw-gauge-wrap fw-gauge-${status}${opts.stale ? ' fw-gauge-stale' : ''}`,
-    html: `${pulse}${shapeSvg(status, size, pal)}${trend}${pill}`,
+    html: `${pulse}${ring}${shapeSvg(status, size, pal)}${trend}${pill}`,
     iconSize: [box, box],
     iconAnchor: [c, c],
   });
@@ -76,7 +85,8 @@ function gaugePopup(g: IrrigationStation): string {
         <div style="color:#6b7280">Major flood</div><div>${m(g.major_flood_level_m)}</div>
       </div>
       <div style="font-size:10px;color:#6b7280;margin-top:6px">Reading: ${colomboTime(g.observed_at)} (Colombo)</div>
-      ${g.stale ? '<div style="font-size:10px;color:#b91c1c;font-weight:700">Stale: no reading for over 6 hours</div>' : ''}
+      ${g.eta_next_threshold ? `<div style="font-size:11px;color:#374151;margin-top:6px">At the current rate${g.rise_rate_m_per_h ? ` (+${Math.round(g.rise_rate_m_per_h * 100)} cm/h)` : ''}: <b>${LEVEL_NAME[g.eta_next_threshold.level]} in ${aboutHours(g.eta_next_threshold.hours)}</b><div style="font-size:10px;color:#6b7280">Straight-line estimate from recent readings, not a forecast.</div></div>` : ''}
+      ${g.stale ? `<div style="font-size:10px;color:#b91c1c;font-weight:700">Last reading ${hoursAgo(g.observed_at)} h ago &mdash; may be out of date</div>` : ''}
       <div class="fw-gauge-chart" style="margin-top:6px;font-size:10px;color:#9ca3af">Loading 7-day levels&hellip;</div>
       <div style="font-size:9px;color:#9ca3af;margin-top:4px">${GAUGE_CREDIT}</div>
     </div>`;
@@ -106,7 +116,7 @@ export function sparkline(readings: GaugeReading[], g: IrrigationStation, w = 22
 // Changes only when a reading, status or stale flag changes; used to skip
 // rebuilding markers (which would close an open popup) on identical polls.
 export const gaugesKey = (gauges: IrrigationStation[]) =>
-  gauges.map((g) => `${g.station}|${g.observed_at}|${g.status}|${g.stale}`).join(';');
+  gauges.map((g) => `${g.station}|${g.observed_at}|${g.status}|${g.stale}|${g.eta_next_threshold?.hours ?? ''}`).join(';');
 
 type BasinInfo = { name: string; bounds: L.LatLngBounds; gauges: Set<string> };
 let basinIndexPromise: Promise<BasinInfo[]> | null = null;
@@ -125,7 +135,9 @@ function singleMarker(g: IrrigationStation, pal: Palette, onSelect?: (g: Irrigat
     pane: GAUGE_PANE, icon: markerIcon(g.status, SIZE[g.status], pal, { trend: g.trend, stale: g.stale }),
     zIndexOffset: 1000 + RANK[g.status] * 100, title: label,
   });
-  marker.bindTooltip(`<b>${esc(g.station)}</b> &mdash; ${statusText(g.status)}${g.trend ? ` &middot; ${g.trend}` : ''}`, {
+  const eta = g.eta_next_threshold ? ` &middot; ${LEVEL_NAME[g.eta_next_threshold.level].toLowerCase()} in ~${aboutHours(g.eta_next_threshold.hours).replace('about ', '')}` : '';
+  const old = g.stale ? ` &middot; last reading ${hoursAgo(g.observed_at)} h ago` : '';
+  marker.bindTooltip(`<b>${esc(g.station)}</b> &mdash; ${statusText(g.status)}${g.trend ? ` &middot; ${g.trend}` : ''}${eta}${old}`, {
     direction: 'right', offset: [SIZE[g.status] / 2 + 4, 0], className: 'fw-gauge-tip',
   });
   marker.bindPopup(gaugePopup(g), { className: 'fw-light-popup', maxWidth: 260 });
@@ -390,6 +402,7 @@ export function createBasinLegend(getPal: () => Palette): { control: L.Control; 
     el.innerHTML = '<summary>River gauge status</summary><div class="fw-legend-grid">' +
       (['major', 'minor', 'alert', 'normal', 'unknown'] as GaugeStatus[]).map((s) =>
         `<b aria-hidden="true">${shapeSvg(s, SIZE[s], pal)}</b>${swatch(s)}<span>${statusText(s)}</span>`).join('') +
+      `<b aria-hidden="true" style="position:relative;opacity:0.5">${staleRing(SIZE.normal, pal)}${shapeSvg('normal', SIZE.normal, pal)}</b><i aria-hidden="true"></i><span>Stale (no reading for 6 h+)</span>` +
       '</div><p>Basin colour = worst gauge inside it · Badge: ↑ rising ↓ falling → steady (shown for Alert and above)</p>';
   };
   control.onAdd = () => {

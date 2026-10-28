@@ -18,7 +18,8 @@ export interface Palette {
   status: Record<StatusKey, { fill: string; stroke: string }>;
   basin: Record<FloodKey, { fillOpacity: number; stroke: string; weight: number }>;
   basinIdle: string; // 1px outline on basins that are not flooding
-  ui: { panel: string; border: string; text: string; muted: string; accent: string; shadow: string };
+  ui: { panel: string; border: string; text: string; muted: string; accent: string; shadow: string; warn: string }; // warn: old-data text on the panel
+  staleRing: string; // dashed ring round a gauge with no reading for 6 h+
   trendBadge: { bg: string; border: string; glyph: string };
   pill: { bg: string; text: string; border: string };
 }
@@ -51,7 +52,8 @@ export const PALETTES: Record<Theme, Palette> = {
       major: { fillOpacity: 0.35, stroke: '#DC2626', weight: 3 },
     },
     basinIdle: '#9AA3AD',
-    ui: { panel: '#FFFFFF', border: '#DADDE1', text: '#1F2328', muted: '#5B636D', accent: '#1D5C8F', shadow: '0 2px 10px rgba(0, 0, 0, 0.14)' },
+    ui: { panel: '#FFFFFF', border: '#DADDE1', text: '#1F2328', muted: '#5B636D', accent: '#1D5C8F', shadow: '0 2px 10px rgba(0, 0, 0, 0.14)', warn: '#B45309' },
+    staleRing: '#475569',
     trendBadge: { bg: '#FFFFFF', border: '#222222', glyph: '#1A1A1A' },
     pill: { bg: '#1A1A1A', text: '#FFFFFF', border: '#FFFFFF' },
   },
@@ -79,7 +81,8 @@ export const PALETTES: Record<Theme, Palette> = {
       major: { fillOpacity: 0.5, stroke: '#FF7A70', weight: 3 },
     },
     basinIdle: '#6B7480',
-    ui: { panel: '#232831', border: '#3A414B', text: '#ECEDEF', muted: '#A3AAB3', accent: '#8FC1EA', shadow: '0 2px 10px rgba(0, 0, 0, 0.45)' },
+    ui: { panel: '#232831', border: '#3A414B', text: '#ECEDEF', muted: '#A3AAB3', accent: '#8FC1EA', shadow: '0 2px 10px rgba(0, 0, 0, 0.45)', warn: '#FBBF24' },
+    staleRing: '#CBD5E1',
     trendBadge: { bg: '#FFFFFF', border: '#222222', glyph: '#1A1A1A' },
     pill: { bg: '#1A1A1A', text: '#FFFFFF', border: '#FFFFFF' },
   },
@@ -103,7 +106,7 @@ export const rainBand = (pct: number) => {
 export function cssVars(p: Palette): Record<string, string> {
   return {
     '--fw-panel': p.ui.panel, '--fw-panel-border': p.ui.border, '--fw-panel-text': p.ui.text,
-    '--fw-panel-muted': p.ui.muted, '--fw-accent': p.ui.accent, '--fw-panel-shadow': p.ui.shadow,
+    '--fw-panel-muted': p.ui.muted, '--fw-accent': p.ui.accent, '--fw-panel-shadow': p.ui.shadow, '--fw-warn': p.ui.warn,
     '--fw-label': p.label, '--fw-label-halo': p.labelHalo, '--fw-water-label': p.waterLabel,
     '--fw-trend-bg': p.trendBadge.bg, '--fw-trend-border': p.trendBadge.border, '--fw-trend-glyph': p.trendBadge.glyph,
     '--fw-pill-bg': p.pill.bg, '--fw-pill-text': p.pill.text, '--fw-pill-border': p.pill.border,
@@ -134,6 +137,10 @@ export function paletteFailures(): string[] {
       const m = Math.max(contrast(p.status[k].stroke, p.land), contrast(MARKER_RING, p.land));
       need(m >= 3, `${theme}: ${k} marker edge vs land ${m.toFixed(2)} < 3`);
     }
+    const w = contrast(p.ui.warn, p.ui.panel);
+    need(w >= 4.5, `${theme}: warn text vs panel ${w.toFixed(2)} < 4.5`);
+    const s = contrast(p.staleRing, p.land);
+    need(s >= 3, `${theme}: stale ring vs land ${s.toFixed(2)} < 3`);
     p.rain.forEach((b, i) => {
       const m = Math.max(contrast(b.fill, p.land), contrast(b.border, p.land));
       need(m >= 3, `${theme}: rain ${RAIN_BANDS[i].label} badge vs land ${m.toFixed(2)} < 3`);

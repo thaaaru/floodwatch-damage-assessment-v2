@@ -93,6 +93,52 @@ def test_stale():
     assert irr.is_stale(None, NOW) is True
 
 
+# --- rate of rise and time to next threshold ---------------------------------------
+
+TH = {"alert": 4.0, "minor": 6.0, "major": 8.0}
+
+
+def _series(levels_newest_first, step_min=30):
+    return [(NOW - timedelta(minutes=i * step_min), l) for i, l in enumerate(levels_newest_first)]
+
+
+def test_rise_rate_least_squares():
+    assert irr.rise_rate(_series([5.0, 4.9, 4.8, 4.7])) == pytest.approx(0.2)  # 10 cm / 30 min
+    assert irr.rise_rate(_series([5.0, 4.9])) is None                          # too few readings
+    # only readings within 6 h of the latest count: 1 recent + 2 old -> too few
+    assert irr.rise_rate([(NOW, 5.0), (NOW - timedelta(hours=7), 4.0), (NOW - timedelta(hours=8), 3.0)]) is None
+
+
+def test_eta_rising_gives_next_threshold():
+    assert irr.eta_next_threshold(5.0, 0.25, TH) == {"level": "minor", "hours": 4.0}
+    assert irr.eta_next_threshold(3.0, 0.5, TH) == {"level": "alert", "hours": 2.0}
+
+
+@pytest.mark.parametrize("level,rate", [
+    (5.0, 0.0), (5.0, -0.1), (5.0, None),   # steady / falling / no rate
+    (5.0, 0.01),                            # 100 h away -> beyond 48 h
+    (8.5, 0.3),                             # already above major
+    (None, 0.3),
+])
+def test_eta_none(level, rate):
+    assert irr.eta_next_threshold(level, rate, TH) is None
+
+
+def test_get_gauges_eta_only_when_rising_and_fresh(tmp_path):
+    f = irr.IrrigationFetcher(_engine(tmp_path))
+    f.ingest([
+        _reading("Magura", 4.7, 105), _reading("Magura", 4.8, 75), _reading("Magura", 4.9, 45), _reading("Magura", 5.0, 15),
+        _reading("Hanwella", 5.0, 105), _reading("Hanwella", 5.0, 75), _reading("Hanwella", 5.0, 45),
+        _reading("Ratnapura", 4.8, 8 * 60 + 60), _reading("Ratnapura", 4.9, 8 * 60 + 30), _reading("Ratnapura", 5.0, 8 * 60),
+    ], STATIONS)
+    g = {x["station"]: x for x in f.get_gauges()}
+    assert g["Magura"]["rise_rate_m_per_h"] == pytest.approx(0.2)
+    assert g["Magura"]["eta_next_threshold"] == {"level": "minor", "hours": 5.0}
+    assert g["Hanwella"]["rise_rate_m_per_h"] is None and g["Hanwella"]["eta_next_threshold"] is None   # steady
+    assert g["Ratnapura"]["trend"] == "rising" and g["Ratnapura"]["stale"] is True
+    assert g["Ratnapura"]["eta_next_threshold"] is None                                                   # stale
+
+
 # --- ingest / reads ---------------------------------------------------------------
 
 def test_upsert_is_idempotent(tmp_path):
