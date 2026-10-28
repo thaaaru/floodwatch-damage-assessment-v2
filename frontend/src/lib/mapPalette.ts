@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Every colour the home map draws with, per theme. Layer code reads these; it holds no hex.
-// One hue family per meaning: warm = gauge/flood status, blue = rain (more rain = darker; brighter on the dark map). No imports: scripts/check-palette.mjs
+// One hue family per meaning: warm = gauge/flood status, blue = rain vs normal (more rain = darker; brighter on the dark map), purple = observed 24 h rain, teal/slate = facilities. No imports: scripts/check-palette.mjs
 // loads this file on its own and fails the build if a contrast check below fails.
 
 export type Theme = 'light' | 'dark';
@@ -9,12 +9,15 @@ export type StatusKey = 'normal' | 'none' | 'alert' | 'minor' | 'major';
 export type FloodKey = 'alert' | 'minor' | 'major';
 
 export interface Badge { fill: string; border: string; text: string }
+export interface Swatch { fill: string; border: string }
 export interface Palette {
   land: string; water: string; coast: string;
   landcover?: string; // park/wood/scrub/farm fill; unset keeps the base flavour's
   river: string; riverOpacity: number; riverWeight: number; mainRiverWeight: number;
   label: string; labelHalo: string; waterLabel: string;
   rain: [Badge, Badge, Badge, Badge, Badge]; // <50, 50–90, 90–110, 110–150, >150 %
+  rain24: [Swatch, Swatch, Swatch, Swatch, Swatch]; // observed 24 h mm, RAIN24_BANDS (purple, apart from the blue % ramp)
+  facility: Record<'hospital' | 'shelter', { fill: string; glyph: string }>;
   status: Record<StatusKey, { fill: string; stroke: string }>;
   basin: Record<FloodKey, { fillOpacity: number; stroke: string; weight: number }>;
   basinIdle: string; // 1px outline on basins that are not flooding
@@ -43,6 +46,17 @@ export const PALETTES: Record<Theme, Palette> = {
       { fill: '#1D4ED8', border: '#FFFFFF', text: '#FFFFFF' },
       { fill: '#172554', border: '#FFFFFF', text: '#FFFFFF' },
     ],
+    rain24: [ // light lilac to deep purple
+      { fill: '#F3E8FF', border: '#6B21A8' },
+      { fill: '#D8B4FE', border: '#6B21A8' },
+      { fill: '#9333EA', border: '#FFFFFF' }, // was #A855F7 (2.98:1 on land)
+      { fill: '#7E22CE', border: '#FFFFFF' },
+      { fill: '#3B0764', border: '#FFFFFF' },
+    ],
+    facility: {
+      hospital: { fill: '#0F766E', glyph: '#FFFFFF' },
+      shelter: { fill: '#334155', glyph: '#FFFFFF' },
+    },
     status: {
       normal: { fill: '#16A34A', stroke: '#FFFFFF' },
       none: { fill: '#94A3B8', stroke: '#FFFFFF' },
@@ -78,6 +92,17 @@ export const PALETTES: Record<Theme, Palette> = {
       { fill: '#93C5FD', border: '#0F172A', text: '#0F172A' },
       { fill: '#DBEAFE', border: '#0F172A', text: '#0F172A' },
     ],
+    rain24: [ // reversed: more rain = brighter
+      { fill: '#3B0764', border: '#D8B4FE' },
+      { fill: '#6B21A8', border: '#D8B4FE' },
+      { fill: '#A855F7', border: '#0F172A' },
+      { fill: '#D8B4FE', border: '#0F172A' },
+      { fill: '#F3E8FF', border: '#0F172A' },
+    ],
+    facility: {
+      hospital: { fill: '#5EEAD4', glyph: '#042F2E' },
+      shelter: { fill: '#E2E8F0', glyph: '#1E293B' },
+    },
     status: {
       normal: { fill: '#2BB673', stroke: '#0E1116' },
       none: { fill: '#8A929C', stroke: '#0E1116' },
@@ -113,6 +138,17 @@ export const RAIN_BANDS = [
   { max: 150, label: '110–150%' },
   { max: Infinity, label: '>150%' },
 ] as const;
+export const RAIN24_BANDS = [
+  { max: 10, label: '0–10 mm' },
+  { max: 50, label: '10–50 mm' },
+  { max: 100, label: '50–100 mm' },
+  { max: 150, label: '100–150 mm' },
+  { max: Infinity, label: '>150 mm' },
+] as const;
+export const rain24Band = (mm: number) => {
+  const i = RAIN24_BANDS.findIndex((b) => mm < b.max);
+  return i === -1 ? RAIN24_BANDS.length - 1 : i;
+};
 export const rainBand = (pct: number) => {
   const i = RAIN_BANDS.findIndex((b) => pct < b.max);
   return i === -1 ? RAIN_BANDS.length - 1 : i;
@@ -171,6 +207,17 @@ export function paletteFailures(): string[] {
     });
     const ic = contrast(p.impact.stroke, p.land);
     need(ic >= 3, `${theme}: DMC impact circle edge vs land ${ic.toFixed(2)} < 3`);
+    // 24 h rain dots: the dot (filled) or its ring (stale, hollow: drawn in whichever of the two reads better) must stand off the land.
+    p.rain24.forEach((b, i) => {
+      const m = Math.max(contrast(b.fill, p.land), contrast(b.border, p.land));
+      need(m >= 3, `${theme}: 24 h rain ${RAIN24_BANDS[i].label} dot vs land ${m.toFixed(2)} < 3`);
+    });
+    for (const [k, f] of Object.entries(p.facility)) {
+      const m = contrast(f.fill, p.land);
+      need(m >= 3, `${theme}: ${k} icon vs land ${m.toFixed(2)} < 3`);
+      const g = contrast(f.glyph, f.fill);
+      need(g >= 4.5, `${theme}: ${k} glyph vs fill ${g.toFixed(2)} < 4.5`);
+    }
   }
   return out;
 }

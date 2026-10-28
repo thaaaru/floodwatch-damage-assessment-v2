@@ -10,6 +10,7 @@ import L from 'leaflet';
 import { api, GaugeReading, GaugeStatus, IrrigationStation } from '@/lib/api';
 import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, STATUS_TEXT, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
 import { MARKER_RING, PALETTES, type FloodKey, type Palette, type StatusKey } from '@/lib/mapPalette';
+import { fillFlowOutlook } from '@/lib/flowOutlook';
 
 export { BASIN_CREDIT, GAUGE_CREDIT };
 
@@ -271,8 +272,13 @@ export function createBasinLayer(
           <div style="color:#6b7280;font-size:11px">${Number(p.area_km2).toLocaleString()} km&sup2;</div>
           ${rows ? `<table style="font-size:11px;margin-top:6px;border-spacing:8px 2px">${rows}</table>`
                  : '<div style="font-size:11px;color:#6b7280;margin-top:6px">No river gauge in this basin</div>'}
+          <div class="fw-flow-outlook"></div>
           <div style="font-size:9px;color:#9ca3af;margin-top:4px">${BASIN_CREDIT}</div></div>`;
       }, { className: 'fw-light-popup', maxWidth: 260 });
+      layer.on('popupopen', (e) => { // GloFAS trend line, fetched on the first basin popup (lib/flowOutlook.ts)
+        const el = (e as L.PopupEvent).popup.getElement()?.querySelector<HTMLElement>('.fw-flow-outlook');
+        if (el) fillFlowOutlook(el, f.properties?.gauges ?? []);
+      });
       layer.on('add', () => {
         if (layer instanceof L.Path) layer.getElement()?.setAttribute('tabindex', '-1');
       });

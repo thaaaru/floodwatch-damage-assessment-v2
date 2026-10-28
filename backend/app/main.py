@@ -14,6 +14,7 @@ from .config import get_settings
 from .config.rate_limit import limiter
 from .database import engine, Base
 from .routers import weather, alerts, subscribers, districts, intel, whatsapp, flood_map, wind, rivers, google_floods, external_flood, map_context, news, rain_history, bulletins
+from .routers import map_layers
 from .jobs.scheduler import start_scheduler, stop_scheduler
 from .schemas import HealthResponse
 
@@ -78,6 +79,12 @@ async def lifespan(app: FastAPI):
         await open_meteo_flood_service.aclose()
     except Exception as e:
         logger.warning(f"Error closing Open-Meteo Flood HTTP client: {e}")
+
+    for feed in (map_layers.rain_24h_service, map_layers.map_facilities_service):
+        try:
+            await feed.aclose()
+        except Exception as e:
+            logger.warning(f"Error closing map layer HTTP client: {e}")
 
     # Close the shared Met Department HTTP client (if it was ever initialized).
     try:
@@ -146,6 +153,7 @@ app.include_router(rivers.router)
 app.include_router(google_floods.router)
 app.include_router(external_flood.router)
 app.include_router(map_context.router)
+app.include_router(map_layers.router)
 
 # Subscription / messaging endpoints exist only when alerts are enabled;
 # otherwise they are not registered at all (404).
