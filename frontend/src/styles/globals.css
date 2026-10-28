@@ -561,7 +561,7 @@
   text-shadow: -1px 0 var(--fw-label-halo), 1px 0 var(--fw-label-halo), 0 -1px var(--fw-label-halo), 0 1px var(--fw-label-halo);
 }
 
-/* Place labels (lib/places.ts): below the point by default (places.ts moves them off rain bubbles), 2 px halo on all sides, above every marker */
+/* Place labels (lib/places.ts): below the point by default (places.ts moves them off flood markers), 2 px halo on all sides, above every marker */
 .fw-place {
   position: absolute;
   transform: translate(-50%, 5px);

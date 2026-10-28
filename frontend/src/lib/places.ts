@@ -7,6 +7,7 @@
 import L from 'leaflet';
 
 const PANE = 'fw-places'; // z 640: above gauges (620) and rain badges (610)
+const GAUGES = 'fw-gauges'; // flood markers names step around; rain badges move around names instead (lib/rainNormal.ts)
 const ALL_TOWNS_ZOOM = 8; // below this only the major cities show
 
 type Place = { name: string; major: boolean; at: L.LatLng };
@@ -38,23 +39,24 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
   let places: Place[] = [];
 
   // Label spots, as the label centre's offset from the point, tried in order: below, above, right, left,
-  // the four diagonals, then one row further out. A name steps around rain bubbles instead of hiding under them.
+  // the four diagonals, then further out. A name steps around flood markers instead of hiding under them.
   const spots = (w: number, h: number) => {
     const [x, y, dx, dy] = [w / 2 + 7, h / 2 + 4, w / 2 + 3, h / 2 + 2];
-    return [[0, y], [0, -y], [x, 0], [-x, 0], [dx, dy], [-dx, dy], [dx, -dy], [-dx, -dy], [0, y + h], [0, -y - h]];
+    return [[0, y], [0, -y], [x, 0], [-x, 0], [dx, dy], [-dx, dy], [dx, -dy], [-dx, -dy], [0, y + h], [0, -y - h], [x + 14, 0], [-x - 14, 0], [0, y + 2 * h], [0, -y - 2 * h]];
   };
 
   const render = () => {
     layer.clearLayers();
     const z = map.getZoom();
     const view = map.getBounds().pad(0.1);
-    // Greedy collision check in screen space: a label is dropped only if every spot overlaps a rain bubble
-    // or a label already placed. Bubbles are read from the DOM (plus 3 px for their ring).
+    // Greedy collision check in screen space: a label is dropped only if every spot overlaps a flood
+    // marker (read from the DOM, plus 3 px) or a label already placed.
     // ponytail: width estimated from character count; measure text if labels start to clip.
     const origin = map.getContainer().getBoundingClientRect();
-    const taken: number[][] = [...map.getContainer().querySelectorAll('.fw-rain-badge')].map((el) => {
+    const taken: number[][] = [...map.getContainer().querySelectorAll(`.leaflet-${GAUGES}-pane .leaflet-marker-icon`)].flatMap((el) => {
       const r = el.getBoundingClientRect();
-      return [r.left - origin.left - 3, r.top - origin.top - 3, r.right - origin.left + 3, r.bottom - origin.top + 3];
+      if (r.width < 14) return []; // small normal/no-threshold gauge dots may sit under a name
+      return [[r.left - origin.left - 3, r.top - origin.top - 3, r.right - origin.left + 3, r.bottom - origin.top + 3]];
     });
     const free = (b: number[]) => !taken.some((t) => t[0] < b[2] && b[0] < t[2] && t[1] < b[3] && b[1] < t[3]);
     for (const p of places) {
@@ -78,10 +80,10 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
       }).addTo(layer);
     }
   };
-  // Re-place after the view settles and whenever another layer (the rain bubbles) is added or removed.
+  // Re-place after the view settles and whenever a gauge marker is added or removed.
   let frame = 0;
   const schedule = (e?: L.LeafletEvent) => {
-    if ((e as L.LayerEvent | undefined)?.layer?.options?.pane === PANE) return; // our own labels
+    if (e?.type !== 'zoomend' && e?.type !== 'moveend' && (e as L.LayerEvent).layer?.options?.pane !== GAUGES) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(render);
   };

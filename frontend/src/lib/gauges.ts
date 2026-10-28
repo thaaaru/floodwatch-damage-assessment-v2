@@ -159,7 +159,7 @@ function groupMarker(map: L.Map, basin: BasinInfo, gs: IrrigationStation[], pal:
   return marker;
 }
 
-const GAUGE_PANE = 'fw-gauges'; // z 620
+export const GAUGE_PANE = 'fw-gauges'; // z 620
 
 /** Gauge markers; re-renders on zoom (grouping) and on render() (theme or data change). */
 export function createGaugeLayer(
