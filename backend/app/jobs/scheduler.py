@@ -123,6 +123,15 @@ async def refresh_news():
         logger.error(f"News refresh failed: {e}")
 
 
+async def refresh_dmc_bulletins():
+    """Hourly job: the only caller of the DMC situation-report and landslide-warning listings."""
+    from ..services.bulletins import dmc_bulletins
+    try:
+        await dmc_bulletins.refresh()
+    except Exception as e:
+        logger.error(f"DMC bulletin refresh failed: {e}")
+
+
 async def update_rain_history():
     """Daily job: the only runtime caller of the Open-Meteo archive API (ERA5).
     Re-fetches the last 14 days (ERA5 lags ~5 days), then continues any unfinished
@@ -203,6 +212,15 @@ def start_scheduler():
         replace_existing=True
     )
 
+    # DMC situation report + NBRO landslide warning - hourly (PDF downloaded only when new)
+    scheduler.add_job(
+        refresh_dmc_bulletins,
+        trigger=IntervalTrigger(hours=1),
+        id="dmc_bulletins_refresh",
+        name="Refresh DMC/NBRO bulletins",
+        replace_existing=True
+    )
+
     # River gauges - every 15 minutes (backfills ~7 days on first run)
     scheduler.add_job(
         sync_river_gauges,
@@ -236,6 +254,7 @@ def start_scheduler():
     asyncio.get_event_loop().create_task(refresh_osm_facilities())
     asyncio.get_event_loop().create_task(sync_river_gauges())
     asyncio.get_event_loop().create_task(refresh_news())
+    asyncio.get_event_loop().create_task(refresh_dmc_bulletins())
     asyncio.get_event_loop().create_task(refresh_flood_threat())
 
 

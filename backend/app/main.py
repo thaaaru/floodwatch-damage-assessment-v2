@@ -13,7 +13,7 @@ from slowapi.errors import RateLimitExceeded
 from .config import get_settings
 from .config.rate_limit import limiter
 from .database import engine, Base
-from .routers import weather, alerts, subscribers, districts, intel, whatsapp, flood_map, wind, rivers, google_floods, external_flood, map_context, news, rain_history
+from .routers import weather, alerts, subscribers, districts, intel, whatsapp, flood_map, wind, rivers, google_floods, external_flood, map_context, news, rain_history, bulletins
 from .jobs.scheduler import start_scheduler, stop_scheduler
 from .schemas import HealthResponse
 
@@ -135,6 +135,7 @@ app.add_middleware(
 # Include routers
 app.include_router(weather.router)
 app.include_router(news.router)
+app.include_router(bulletins.router)
 app.include_router(rain_history.router)
 app.include_router(alerts.router)
 app.include_router(districts.router)

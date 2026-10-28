@@ -21,6 +21,10 @@ export interface Palette {
   ui: { panel: string; border: string; text: string; muted: string; accent: string; shadow: string };
   trendBadge: { bg: string; border: string; glyph: string };
   pill: { bg: string; text: string; border: string };
+  // Official bulletins (lib/bulletins.ts). Landslide levels 1-3 use an earth (sand/ochre/rust) family and a
+  // hatched square, so they never read as the flood yellow/orange/red; DMC impact circles are violet.
+  landslide: [Badge, Badge, Badge];
+  impact: { fill: string; stroke: string; fillOpacity: number };
 }
 
 // Values follow the approved prototype. Where it failed its own checks the colour was darkened
@@ -54,6 +58,12 @@ export const PALETTES: Record<Theme, Palette> = {
     ui: { panel: '#FFFFFF', border: '#DADDE1', text: '#1F2328', muted: '#5B636D', accent: '#1D5C8F', shadow: '0 2px 10px rgba(0, 0, 0, 0.14)' },
     trendBadge: { bg: '#FFFFFF', border: '#222222', glyph: '#1A1A1A' },
     pill: { bg: '#1A1A1A', text: '#FFFFFF', border: '#FFFFFF' },
+    landslide: [
+      { fill: '#E8D5A3', border: '#6B4F1D', text: '#3B2A0E' },
+      { fill: '#B7791F', border: '#3B2A0E', text: '#1C1917' },
+      { fill: '#8B2E16', border: '#FFFFFF', text: '#FFFFFF' },
+    ],
+    impact: { fill: '#7C3AED', stroke: '#4C1D95', fillOpacity: 0.28 },
   },
   dark: {
     land: '#2B3038', water: '#1D2A38', coast: '#4A5562',
@@ -82,6 +92,12 @@ export const PALETTES: Record<Theme, Palette> = {
     ui: { panel: '#232831', border: '#3A414B', text: '#ECEDEF', muted: '#A3AAB3', accent: '#8FC1EA', shadow: '0 2px 10px rgba(0, 0, 0, 0.45)' },
     trendBadge: { bg: '#FFFFFF', border: '#222222', glyph: '#1A1A1A' },
     pill: { bg: '#1A1A1A', text: '#FFFFFF', border: '#FFFFFF' },
+    landslide: [
+      { fill: '#E8D5A3', border: '#1C1917', text: '#3B2A0E' },
+      { fill: '#C98A2B', border: '#1C1917', text: '#1C1917' },
+      { fill: '#A33A1C', border: '#FFFFFF', text: '#FFFFFF' },
+    ],
+    impact: { fill: '#A78BFA', stroke: '#DDD6FE', fillOpacity: 0.3 },
   },
 };
 
@@ -140,6 +156,14 @@ export function paletteFailures(): string[] {
       const t = contrast(b.text, b.fill);
       need(t >= 4.5, `${theme}: rain ${RAIN_BANDS[i].label} text vs fill ${t.toFixed(2)} < 4.5`);
     });
+    p.landslide.forEach((b, i) => {
+      const m = Math.max(contrast(b.fill, p.land), contrast(b.border, p.land));
+      need(m >= 3, `${theme}: landslide level ${i + 1} badge vs land ${m.toFixed(2)} < 3`);
+      const t = contrast(b.text, b.fill);
+      need(t >= 4.5, `${theme}: landslide level ${i + 1} text vs fill ${t.toFixed(2)} < 4.5`);
+    });
+    const ic = contrast(p.impact.stroke, p.land);
+    need(ic >= 3, `${theme}: DMC impact circle edge vs land ${ic.toFixed(2)} < 3`);
   }
   return out;
 }
