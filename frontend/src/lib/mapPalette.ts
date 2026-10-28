@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Every colour the home map draws with, per theme. Layer code reads these; it holds no hex.
-// One hue family per meaning: warm = gauge/flood status, blue = rain (more rain = more opaque). No imports: scripts/check-palette.mjs
+// One hue family per meaning: warm = gauge/flood status, blue = rain (more rain = darker; brighter on the dark map). No imports: scripts/check-palette.mjs
 // loads this file on its own and fails the build if a contrast check below fails.
 
 export type Theme = 'light' | 'dark';
 export type StatusKey = 'normal' | 'none' | 'alert' | 'minor' | 'major';
 export type FloodKey = 'alert' | 'minor' | 'major';
 
-export interface Badge { fill: string; alpha: number; border: string; borderWidth: number; ring?: string; text: string }
+export interface Badge { fill: string; border: string; text: string }
 export interface Palette {
   land: string; water: string; coast: string;
   landcover?: string; // park/wood/scrub/farm fill; unset keeps the base flavour's
@@ -31,12 +31,12 @@ export const PALETTES: Record<Theme, Palette> = {
     land: '#E2DFDA', water: '#9DDAEA', coast: '#7FB8C9',
     river: '#2563EB', riverOpacity: 0.7, riverWeight: 1, mainRiverWeight: 1.5,
     label: '#222222', labelHalo: 'rgba(255, 255, 255, 0.92)', waterLabel: '#4F6F8E',
-    rain: [ // one blue, opacity grows with % of normal
-      { fill: '#1E40AF', alpha: 0.12, border: '#1E3A8A', borderWidth: 1.5, text: '#0F172A' },
-      { fill: '#1E40AF', alpha: 0.3, border: '#1E3A8A', borderWidth: 1.5, text: '#0F172A' },
-      { fill: '#1E40AF', alpha: 0.5, border: '#1E3A8A', borderWidth: 1.5, text: '#0F172A' },
-      { fill: '#1E40AF', alpha: 0.75, border: '#1E3A8A', borderWidth: 1.5, text: '#FFFFFF' },
-      { fill: '#1E40AF', alpha: 1, border: '#FFFFFF', borderWidth: 2, ring: '#1E3A8A', text: '#FFFFFF' },
+    rain: [ // solid blue ramp, light to dark; dark text on the light two
+      { fill: '#DBEAFE', border: '#1E3A8A', text: '#0F172A' },
+      { fill: '#93C5FD', border: '#1E3A8A', text: '#0F172A' },
+      { fill: '#2563EB', border: '#FFFFFF', text: '#FFFFFF' },
+      { fill: '#1D4ED8', border: '#FFFFFF', text: '#FFFFFF' },
+      { fill: '#172554', border: '#FFFFFF', text: '#FFFFFF' },
     ],
     status: {
       normal: { fill: '#16A34A', stroke: '#FFFFFF' },
@@ -59,12 +59,12 @@ export const PALETTES: Record<Theme, Palette> = {
     land: '#2B3038', water: '#1D2A38', coast: '#4A5562',
     river: '#5C86AD', riverOpacity: 0.6, riverWeight: 1.1, mainRiverWeight: 1.7,
     label: '#ECECEC', labelHalo: 'rgba(0, 0, 0, 0.9)', waterLabel: '#7FA3C4',
-    rain: [ // one blue, opacity grows with % of normal
-      { fill: '#2563EB', alpha: 0.15, border: '#93C5FD', borderWidth: 1.5, text: '#FFFFFF' },
-      { fill: '#2563EB', alpha: 0.3, border: '#93C5FD', borderWidth: 1.5, text: '#FFFFFF' },
-      { fill: '#2563EB', alpha: 0.5, border: '#93C5FD', borderWidth: 1.5, text: '#FFFFFF' },
-      { fill: '#2563EB', alpha: 0.75, border: '#93C5FD', borderWidth: 1.5, text: '#FFFFFF' },
-      { fill: '#2563EB', alpha: 1, border: '#FFFFFF', borderWidth: 2, ring: '#93C5FD', text: '#FFFFFF' },
+    rain: [ // same ramp reversed: more rain = brighter against the dark land
+      { fill: '#1E3A8A', border: '#93C5FD', text: '#FFFFFF' },
+      { fill: '#1D4ED8', border: '#93C5FD', text: '#FFFFFF' },
+      { fill: '#3B82F6', border: '#0F172A', text: '#0F172A' },
+      { fill: '#93C5FD', border: '#0F172A', text: '#0F172A' },
+      { fill: '#DBEAFE', border: '#0F172A', text: '#0F172A' },
     ],
     status: {
       normal: { fill: '#2BB673', stroke: '#0E1116' },
@@ -116,16 +116,6 @@ const luminance = (hex: string) => {
   const [r, g, b] = (hex.replace('#', '').match(/\w\w/g) ?? []).map((x) => channel(parseInt(x, 16)));
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 };
-/** `hex` at `alpha` composited over `bg`, as a hex colour. */
-export const over = (hex: string, alpha: number, bg: string) => {
-  const [f, g] = [hex, bg].map((h) => (h.replace('#', '').match(/\w\w/g) ?? []).map((x) => parseInt(x, 16)));
-  return '#' + f.map((v, i) => Math.round(v * alpha + g[i] * (1 - alpha)).toString(16).padStart(2, '0')).join('');
-};
-/** `hex` as a CSS rgba() at `alpha`. */
-export const rgba = (hex: string, alpha: number) => {
-  const [r, g, b] = (hex.replace('#', '').match(/\w\w/g) ?? []).map((x) => parseInt(x, 16));
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-};
 export const contrast = (a: string, b: string) => {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
@@ -145,10 +135,9 @@ export function paletteFailures(): string[] {
       need(m >= 3, `${theme}: ${k} marker edge vs land ${m.toFixed(2)} < 3`);
     }
     p.rain.forEach((b, i) => {
-      const seen = over(b.fill, b.alpha, p.land); // badge as drawn on land
-      const m = Math.max(contrast(seen, p.land), contrast(b.border, p.land));
+      const m = Math.max(contrast(b.fill, p.land), contrast(b.border, p.land));
       need(m >= 3, `${theme}: rain ${RAIN_BANDS[i].label} badge vs land ${m.toFixed(2)} < 3`);
-      const t = contrast(b.text, seen);
+      const t = contrast(b.text, b.fill);
       need(t >= 4.5, `${theme}: rain ${RAIN_BANDS[i].label} text vs fill ${t.toFixed(2)} < 4.5`);
     });
   }

@@ -158,7 +158,8 @@ function createFillModeSwitch(setFillMode: (mode: BasinFillMode) => void): L.Con
   const ctl = new L.Control({ position: DOCK_TOP });
   ctl.onAdd = () => {
     const label = L.DomUtil.create('label', 'fw-basin-switch');
-    label.innerHTML = '<input type="checkbox"> Colour all basins';
+    label.innerHTML = '<input type="checkbox"> All basins';
+    label.title = 'Colour every gauged basin, not only those on alert';
     const box = label.querySelector('input') as HTMLInputElement;
     box.addEventListener('change', () => setFillMode(box.checked ? 'always' : 'alertsOnly'));
     L.DomEvent.disableClickPropagation(label);
@@ -200,9 +201,12 @@ function addViewControl(map: L.Map, getGauges: () => IrrigationStation[], getThe
       });
       make('Whole island', () => fitIsland(map));
       const themeBtn = make('', () => { toggleTheme(); syncTheme(); });
+      themeBtn.className = 'fw-theme-btn';
+      themeBtn.setAttribute('aria-label', 'Dark map');
       const syncTheme = () => {
         const dark = getTheme() === 'dark';
-        themeBtn.textContent = 'Dark map';
+        themeBtn.textContent = dark ? '\u2600' : '\u263E'; // sun to go light, moon to go dark
+        themeBtn.title = dark ? 'Light map' : 'Dark map';
         themeBtn.setAttribute('aria-pressed', String(dark));
       };
       syncTheme();
@@ -556,12 +560,13 @@ export default function MetStationsMap({
           <div ref={topDockRef} className="contents" />
           <button
             type="button"
-            className="focus-ring ml-auto flex min-h-[44px] items-center justify-center rounded-full border border-slate-600 bg-slate-950/95 px-4 text-sm font-semibold text-slate-100 shadow-lg hover:bg-slate-800"
+            className="focus-ring fw-dock-btn ml-auto flex shrink-0 items-center justify-center rounded-full border border-slate-600 bg-slate-950/95 px-3 text-xs font-semibold text-slate-100 shadow-lg hover:bg-slate-800"
+            aria-label={evidenceKeyOpen ? 'Hide evidence key' : 'Show evidence key'}
             aria-expanded={evidenceKeyOpen}
             aria-controls={evidenceKeyOpen ? 'map-evidence-key' : undefined}
             onClick={() => setEvidenceKeyOpen((open) => !open)}
           >
-            {evidenceKeyOpen ? 'Hide evidence key' : 'Show evidence key'}
+            {evidenceKeyOpen ? 'Hide key' : 'Key'}
           </button>
         </div>
         {/* The canvas keeps the full map height; toolbar and legends add to the card instead of eating into it. */}

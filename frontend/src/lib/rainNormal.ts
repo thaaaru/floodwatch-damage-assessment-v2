@@ -7,7 +7,7 @@
 import L from 'leaflet';
 import { api, RainVsNormal } from '@/lib/api';
 import { DOCK_LEGENDS, GAUGE_PANE, NARROW } from '@/lib/gauges';
-import { RAIN_BANDS, rainBand, rgba, type Palette } from '@/lib/mapPalette';
+import { RAIN_BANDS, rainBand, type Palette } from '@/lib/mapPalette';
 import { MONTHS, RAIN_HISTORY_LABEL, fmtDay } from '@/lib/rainHistory';
 
 const esc = (v: unknown) =>
@@ -58,12 +58,14 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
     const size = (r: RainVsNormal) => {
       const band = rainBand(r.pct_of_normal as number);
       const big = band === RAIN_BANDS.length - 1; // ≥150%
-      return { band, b: pal.rain[band], radius: showPct ? (big ? 13 : 12) : (big ? 8 : 6) };
+      const digits = String(r.pct_of_normal).length;
+      // With numbers: a pill sized to them (no "%", the legend says it). Without: a plain dot.
+      const [hw, hh] = showPct ? [digits * 3.5 + 5, 9] : big ? [8, 8] : [6, 6];
+      return { band, b: pal.rain[band], hw, hh };
     };
     const spots = rows.map((r, i) => {
-      const { b, radius } = size(r);
-      const pad = radius + (b.ring ? 3 : 0) + 1;
-      const box = ([dx, dy]: [number, number]) => [pts[i].x + dx - pad, pts[i].y + dy - pad, pts[i].x + dx + pad, pts[i].y + dy + pad];
+      const { hw, hh } = size(r);
+      const box = ([dx, dy]: [number, number]) => [pts[i].x + dx - hw - 1, pts[i].y + dy - hh - 1, pts[i].x + dx + hw + 1, pts[i].y + dy + hh + 1];
       const spot = SPOTS.find((s) => free(box(s))) ?? SPOTS[0];
       taken.push(box(spot));
       return spot;
@@ -74,13 +76,12 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
     layer.clearLayers();
     rows.forEach((r, i) => {
       const pct = r.pct_of_normal as number;
-      const { band, b, radius } = size(r);
+      const { band, b, hw, hh } = size(r);
       const [dx, dy] = spots[i];
-      const shadow = `${b.ring ? `0 0 0 3px ${b.ring}, ` : ''}0 1px 3px rgba(0, 0, 0, 0.28)`;
       const html = `<svg class="fw-rain-leader" width="1" height="1" aria-hidden="true">
           <line x1="0" y1="0" x2="${dx}" y2="${dy}" stroke="${pal.label}" stroke-opacity="0.55" stroke-width="1"/></svg>
-        <span class="fw-rain-dot" style="background:${b.ring ?? b.border}" aria-hidden="true"></span>
-        <span class="fw-rain-badge" style="left:${dx - radius}px;top:${dy - radius}px;width:${radius * 2}px;height:${radius * 2}px;background:${rgba(b.fill, b.alpha)};border:${b.borderWidth}px solid ${b.border};color:${b.text};box-shadow:${shadow}" aria-hidden="true">${showPct ? `${pct}%` : ''}</span>`;
+        <span class="fw-rain-dot" style="background:${pal.label}" aria-hidden="true"></span>
+        <span class="fw-rain-badge" style="left:${dx - hw}px;top:${dy - hh}px;width:${hw * 2}px;height:${hh * 2}px;background:${b.fill};border:1px solid ${b.border};color:${b.text}" aria-hidden="true">${showPct ? pct : ''}</span>`;
       L.marker([r.lat, r.lon], {
         pane: PANE,
         zIndexOffset: Math.round(pct * 10000), // wetter districts draw on top; outweighs Leaflet's by-latitude order
@@ -88,7 +89,7 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
         icon: L.divIcon({ className: 'fw-rain-wrap', html, iconSize: [0, 0] }),
       })
         .bindTooltip(`<b>${esc(r.district)}</b> &mdash; Rainfall ${pct}% of normal &middot; ${RAIN_BANDS[band].label}`, {
-          direction: 'right', offset: [dx + radius, dy], className: 'fw-gauge-tip',
+          direction: 'right', offset: [dx + hw, dy], className: 'fw-gauge-tip',
         })
         .bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260, offset: [dx, dy] })
         .addTo(layer);
@@ -112,9 +113,9 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
     if (!legendEl) return;
     const pal = getPal();
     const shown = (data ?? []).filter((r) => r.pct_of_normal != null).length;
-    legendEl.innerHTML = `<summary>Rainfall vs normal (this month)</summary>
-      ${RAIN_BANDS.map((band, i) => `<div class="fw-legend-row"><span class="fw-legend-dot" style="background:${rgba(pal.rain[i].fill, pal.rain[i].alpha)};border:${pal.rain[i].borderWidth}px solid ${pal.rain[i].border}${pal.rain[i].ring ? `;box-shadow:0 0 0 2px ${pal.rain[i].ring}` : ''}"></span>${band.label}</div>`).join('')}
-      <label class="fw-legend-check"><input type="checkbox"${showPct ? ' checked' : ''}> Show % on circles</label>
+    legendEl.innerHTML = `<summary>Rainfall this month, % of normal</summary>
+      ${RAIN_BANDS.map((band, i) => `<div class="fw-legend-row"><span class="fw-legend-dot" style="background:${pal.rain[i].fill};border:1px solid ${pal.rain[i].border}"></span>${band.label}</div>`).join('')}
+      <label class="fw-legend-check"><input type="checkbox"${showPct ? ' checked' : ''}> Show % on rain markers</label>
       ${data && shown < data.length ? `<p>${shown} of ${data.length} districts loaded so far</p>` : ''}
       <p>${RAIN_HISTORY_LABEL}</p>`;
     legendEl.querySelector('input')?.addEventListener('change', (e) => setShowPct((e.target as HTMLInputElement).checked));

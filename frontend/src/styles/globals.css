@@ -603,9 +603,9 @@
   justify-content: center;
   pointer-events: auto;
   cursor: pointer;
-  font: 600 9px/1 var(--font-plex-mono), ui-monospace, monospace;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  font: 700 11px/1 var(--font-public-sans), system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.03em;
 }
 
 /* Panels and controls share the theme's panel tokens */
@@ -773,37 +773,100 @@
   background: #f4f4f4;
 }
 
-/* Home-map "Flood area / Whole island / Dark map" buttons (MetStationsMap addViewControl) */
+/* Home-map toolbar (MetStationsMap): "Flood area | Whole island" segmented, moon/sun theme
+   button, "All basins" switch, Key. 32 px tall (36 px on touch screens), one row. */
 .fw-view-switch {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  align-items: center;
 }
-.fw-view-switch button {
-  min-height: 44px;
-  padding: 0 12px;
+.fw-map .fw-view-switch button {
+  min-height: 32px;
+  padding: 0 10px;
   font: 600 12px/1 var(--font-public-sans), system-ui, sans-serif;
+  white-space: nowrap;
   cursor: pointer;
+  border-radius: 0;
+  box-shadow: none;
+}
+.fw-map .fw-view-switch button:first-child {
+  border-radius: 8px 0 0 8px;
+}
+.fw-map .fw-view-switch button:nth-child(2) {
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+}
+.fw-map .fw-view-switch .fw-theme-btn {
+  margin-left: 6px;
+  width: 32px;
+  padding: 0;
+  border-radius: 8px;
+  font-size: 15px;
 }
 .fw-view-switch button[aria-pressed='true'] {
   outline: 2px solid var(--fw-accent);
   outline-offset: -2px;
 }
-
-/* Home-map "Colour all basins" switch (MetStationsMap createFillModeSwitch) */
 .fw-basin-switch {
   display: flex;
   align-items: center;
   gap: 6px;
-  min-height: 44px;
-  padding: 6px 10px;
-  font: 600 11px/1.3 var(--font-public-sans), system-ui, sans-serif;
+  min-height: 32px;
+  padding: 0 10px;
+  font: 600 12px/1 var(--font-public-sans), system-ui, sans-serif;
+  white-space: nowrap;
   cursor: pointer;
 }
+.fw-map .fw-basin-switch {
+  border-radius: 8px;
+  box-shadow: none;
+}
 .fw-basin-switch input {
-  width: 24px;
-  height: 24px;
+  width: 16px;
+  height: 16px;
+  margin: 0;
   accent-color: var(--fw-accent);
+}
+.fw-dock-btn {
+  min-height: 32px;
+}
+@media (pointer: coarse) {
+  .fw-map .fw-view-switch button,
+  .fw-basin-switch,
+  .fw-dock-btn {
+    min-height: 36px;
+  }
+  .fw-map .fw-view-switch .fw-theme-btn {
+    width: 36px;
+  }
+}
+/* One row on phones: the toolbar scrolls sideways rather than wrapping */
+.fw-dock-top {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 6px 8px;
+}
+.fw-dock-top .fw-dock-slot {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+}
+@media (max-width: 430px) {
+  .fw-dock-top,
+  .fw-dock-top .fw-dock-slot {
+    gap: 4px;
+    padding-inline: 6px;
+  }
+  .fw-dock-top .fw-dock-slot {
+    padding-inline: 0;
+  }
+  .fw-map .fw-view-switch button,
+  .fw-basin-switch {
+    padding: 0 7px;
+  }  .fw-map .fw-view-switch .fw-theme-btn {
+    margin-left: 4px;
+    padding: 0;
+  }
 }
 
 /* Home-map rain forecast legend + 24/48 h switch (lib/forecast.ts) */
