@@ -10,7 +10,7 @@ import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 import { createForecastLayer } from '@/lib/forecast';
 import { createRainNormalLayer } from '@/lib/rainNormal';
 import {
-  BASIN_CREDIT, BasinFillMode, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey,
+  BASIN_CREDIT, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey,
 } from '@/lib/gauges';
 import { PALETTES, Palette, Theme, cssVars } from '@/lib/mapPalette';
 import { DOCK_LEGENDS, DOCK_TOP } from '@/lib/gauges';
@@ -151,21 +151,6 @@ function buildPopupHtml(s: MetStation): string {
       </div>
     </div>
   `;
-}
-
-// "Colour all basins" switch: off = only basins on alert are filled (default), on = every gauged basin.
-function createFillModeSwitch(setFillMode: (mode: BasinFillMode) => void): L.Control {
-  const ctl = new L.Control({ position: DOCK_TOP });
-  ctl.onAdd = () => {
-    const label = L.DomUtil.create('label', 'fw-basin-switch');
-    label.innerHTML = '<input type="checkbox"> All basins';
-    label.title = 'Colour every gauged basin, not only those on alert';
-    const box = label.querySelector('input') as HTMLInputElement;
-    box.addEventListener('change', () => setFillMode(box.checked ? 'always' : 'alertsOnly'));
-    L.DomEvent.disableClickPropagation(label);
-    return label;
-  };
-  return ctl;
 }
 
 // Full-screen toggle using the browser Fullscreen API (no plugin). Hidden where
@@ -368,19 +353,18 @@ export default function MetStationsMap({
     createPlaceLabels(map).addTo(map);
     map.createPane(LAND_PANE).style.zIndex = '210';
     mapRef.current = map;
-    // Basins + rivers: on by default; only flooding basins are filled, with a legend.
+    // Basins + rivers: on by default; every basin outlined, flooding ones filled, with a legend.
     const loadBasins = () => {
       if (mapRef.current !== map) return;
       setBasinError(false);
-      createWaterLayer(map, () => gaugesRef.current, getPal, 'alertsOnly')
-        .then(({ layer, restyle, setFillMode }) => {
+      createWaterLayer(map, () => gaugesRef.current, getPal)
+        .then(({ layer, restyle }) => {
           if (mapRef.current !== map) return;
           restyleWaterRef.current = restyle;
           const legend = createBasinLegend(getPal);
           reThemeRef.current.push(legend.render);
-          const colourAll = createFillModeSwitch(setFillMode);
-          layer.on('add', () => { colourAll.addTo(map); legend.control.addTo(map); });
-          layer.on('remove', () => { colourAll.remove(); legend.control.remove(); });
+          layer.on('add', () => legend.control.addTo(map));
+          layer.on('remove', () => legend.control.remove());
           layer.addTo(map);
           controlRef.current?.addOverlay(layer, 'Context — River basins &amp; rivers');
         })

@@ -204,12 +204,6 @@ export function loadBasins(): Promise<GeoJSON.FeatureCollection> {
   return basinsPromise;
 }
 
-/**
- * How basins are filled by the worst current gauge status inside them:
- *  - 'alertsOnly' (home map default): only alert/minor/major basins are filled.
- *  - 'always'     ("Colour all basins" switch): other gauged basins also get a 1px neutral outline.
- */
-export type BasinFillMode = 'always' | 'alertsOnly';
 
 const BASIN_PANE = 'fw-basins'; // z 350
 const HATCH_ID = 'fw-hatch-major';
@@ -227,7 +221,6 @@ export function createBasinLayer(
   map: L.Map,
   data: GeoJSON.FeatureCollection,
   getGauges: () => IrrigationStation[],
-  getFillMode: () => BasinFillMode,
   getPal: () => Palette,
 ): { fills: L.GeoJSON; hatch: L.GeoJSON } {
   if (!map.getPane(BASIN_PANE)) map.createPane(BASIN_PANE).style.zIndex = '350';
@@ -242,10 +235,8 @@ export function createBasinLayer(
       const b = pal.basin[worst];
       return { color: b.stroke, weight: b.weight, opacity: 1, fillColor: pal.status[worst].fill, fillOpacity: b.fillOpacity };
     }
-    // fillOpacity 0 keeps the area clickable
-    return getFillMode() === 'always' && worst
-      ? { color: pal.basinIdle, weight: 1, opacity: 1, fillOpacity: 0 }
-      : { stroke: false, fillOpacity: 0 };
+    // Every other basin keeps a 1px neutral outline; fillOpacity 0 keeps the area clickable.
+    return { color: pal.basinIdle, weight: 1, opacity: 1, fillOpacity: 0 };
   };
   const fills = L.geoJSON(data, {
     pane: BASIN_PANE, // Leaflet gives each pane its own SVG renderer, which holds the hatch <defs>
@@ -361,19 +352,14 @@ export async function createWaterLayer(
   map: L.Map,
   getGauges: () => IrrigationStation[],
   getPal: () => Palette,
-  fillMode: BasinFillMode = 'alertsOnly',
 ) {
   const [basinData, riverData] = await Promise.all([loadBasins(), loadRivers()]);
-  const { fills, hatch } = createBasinLayer(map, basinData, getGauges, () => fillMode, getPal);
+  const { fills, hatch } = createBasinLayer(map, basinData, getGauges, getPal);
   const rivers = createRiverLayer(map, riverData, getPal);
   const restyleBasins = () => { fills.resetStyle(); hatch.resetStyle(); };
   return {
     layer: L.layerGroup([rivers.group, fills, hatch]),
     restyle: () => { restyleBasins(); rivers.restyle(); syncHatch(map, getPal()); },
-    setFillMode: (mode: BasinFillMode) => {
-      fillMode = mode;
-      restyleBasins();
-    },
   };
 }
 

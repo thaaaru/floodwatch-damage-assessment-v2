@@ -594,6 +594,16 @@
   height: 5px;
   border-radius: 9999px;
 }
+.fw-rain-name {
+  position: absolute;
+  white-space: nowrap;
+  color: var(--fw-label);
+  font: 600 11px/1.2 var(--font-public-sans), system-ui, sans-serif;
+  text-shadow:
+    -2px 0 var(--fw-label-halo), 2px 0 var(--fw-label-halo), 0 -2px var(--fw-label-halo), 0 2px var(--fw-label-halo),
+    -1px -1px var(--fw-label-halo), 1px -1px var(--fw-label-halo), -1px 1px var(--fw-label-halo), 1px 1px var(--fw-label-halo);
+  pointer-events: none;
+}
 .fw-rain-badge {
   position: absolute;
   box-sizing: border-box;
@@ -610,7 +620,6 @@
 
 /* Panels and controls share the theme's panel tokens */
 .fw-map .fw-panel,
-.fw-map .fw-basin-switch,
 .fw-map .fw-forecast-legend,
 .fw-map .leaflet-control-layers,
 .fw-map .leaflet-bar,
@@ -636,8 +645,7 @@
 .fw-map .fw-fullscreen:focus-visible,
 .fw-map .fw-view-switch button:focus-visible,
 .fw-map .fw-panel summary:focus-visible,
-.fw-map .fw-panel input:focus-visible,
-.fw-map .fw-basin-switch input:focus-visible {
+.fw-map .fw-panel input:focus-visible {
   outline: 2px solid var(--fw-accent);
   outline-offset: 2px;
 }
@@ -774,7 +782,7 @@
 }
 
 /* Home-map toolbar (MetStationsMap): "Flood area | Whole island" segmented, moon/sun theme
-   button, "All basins" switch, Key. 32 px tall (36 px on touch screens), one row. */
+   button, Key. 32 px tall (36 px on touch screens), one row. */
 .fw-view-switch {
   display: flex;
   align-items: center;
@@ -806,32 +814,11 @@
   outline: 2px solid var(--fw-accent);
   outline-offset: -2px;
 }
-.fw-basin-switch {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 10px;
-  font: 600 12px/1 var(--font-public-sans), system-ui, sans-serif;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.fw-map .fw-basin-switch {
-  border-radius: 8px;
-  box-shadow: none;
-}
-.fw-basin-switch input {
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  accent-color: var(--fw-accent);
-}
 .fw-dock-btn {
   min-height: 32px;
 }
 @media (pointer: coarse) {
   .fw-map .fw-view-switch button,
-  .fw-basin-switch,
   .fw-dock-btn {
     min-height: 36px;
   }
@@ -860,8 +847,7 @@
   .fw-dock-top .fw-dock-slot {
     padding-inline: 0;
   }
-  .fw-map .fw-view-switch button,
-  .fw-basin-switch {
+  .fw-map .fw-view-switch button {
     padding: 0 7px;
   }  .fw-map .fw-view-switch .fw-theme-btn {
     margin-left: 4px;

@@ -8,6 +8,7 @@ import L from 'leaflet';
 
 const PANE = 'fw-places'; // z 640: above gauges (620) and rain badges (610)
 const GAUGES = 'fw-gauges'; // flood markers names step around; rain badges move around names instead (lib/rainNormal.ts)
+const RAIN = 'fw-rain-normal'; // rain badges carry their district's name, so that town name is not drawn twice
 // How many names (in rank order: the 8 major cities, then by population) a zoom level may show.
 // Collisions can drop some of these; zooming in raises the cap.
 const nameCap = (z: number) => (z < 7 ? 4 : z < 8 ? 6 : z < 8.5 ? 8 : z < 9 ? 20 : z < 10 ? 60 : Infinity);
@@ -61,8 +62,9 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
       return [[r.left - origin.left - 3, r.top - origin.top - 3, r.right - origin.left + 3, r.bottom - origin.top + 3]];
     });
     const free = (b: number[]) => !taken.some((t) => t[0] < b[2] && b[0] < t[2] && t[1] < b[3] && b[1] < t[3]);
+    const onBadges = new Set([...map.getContainer().querySelectorAll('.fw-rain-name')].map((el) => el.textContent));
     for (const p of places.slice(0, nameCap(z))) {
-      if (!view.contains(p.at)) continue;
+      if (!view.contains(p.at) || onBadges.has(p.name)) continue;
       const pt = map.latLngToContainerPoint(p.at);
       const w = p.name.length * (p.major ? 7.5 : 6.6) + 6;
       const h = p.major ? 18 : 16;
@@ -82,10 +84,10 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
       }).addTo(layer);
     }
   };
-  // Re-place after the view settles and whenever a gauge marker is added or removed.
+  // Re-place after the view settles and whenever a gauge marker or rain badge is added or removed.
   let frame = 0;
   const schedule = (e?: L.LeafletEvent) => {
-    if (e?.type !== 'zoomend' && e?.type !== 'moveend' && (e as L.LayerEvent).layer?.options?.pane !== GAUGES) return;
+    if (e?.type !== 'zoomend' && e?.type !== 'moveend' && ![GAUGES, RAIN].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(render);
   };

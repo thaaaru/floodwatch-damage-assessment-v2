@@ -17,7 +17,7 @@ export interface Palette {
   rain: [Badge, Badge, Badge, Badge, Badge]; // <50, 50–90, 90–110, 110–150, >150 %
   status: Record<StatusKey, { fill: string; stroke: string }>;
   basin: Record<FloodKey, { fillOpacity: number; stroke: string; weight: number }>;
-  basinIdle: string; // 1px outline when "Colour all basins" is on
+  basinIdle: string; // 1px outline on basins that are not flooding
   ui: { panel: string; border: string; text: string; muted: string; accent: string; shadow: string };
   trendBadge: { bg: string; border: string; glyph: string };
   pill: { bg: string; text: string; border: string };

@@ -27,8 +27,8 @@ const PANE = 'fw-rain-normal'; // z 610: above basins, below gauges (620) and pl
 const PLACES_PANE = 'fw-places'; // lib/places.ts
 const OFFSET = 17; // badge centre sits this far off the station on each axis, joined by a leader line
 // Where a badge may sit relative to its station, tried in order: up-right first, then the other
-// diagonals and the sides, then the same eight directions two steps further out.
-const SPOTS: [number, number][] = [1, 1.6, 2.2].flatMap((k) => [
+// diagonals and the sides, then the same eight directions further and further out.
+const SPOTS: [number, number][] = [1, 1.6, 2.2, 3, 4].flatMap((k) => [
   [OFFSET, -OFFSET], [-OFFSET, -OFFSET], [OFFSET, OFFSET], [-OFFSET, OFFSET],
   [0, -24], [24, 0], [-24, 0], [0, 24],
 ].map(([x, y]) => [Math.round(x * k), Math.round(y * k)] as [number, number]));
@@ -61,11 +61,21 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
       const digits = String(r.pct_of_normal).length;
       // With numbers: a pill sized to them (no "%", the legend says it). Without: a plain dot.
       const [hw, hh] = showPct ? [digits * 3.5 + 5, 9] : big ? [8, 8] : [6, 6];
-      return { band, b: pal.rain[band], hw, hh };
+      // The district name rides beside the badge, on the side away from the station.
+      // ponytail: name width estimated from character count, as in places.ts.
+      return { band, b: pal.rain[band], hw, hh, nw: r.district.length * 6.6 + 4 };
+    };
+    // Badge plus name, as a box around the spot.
+    const tagBox = (r: RainVsNormal, x: number, y: number) => {
+      const { hw, hh, nw } = size(r);
+      const ny = Math.max(hh, 8);
+      return x < 0 ? [x - hw - 3 - nw, y - ny, x + hw, y + ny] : [x - hw, y - ny, x + hw + 3 + nw, y + ny];
     };
     const spots = rows.map((r, i) => {
-      const { hw, hh } = size(r);
-      const box = ([dx, dy]: [number, number]) => [pts[i].x + dx - hw - 1, pts[i].y + dy - hh - 1, pts[i].x + dx + hw + 1, pts[i].y + dy + hh + 1];
+      const box = ([dx, dy]: [number, number]) => {
+        const [x0, y0, x1, y1] = tagBox(r, dx, dy);
+        return [pts[i].x + x0 - 1, pts[i].y + y0 - 1, pts[i].x + x1 + 1, pts[i].y + y1 + 1];
+      };
       const spot = SPOTS.find((s) => free(box(s))) ?? SPOTS[0];
       taken.push(box(spot));
       return spot;
@@ -81,7 +91,8 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
       const html = `<svg class="fw-rain-leader" width="1" height="1" aria-hidden="true">
           <line x1="0" y1="0" x2="${dx}" y2="${dy}" stroke="${pal.label}" stroke-opacity="0.55" stroke-width="1"/></svg>
         <span class="fw-rain-dot" style="background:${pal.label}" aria-hidden="true"></span>
-        <span class="fw-rain-badge" style="left:${dx - hw}px;top:${dy - hh}px;width:${hw * 2}px;height:${hh * 2}px;background:${b.fill};border:1px solid ${b.border};color:${b.text}" aria-hidden="true">${showPct ? pct : ''}</span>`;
+        <span class="fw-rain-badge" style="left:${dx - hw}px;top:${dy - hh}px;width:${hw * 2}px;height:${hh * 2}px;background:${b.fill};border:1px solid ${b.border};color:${b.text}" aria-hidden="true">${showPct ? pct : ''}</span>
+        <span class="fw-rain-name" style="left:${dx < 0 ? dx - hw - 3 : dx + hw + 3}px;top:${dy}px;transform:translate(${dx < 0 ? '-100%' : '0'}, -50%)" aria-hidden="true">${esc(r.district)}</span>`;
       L.marker([r.lat, r.lon], {
         pane: PANE,
         zIndexOffset: Math.round(pct * 10000), // wetter districts draw on top; outweighs Leaflet's by-latitude order
@@ -96,11 +107,11 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
     });
     uncover();
   };
-  // Last guard: a name that still sits on a badge (a badge with no clear spot) is hidden until the
-  // next placement. Badges carry the data, so they win.
+  // Last guard: a town name that still sits on a badge or district name (a badge with no clear spot)
+  // is hidden until the next placement. Badges carry the data, so they win.
   const uncover = () => {
     const rect = (el: Element) => el.getBoundingClientRect();
-    const badges = [...map.getContainer().querySelectorAll('.fw-rain-badge')].map(rect);
+    const badges = [...map.getContainer().querySelectorAll('.fw-rain-badge, .fw-rain-name')].map(rect);
     map.getContainer().querySelectorAll<HTMLElement>('.fw-place').forEach((el) => {
       const a = rect(el);
       el.style.visibility = badges.some((c) => a.left < c.right && c.left < a.right && a.top < c.bottom && c.top < a.bottom) ? 'hidden' : '';
