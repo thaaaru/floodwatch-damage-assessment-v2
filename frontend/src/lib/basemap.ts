@@ -37,12 +37,17 @@ export type BasemapFlavor = 'light' | 'dark';
  * A recoloured basemap (home map): a Protomaps flavour with land/water/coast overridden and
  * only the sea labels kept, because place labels are drawn as DOM markers above the data.
  */
+// Flavour keys for land-use fills (parks, forest, farmland, campuses...).
+const LANDCOVER = ['park_a', 'park_b', 'wood_a', 'wood_b', 'scrub_a', 'scrub_b', 'hospital', 'industrial', 'school',
+  'pedestrian', 'glacier', 'sand', 'beach', 'aerodrome', 'zoo', 'military'];
+
 export interface BasemapStyle {
   base: 'grayscale' | 'dark';
   land: string;
   water: string;
   coast: string;
   waterLabel: string;
+  landcover?: string; // one fill for park/wood/scrub/farm etc.; unset keeps the flavour's
   pane?: string;
 }
 
@@ -97,6 +102,7 @@ export async function addBasemap(
       const f = {
         ...flavors.namedFlavor(style.base),
         background: style.water, earth: style.land, water: style.water, ocean_label: style.waterLabel,
+        ...(style.landcover && Object.fromEntries(LANDCOVER.map((k) => [k, style.landcover]))),
       };
       look = {
         // Coastline: the water polygons' edge (tiles are clipped per canvas, so no tile seams show).

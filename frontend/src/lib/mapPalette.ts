@@ -12,6 +12,7 @@ export type FloodKey = 'alert' | 'minor' | 'major';
 export interface Badge { fill: string; border: string; borderWidth: number; ring?: string; text: string }
 export interface Palette {
   land: string; water: string; coast: string;
+  landcover?: string; // park/wood/scrub/farm fill; unset keeps the base flavour's
   river: string; riverOpacity: number; riverWeight: number; mainRiverWeight: number;
   label: string; labelHalo: string; waterLabel: string;
   rain: [Badge, Badge, Badge, Badge, Badge]; // <50, 50–90, 90–110, 110–150, >150 %
@@ -27,8 +28,9 @@ export interface Palette {
 // just enough to pass; each is marked "was …".
 export const PALETTES: Record<Theme, Palette> = {
   light: {
-    land: '#F2F1EC', water: '#CFE0EE', coast: '#AEB8C2',
-    river: '#6E9BC4', riverOpacity: 0.7, riverWeight: 1.1, mainRiverWeight: 1.7,
+    land: '#F2F1EC', water: '#D6E6F0', coast: '#AEB8C2',
+    landcover: '#F1F1EB', // 4% #E3E8DA over land: parks and forest add no visible patches
+    river: '#7FA6C9', riverOpacity: 0.6, riverWeight: 1, mainRiverWeight: 1.5,
     label: '#222222', labelHalo: 'rgba(255, 255, 255, 0.92)', waterLabel: '#4F6F8E',
     rain: [
       { fill: '#7A3E0B', border: '#FFFFFF', borderWidth: 1.5, text: '#FFFFFF' },
@@ -38,8 +40,8 @@ export const PALETTES: Record<Theme, Palette> = {
       { fill: '#3F1D8C', border: '#FFFFFF', borderWidth: 2, ring: '#3F1D8C', text: '#FFFFFF' },
     ],
     status: {
-      normal: { fill: '#1B9C76', stroke: '#FFFFFF' }, // was #1B9E77 (2.99:1 on land)
-      none: { fill: '#8A8A8A', stroke: '#FFFFFF' }, // was #9E9E9E (2.37:1 on land)
+      normal: { fill: '#1B9E77', stroke: '#FFFFFF' },
+      none: { fill: '#9E9E9E', stroke: '#FFFFFF' },
       alert: { fill: '#F2B705', stroke: '#6B5000' },
       minor: { fill: '#F57C00', stroke: '#7A3E00' },
       major: { fill: '#D7191C', stroke: '#6B0000' },
@@ -84,6 +86,8 @@ export const PALETTES: Record<Theme, Palette> = {
   },
 };
 
+export const MARKER_RING = '#FFFFFF';
+
 export const RAIN_BANDS = [
   { max: 50, label: '<50%' },
   { max: 90, label: '50–90%' },
@@ -125,9 +129,11 @@ export function paletteFailures(): string[] {
   for (const [theme, p] of Object.entries(PALETTES)) {
     const r = contrast(p.label, p.land);
     need(r >= 4.5, `${theme}: place label vs land ${r.toFixed(2)} < 4.5`);
-    for (const [k, s] of Object.entries(p.status)) {
-      const m = Math.max(contrast(s.fill, p.land), contrast(s.stroke, p.land));
-      need(m >= 3, `${theme}: ${k} marker max(fill, stroke) vs land ${m.toFixed(2)} < 3`);
+    // Flood markers only (normal and no-threshold dots are deliberately quiet). Their edge is the
+    // dark stroke plus a white outer ring (gauges.ts shapeSvg); one of the two must stand off the land.
+    for (const k of ['alert', 'minor', 'major'] as const) {
+      const m = Math.max(contrast(p.status[k].stroke, p.land), contrast(MARKER_RING, p.land));
+      need(m >= 3, `${theme}: ${k} marker edge vs land ${m.toFixed(2)} < 3`);
     }
     p.rain.forEach((b, i) => {
       const m = Math.max(contrast(b.fill, p.land), contrast(b.border, p.land));

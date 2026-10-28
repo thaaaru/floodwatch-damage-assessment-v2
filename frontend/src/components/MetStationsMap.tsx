@@ -26,7 +26,7 @@ const saveTheme = (t: Theme) => {
 const LAND_PANE = 'fw-land'; // z 210
 const basemapStyle = (theme: Theme, p: Palette) => ({
   base: theme === 'light' ? 'grayscale' as const : 'dark' as const,
-  land: p.land, water: p.water, coast: p.coast, waterLabel: p.waterLabel, pane: LAND_PANE,
+  land: p.land, water: p.water, coast: p.coast, waterLabel: p.waterLabel, landcover: p.landcover, pane: LAND_PANE,
 });
 
 interface MetStationsMapProps {

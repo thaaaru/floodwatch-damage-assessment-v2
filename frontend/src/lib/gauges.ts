@@ -9,7 +9,7 @@
 import L from 'leaflet';
 import { api, GaugeReading, GaugeStatus, IrrigationStation } from '@/lib/api';
 import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, STATUS_TEXT, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
-import type { FloodKey, Palette, StatusKey } from '@/lib/mapPalette';
+import { MARKER_RING, PALETTES, type FloodKey, type Palette, type StatusKey } from '@/lib/mapPalette';
 
 export { BASIN_CREDIT, GAUGE_CREDIT };
 
@@ -27,17 +27,20 @@ const statusText = (s: GaugeStatus) => STATUS_LABEL[s].charAt(0) + STATUS_LABEL[
 
 // Severity is coded by shape and size as well as colour, so it survives colour blindness and
 // greyscale: dot → diamond (alert) → triangle (minor) → bigger triangle with a pulse (major).
-const SIZE: Record<GaugeStatus, number> = { unknown: 5, normal: 7, alert: 14, minor: 16, major: 18 };
+const SIZE: Record<GaugeStatus, number> = { unknown: 6, normal: 8, alert: 15, minor: 17, major: 19 };
 const GROUP_ZOOM = 9; // below this, gauges in a flooding basin collapse into one marker per basin
 
+// Flood shapes get a 2 px white ring outside their dark stroke, so they stay separate on basin fills.
 function shapeSvg(status: GaugeStatus, s: number, pal: Palette): string {
   const c = pal.status[KEY[status]];
-  const sw = isFlooding(status) ? 1.5 : 1;
-  const h = sw / 2;
-  const body = status === 'alert' ? `<polygon points="${s / 2},${h} ${s - h},${s / 2} ${s / 2},${s - h} ${h},${s / 2}"/>`
-    : isFlooding(status) ? `<polygon points="${s / 2},${h} ${s - h},${s - h} ${h},${s - h}"/>`
-    : `<circle cx="${s / 2}" cy="${s / 2}" r="${s / 2 - h}"/>`;
-  return `<svg class="fw-gauge" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" fill="${c.fill}" stroke="${c.stroke}" stroke-width="${sw}" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
+  const sw = 1.5;
+  const ring = isFlooding(status) ? 2 : 0;
+  const [h, e, m, S] = [sw / 2 + ring, s - sw / 2 + ring, s / 2 + ring, s + 2 * ring];
+  const body = status === 'alert' ? `<polygon points="${m},${h} ${e},${m} ${m},${e} ${h},${m}"/>`
+    : isFlooding(status) ? `<polygon points="${m},${h} ${e},${e} ${h},${e}"/>`
+    : `<circle cx="${m}" cy="${m}" r="${s / 2 - sw / 2}"/>`;
+  const halo = ring ? `<g fill="none" stroke="${MARKER_RING}" stroke-width="${sw + 2 * ring}">${body}</g>` : '';
+  return `<svg class="fw-gauge" width="${S}" height="${S}" viewBox="0 0 ${S} ${S}" stroke-linejoin="round" aria-hidden="true">${halo}<g fill="${c.fill}" stroke="${c.stroke}" stroke-width="${sw}">${body}</g></svg>`;
 }
 
 // Marker = shape centred in a box, trend badge on its top-right corner, optional count pill bottom-right.
@@ -45,8 +48,10 @@ function markerIcon(status: GaugeStatus, size: number, pal: Palette, opts: { tre
   const box = isFlooding(status) ? 36 : 24; // small dots keep a 24 px tap target
   const c = box / 2;
   const pulse = status === 'major' ? `<span class="fw-gauge-pulse" style="border-color:${pal.status.major.fill}" aria-hidden="true"></span>` : '';
+  // Rising on a flood shows in red; the badge is white in both themes, so the light red reads on it.
+  const red = opts.trend === 'rising' && (status === 'minor' || status === 'major') ? `;color:${PALETTES.light.status.major.fill}` : '';
   const trend = opts.trend && isFlooding(status)
-    ? `<span class="fw-trend" style="left:${c + size / 2 - 7}px;top:${c - size / 2 - 7}px" aria-hidden="true">${trendArrow(opts.trend)}</span>` : '';
+    ? `<span class="fw-trend" style="left:${c + size / 2 - 5}px;top:${c - size / 2 - 9}px${red}" aria-hidden="true">${trendArrow(opts.trend)}</span>` : '';
   const pill = opts.count ? `<span class="fw-count" style="left:${c + size / 2 - 4}px;top:${c + size / 2 - 8}px" aria-hidden="true">${opts.count}</span>` : '';
   return L.divIcon({
     className: `fw-gauge-wrap fw-gauge-${status}${opts.stale ? ' fw-gauge-stale' : ''}`,
@@ -287,6 +292,7 @@ export function createBasinLayer(
 
 const RIVER_PANE = 'fw-rivers'; // z 300: above the basemap (210), below basins (350)
 const LABEL_MIN_ZOOM = 11;
+const MINOR_RIVER_ZOOM = 9;
 
 let riversPromise: Promise<GeoJSON.FeatureCollection> | null = null;
 function loadRivers(): Promise<GeoJSON.FeatureCollection> {
@@ -311,10 +317,13 @@ function labelPoint(geom: GeoJSON.MultiLineString): L.LatLngExpression | null {
 
 function createRiverLayer(map: L.Map, data: GeoJSON.FeatureCollection, getPal: () => Palette) {
   if (!map.getPane(RIVER_PANE)) map.createPane(RIVER_PANE).style.zIndex = '300';
-  // Flood status lives on the basin fill above; rivers stay one colour. Named = main river.
+  // Flood status lives on the basin fill above; rivers stay one colour. Main river = one that
+  // drains a modelled basin; the rest are minor and hidden below MINOR_RIVER_ZOOM.
+  const isMain = (f?: GeoJSON.Feature) => !!f?.properties?.basin_ids?.length;
   const style = (f?: GeoJSON.Feature): L.PathOptions => {
     const pal = getPal();
-    return { pane: RIVER_PANE, color: pal.river, opacity: pal.riverOpacity, weight: f?.properties?.name ? pal.mainRiverWeight : pal.riverWeight };
+    const minor = !isMain(f) && map.getZoom() < MINOR_RIVER_ZOOM;
+    return { pane: RIVER_PANE, color: pal.river, opacity: minor ? 0 : pal.riverOpacity, weight: isMain(f) ? pal.mainRiverWeight : pal.riverWeight };
   };
   const lines = L.geoJSON(data, {
     pane: RIVER_PANE,
@@ -338,6 +347,7 @@ function createRiverLayer(map: L.Map, data: GeoJSON.FeatureCollection, getPal: (
   );
   const group = L.layerGroup([lines]);
   const syncLabels = () => {
+    lines.setStyle(style);
     if (map.hasLayer(group) && map.getZoom() >= LABEL_MIN_ZOOM) group.addLayer(labels);
     else group.removeLayer(labels);
   };
@@ -391,7 +401,7 @@ export function createBasinLegend(getPal: () => Palette): { control: L.Control; 
     el.innerHTML = '<summary>River gauge status</summary><div class="fw-legend-grid">' +
       (['major', 'minor', 'alert', 'normal', 'unknown'] as GaugeStatus[]).map((s) =>
         `<b aria-hidden="true">${shapeSvg(s, SIZE[s], pal)}</b>${swatch(s)}<span>${statusText(s)}</span>`).join('') +
-      '</div><p>Basin colour = worst gauge inside it. Badge: ↑ rising · ↓ falling · → steady. Zoomed out, gauges group per basin with a count.</p>';
+      '</div><p>Basin colour = worst gauge inside it · Badge: ↑ rising ↓ falling → steady (shown for Alert and above)</p>';
   };
   control.onAdd = () => {
     el = L.DomUtil.create('details', 'fw-panel fw-basin-legend');
