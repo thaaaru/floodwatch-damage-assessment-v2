@@ -25,6 +25,7 @@ function popup(r: RainVsNormal): string {
 
 const PANE = 'fw-rain-normal'; // z 610: above basins, below gauges (620) and place labels (640)
 const PLACES_PANE = 'fw-places'; // lib/places.ts
+const WARN_PANE = 'fw-official-warn'; // landslide marks, lib/bulletins.ts: badges step around them like gauges
 const OFFSET = 17; // badge centre sits this far off the station on each axis, joined by a leader line
 // Where a badge may sit relative to its station, tried in order: up-right first, then the other
 // diagonals and the sides, then the same eight directions further and further out.
@@ -45,16 +46,18 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
   const draw = (force = true) => {
     const pal = getPal();
     // Greedy placement in screen space, wettest first: a badge takes the first spot clear of gauge
-    // markers, place names, station dots and badges already placed; if none is clear it keeps up-right.
+    // markers, place names, station dots and badges already placed; if none is clear it takes the least covered spot.
     const origin = map.getContainer().getBoundingClientRect();
-    const taken: number[][] = [...map.getContainer().querySelectorAll(`.leaflet-${GAUGE_PANE}-pane .leaflet-marker-icon, .fw-place`)].map((el) => {
+    const taken: number[][] = [...map.getContainer().querySelectorAll(`.leaflet-${GAUGE_PANE}-pane .leaflet-marker-icon, .leaflet-${WARN_PANE}-pane .leaflet-marker-icon, .fw-place`)].map((el) => {
       const r = el.getBoundingClientRect();
       return [r.left - origin.left, r.top - origin.top, r.right - origin.left, r.bottom - origin.top];
     });
     const rows = (data ?? []).filter((r) => r.pct_of_normal != null && r.as_of).sort((a, b) => b.pct_of_normal! - a.pct_of_normal!);
     const pts = rows.map((r) => map.latLngToContainerPoint([r.lat, r.lon]));
     pts.forEach((pt) => taken.push([pt.x - 3, pt.y - 3, pt.x + 3, pt.y + 3]));
-    const free = (b: number[]) => !taken.some((t) => t[0] < b[2] && b[0] < t[2] && t[1] < b[3] && b[1] < t[3]);
+    // Area of `b` covered by what is already placed; 0 = a clear spot.
+    const clash = (b: number[]) => taken.reduce((sum, t) =>
+      sum + Math.max(0, Math.min(t[2], b[2]) - Math.max(t[0], b[0])) * Math.max(0, Math.min(t[3], b[3]) - Math.max(t[1], b[1])), 0);
     const size = (r: RainVsNormal) => {
       const band = rainBand(r.pct_of_normal as number);
       const big = band === RAIN_BANDS.length - 1; // ≥150%
@@ -76,7 +79,9 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
         const [x0, y0, x1, y1] = tagBox(r, dx, dy);
         return [pts[i].x + x0 - 1, pts[i].y + y0 - 1, pts[i].x + x1 + 1, pts[i].y + y1 + 1];
       };
-      const spot = SPOTS.find((s) => free(box(s))) ?? SPOTS[0];
+      // First clear spot; in a crowd with none clear, the least covered one.
+      const spot = SPOTS.find((s) => clash(box(s)) === 0)
+        ?? SPOTS.reduce((best, s) => (clash(box(s)) < clash(box(best)) ? s : best));
       taken.push(box(spot));
       return spot;
     });
@@ -121,7 +126,7 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
   // DOM is in place. Place names never avoid badges (that would loop); badges move around names.
   let frame = 0;
   const schedule = (e?: L.LeafletEvent) => {
-    if (e?.type !== 'zoomend' && ![GAUGE_PANE, PLACES_PANE].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
+    if (e?.type !== 'zoomend' && ![GAUGE_PANE, WARN_PANE, PLACES_PANE].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => { if (data && map.hasLayer(layer)) draw(false); });
   };
