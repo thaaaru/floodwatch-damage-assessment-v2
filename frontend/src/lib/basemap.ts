@@ -42,7 +42,7 @@ const LANDCOVER = ['park_a', 'park_b', 'wood_a', 'wood_b', 'scrub_a', 'scrub_b',
   'pedestrian', 'glacier', 'sand', 'beach', 'aerodrome', 'zoo', 'military'];
 
 export interface BasemapStyle {
-  base: 'grayscale' | 'dark';
+  base: 'light' | 'grayscale' | 'dark';
   land: string;
   water: string;
   coast: string;

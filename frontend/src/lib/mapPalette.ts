@@ -28,28 +28,28 @@ export interface Palette {
 // just enough to pass; each is marked "was …".
 export const PALETTES: Record<Theme, Palette> = {
   light: {
-    land: '#F2F1EC', water: '#D6E6F0', coast: '#AEB8C2',
-    landcover: '#F1F1EB', // 4% #E3E8DA over land: parks and forest add no visible patches
-    river: '#7FA6C9', riverOpacity: 0.6, riverWeight: 1, mainRiverWeight: 1.5,
+    // Protomaps "light" flavour land with its green landcover, cyan sea and blue rivers (user's reference).
+    land: '#E2DFDA', water: '#9DDAEA', coast: '#7FB8C9',
+    river: '#2563EB', riverOpacity: 0.7, riverWeight: 1, mainRiverWeight: 1.5,
     label: '#222222', labelHalo: 'rgba(255, 255, 255, 0.92)', waterLabel: '#4F6F8E',
     rain: [
       { fill: '#7A3E0B', border: '#FFFFFF', borderWidth: 1.5, text: '#FFFFFF' },
-      { fill: '#B07E2E', border: '#FFFFFF', borderWidth: 1.5, text: '#1A1A1A' },
-      { fill: '#858A91', border: '#FFFFFF', borderWidth: 1.5, text: '#111111' }, // was #878C93 (2.99:1 on land)
+      { fill: '#9A6E28', border: '#FFFFFF', borderWidth: 1.5, text: '#FFFFFF' }, // was #B07E2E (2.69:1 on the darker land)
+      { fill: '#72767C', border: '#FFFFFF', borderWidth: 1.5, text: '#FFFFFF' }, // was #878C93 (2.62:1 on the darker land)
       { fill: '#6F5BC0', border: '#FFFFFF', borderWidth: 1.5, text: '#FFFFFF' },
       { fill: '#3F1D8C', border: '#FFFFFF', borderWidth: 2, ring: '#3F1D8C', text: '#FFFFFF' },
     ],
     status: {
-      normal: { fill: '#1B9E77', stroke: '#FFFFFF' },
-      none: { fill: '#9E9E9E', stroke: '#FFFFFF' },
-      alert: { fill: '#F2B705', stroke: '#6B5000' },
-      minor: { fill: '#F57C00', stroke: '#7A3E00' },
-      major: { fill: '#D7191C', stroke: '#6B0000' },
+      normal: { fill: '#16A34A', stroke: '#FFFFFF' },
+      none: { fill: '#94A3B8', stroke: '#FFFFFF' },
+      alert: { fill: '#EAB308', stroke: '#854D0E' },
+      minor: { fill: '#F97316', stroke: '#9A3412' },
+      major: { fill: '#DC2626', stroke: '#7F1D1D' },
     },
     basin: {
-      alert: { fillOpacity: 0.22, stroke: '#C99700', weight: 1.5 },
-      minor: { fillOpacity: 0.28, stroke: '#E06F00', weight: 2 },
-      major: { fillOpacity: 0.38, stroke: '#B30000', weight: 3 },
+      alert: { fillOpacity: 0.35, stroke: '#EAB308', weight: 2 },
+      minor: { fillOpacity: 0.35, stroke: '#F97316', weight: 2 },
+      major: { fillOpacity: 0.35, stroke: '#DC2626', weight: 3 },
     },
     basinIdle: '#9AA3AD',
     ui: { panel: '#FFFFFF', border: '#DADDE1', text: '#1F2328', muted: '#5B636D', accent: '#1D5C8F', shadow: '0 2px 10px rgba(0, 0, 0, 0.14)' },
