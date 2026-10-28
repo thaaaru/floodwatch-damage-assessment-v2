@@ -66,3 +66,14 @@ def test_newsfirst_keeps_only_sri_lanka_items():
     assert nf.about_sri_lanka("3,495 People Affected by Heavy Rains Across 15 Districts",
                               "COLOMBO (News 1st) - The National Disaster Relief Services Centre says...")
     assert nf.about_sri_lanka("Amber advisory", "The Department of Meteorology has issued an advisory.")
+
+
+def test_imd_cyclone_advisory_while_storm_active():
+    page = ('<img src="images/warning.png"><a href="uploads/x.pdf" target="_blank"> Severe Cyclonic Storm “Arnab”  over'
+            ' Westcentral Bay of Bengal</a><h3>Cyclone Warnings/Advisory</h3><ul class="menu">'
+            '<li><a href="uploads/archive/1/1_ad3cac_25._National_Bulletin_No_25-28Oct2026_0830IST.pdf">National Bulletin</a></li>'
+            '<li><a href="uploads/archive/2/2_2c1273_Tropical_cyclone_advisory__No.18_based_on_0300_UTC_of_28.10.2026.pdf">'
+            'RSMC Bulletin</a></li></ul>')
+    [i] = nf.parse_imd(page)
+    assert i["publishedAt"] == "2026-10-28T03:00:00+00:00" and i["severity"] == "warning"
+    assert i["title"].startswith("IMD Tropical Cyclone Advisory") and "Arnab” over Westcentral" in i["summary"]

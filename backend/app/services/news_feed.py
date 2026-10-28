@@ -125,7 +125,14 @@ ADVISORIES = {
 
 
 async def fetch_slmet(client: httpx.AsyncClient) -> list[dict]:
-    r = await client.get("https://meteo.gov.lk/content.json", headers=UA)
+    for attempt in range(3):  # meteo.gov.lk has occasional connect timeouts; a refresh is 15 min away otherwise
+        try:
+            r = await client.get("https://meteo.gov.lk/content.json", headers=UA)
+            break
+        except httpx.TransportError:
+            if attempt == 2:
+                raise
+            await asyncio.sleep(2)
     r.raise_for_status()
     data = r.json()
     out = []
@@ -248,17 +255,19 @@ IMD_BASE = "https://rsmcnewdelhi.imd.gov.in/"
 
 def parse_imd(page: str) -> list[dict]:
     block = page[page.find("Cyclone Warnings/Advisory"):] if "Cyclone Warnings/Advisory" in page else page
-    m = re.search(r'href="([^"]*Tropical_Weather_Outlook_based_on_(\d{4})_UTC_of_(\d{2})\.(\d{2})\.(\d{4})\.pdf)"', block)
+    # The RSMC bulletin is a Tropical_Weather_Outlook PDF, or a Tropical_cyclone_advisory PDF while a storm is active.
+    m = re.search(r'href="([^"]*_based_on_(\d{4})_UTC_of_(\d{2})\.(\d{2})\.(\d{4})\.pdf)"', block)
     if not m:
         return []
     href, hhmm, dd, mm, yyyy = m.groups()
     published = datetime(int(yyyy), int(mm), int(dd), int(hhmm[:2]), int(hhmm[2:]), tzinfo=timezone.utc)
     national = re.search(r'href="([^"]+)"[^>]*>\s*National Bulletin', block)
     active = bool(national and "no cyclone" not in national.group(1).lower())
-    summary = ("Cyclone bulletins are active for the North Indian Ocean - see RSMC New Delhi."
+    headline = re.search(r'warning\.png"[^>]*>\s*<a [^>]*>([^<]+)</a>', page)
+    summary = ((" ".join(headline.group(1).split()) + ". " if headline else "") + "Cyclone bulletins are active for the North Indian Ocean - see RSMC New Delhi."
                if active else "Daily tropical weather outlook for the North Indian Ocean; no cyclone bulletin in force.")
     return [item(f"imd-two-{published.isoformat()}",
-                 f"IMD Tropical Weather Outlook ({hhmm} UTC, {published:%d %b %Y})", summary, "IMD RSMC", "🇮🇳",
+                 f"IMD {'Tropical Cyclone Advisory' if 'advisory' in href.lower() else 'Tropical Weather Outlook'} ({hhmm} UTC, {published:%d %b %Y})", summary, "IMD RSMC", "🇮🇳",
                  IMD_BASE + href.replace(" ", "%20").lstrip("/"), published, "cyclone",
                  "warning" if active else "info", kind="Warning" if active else "Forecast")]
 

@@ -81,8 +81,18 @@ def test_feed_serves_last_good_as_stale_and_does_not_hammer_upstream():
 def test_facilities_failure_without_last_good_is_empty_and_stale():
     async def scenario():
         client = httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(502)))
-        result = await MapFacilitiesService(client=client).get()
+        result = await MapFacilitiesService(client=client, snapshot=None).get()
         assert result["stale"] is True and result["facilities"] == []
         assert "not an official evacuation centre list" in result["disclaimer"]
+        await client.aclose()
+    asyncio.run(scenario())
+
+
+def test_facilities_failure_serves_bundled_snapshot():
+    async def scenario():
+        client = httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(406)))
+        result = await MapFacilitiesService(client=client).get()
+        assert result["stale"] is True and len(result["facilities"]) > 500
+        assert result["retrieved_at"] and "not an official evacuation centre list" in result["disclaimer"]
         await client.aclose()
     asyncio.run(scenario())

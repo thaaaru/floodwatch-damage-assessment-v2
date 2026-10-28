@@ -6,10 +6,14 @@ good snapshot with stale=True and is retried after RETRY_SECONDS at the soonest 
 """
 import asyncio
 import json
+import logging
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Optional
 
 import httpx
+
+logger = logging.getLogger(__name__)
 
 USER_AGENT = "FloodWatchLK/1.0 (+https://floodwatch.teklab.dev)"
 
@@ -168,6 +172,18 @@ class MapFacilitiesService(_CachedFeed):
     MAX_RESPONSE_BYTES = 8 * 1024 * 1024
     TIMEOUT = httpx.Timeout(100.0, connect=10.0)
     EMPTY = {"source": FACILITY_ATTRIBUTION, "disclaimer": FACILITY_DISCLAIMER, "facilities": []}
+    # Bundled result of OVERPASS_QUERY (refresh by saving a good response's retrieved_at + facilities).
+    # Served, marked stale, until the first live query succeeds: the public Overpass servers are often
+    # at capacity (502) or refuse requests (406), and the layer should not come up empty.
+    SNAPSHOT = Path(__file__).resolve().parent.parent / "data" / "facilities_snapshot.json"
+
+    def __init__(self, client: Optional[httpx.AsyncClient] = None, snapshot: Optional[Path] = SNAPSHOT):
+        super().__init__(client)
+        try:
+            if snapshot:
+                self._last_good = {**self.EMPTY, **json.loads(snapshot.read_text())}
+        except (OSError, ValueError) as e:
+            logger.warning(f"Facilities snapshot not loaded: {e}")
 
     async def _fetch(self) -> dict:
         payload = await self._json("POST", OVERPASS_URL, data={"data": OVERPASS_QUERY})

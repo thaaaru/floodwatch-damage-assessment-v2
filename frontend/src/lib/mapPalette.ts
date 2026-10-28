@@ -39,12 +39,12 @@ export const PALETTES: Record<Theme, Palette> = {
     land: '#E2DFDA', water: '#9DDAEA', coast: '#7FB8C9',
     river: '#2563EB', riverOpacity: 0.7, riverWeight: 1, mainRiverWeight: 1.5,
     label: '#222222', labelHalo: 'rgba(255, 255, 255, 0.92)', waterLabel: '#4F6F8E',
-    rain: [ // solid blue ramp, light to dark; dark text on the light two
-      { fill: '#DBEAFE', border: '#1E3A8A', text: '#0F172A' },
-      { fill: '#93C5FD', border: '#1E3A8A', text: '#0F172A' },
-      { fill: '#2563EB', border: '#FFFFFF', text: '#FFFFFF' },
-      { fill: '#1D4ED8', border: '#FFFFFF', text: '#FFFFFF' },
-      { fill: '#172554', border: '#FFFFFF', text: '#FFFFFF' },
+    rain: [ // muted grey-blue for little rain, brightening to a vivid blue for the most
+      { fill: '#E2E8F0', border: '#64748B', text: '#0F172A' },
+      { fill: '#BFDBFE', border: '#2563EB', text: '#0F172A' },
+      { fill: '#60A5FA', border: '#1D4ED8', text: '#0F172A' },
+      { fill: '#2F80FF', border: '#1D4ED8', text: '#0F172A' },
+      { fill: '#0A5CFF', border: '#FFFFFF', text: '#FFFFFF' },
     ],
     rain24: [ // light lilac to deep purple
       { fill: '#F3E8FF', border: '#6B21A8' },

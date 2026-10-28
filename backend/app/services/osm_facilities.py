@@ -93,7 +93,8 @@ async def fetch_all_facilities() -> Dict[str, List[Dict]]:
             out center;
             '''
 
-            async with httpx.AsyncClient(timeout=90.0) as client:
+            # Overpass answers 406 to requests without an identifying User-Agent.
+            async with httpx.AsyncClient(timeout=90.0, headers={"User-Agent": "FloodWatchLK/1.0 (+https://floodwatch.teklab.dev)"}) as client:
                 response = await client.post(
                     OVERPASS_API_URL,
                     data={"data": query}
