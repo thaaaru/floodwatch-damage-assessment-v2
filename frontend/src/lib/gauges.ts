@@ -27,7 +27,7 @@ const statusText = (s: GaugeStatus) => STATUS_LABEL[s].charAt(0) + STATUS_LABEL[
 
 // Severity is coded by shape and size as well as colour, so it survives colour blindness and
 // greyscale: dot → diamond (alert) → triangle (minor) → bigger triangle with a pulse (major).
-const SIZE: Record<GaugeStatus, number> = { unknown: 6, normal: 8, alert: 15, minor: 17, major: 19 };
+const SIZE: Record<GaugeStatus, number> = { unknown: 6, normal: 8, alert: 10, minor: 11, major: 13 };
 const GROUP_ZOOM = 9; // below this, gauges in a flooding basin collapse into one marker per basin
 
 // Flood shapes get a 2 px white ring outside their dark stroke, so they stay separate on basin fills.
