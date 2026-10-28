@@ -604,6 +604,19 @@ class ApiClient {
     return this.fetch<RainVsNormalResponse>('/api/rain-history/districts');
   }
 
+  // Optional home-map overlays (lib/rain24h.ts, lib/facilities.ts, lib/flowOutlook.ts)
+  async getRain24h(): Promise<Rain24hResponse> {
+    return this.fetch<Rain24hResponse>('/api/rain/24h');
+  }
+
+  async getMapFacilities(): Promise<MapFacilitiesResponse> {
+    return this.fetch<MapFacilitiesResponse>('/api/map/facilities');
+  }
+
+  async getDischargeForecastStations(): Promise<DischargeForecastStations> {
+    return this.fetch<DischargeForecastStations>('/api/rivers/discharge-forecast/stations');
+  }
+
   async getRainHistory(district: string): Promise<RainHistoryResponse> {
     return this.fetch<RainHistoryResponse>(`/api/rain-history/districts/${encodeURIComponent(district)}`);
   }
@@ -1182,4 +1195,46 @@ export interface GoogleFloodsResponse {
   gauges: GoogleFloodGauge[];
   source: string;
   license_note: string;
+}
+
+export interface Rain24hStation {
+  name: string;
+  district: string | null;
+  lat: number;
+  lon: number;
+  rain_24h_mm: number;
+  observed_at: string | null;
+  stale: boolean; // observation older than 3 h
+}
+
+export interface Rain24hResponse {
+  source: string;
+  stations: Rain24hStation[];
+  latest_observation_at: string | null;
+  retrieved_at?: string;
+  stale: boolean; // upstream failed: last good snapshot
+}
+
+export interface MapFacility {
+  id: string;
+  kind: 'hospital' | 'shelter';
+  name: string | null;
+  lat: number;
+  lon: number;
+  phone: string | null;
+}
+
+export interface MapFacilitiesResponse {
+  source: string;
+  disclaimer: string;
+  facilities: MapFacility[];
+  stale: boolean;
+}
+
+export interface DischargeForecastStations {
+  status: string;
+  stations?: {
+    station_name: string;
+    forecast: { dates: string[]; river_discharge_m3s: (number | null)[]; generated_at?: string } | null;
+  }[];
 }

@@ -9,6 +9,8 @@ import type { CandidateRoute, EmergencyFacility, IrrigationStation, MapCoordinat
 import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 import { createForecastLayer } from '@/lib/forecast';
 import { createRainNormalLayer } from '@/lib/rainNormal';
+import { createRain24hLayer } from '@/lib/rain24h';
+import { createFacilitiesLayer } from '@/lib/facilities';
 import {
   BASIN_CREDIT, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey,
 } from '@/lib/gauges';
@@ -345,6 +347,12 @@ export default function MetStationsMap({
     reThemeRef.current.push(rainNormal.redraw);
     controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
     if (mode === 'technical') rainNormal.layer.addTo(map); // labelled as modelled in its legend and popups
+    // Off by default: NBRO rain gauges (lib/rain24h.ts) and OSM hospitals/shelters (lib/facilities.ts).
+    const rain24h = createRain24hLayer(map, getPal);
+    const facilitiesLayer = createFacilitiesLayer(map, getPal);
+    reThemeRef.current.push(rain24h.redraw, facilitiesLayer.redraw);
+    controlRef.current.addOverlay(rain24h.layer, 'Observed — Rain last 24 h (NBRO via RISE)');
+    controlRef.current.addOverlay(facilitiesLayer.layer, 'Context — Hospitals &amp; shelters (OpenStreetMap)');
     addViewControl(map, () => gaugesRef.current, () => themeRef.current,
       () => {
         themeRef.current = themeRef.current === 'dark' ? 'light' : 'dark';
