@@ -15,6 +15,7 @@ import {
 import { PALETTES, Palette, Theme, cssVars } from '@/lib/mapPalette';
 import { DOCK_LEGENDS, DOCK_TOP } from '@/lib/gauges';
 import { createPlaceLabels } from '@/lib/places';
+import { addBulletinOverlays } from '@/lib/bulletins';
 
 // The map theme is a per-viewer preference; storage can be unavailable (private mode), so it is optional.
 const THEME_KEY = 'fw-map-theme';
@@ -368,6 +369,7 @@ export default function MetStationsMap({
     reThemeRef.current.push(rainNormal.redraw);
     controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
     if (mode === 'technical') rainNormal.layer.addTo(map); // labelled as modelled in its legend and popups
+    addBulletinOverlays(map, controlRef.current, getPal, (f) => reThemeRef.current.push(f));
     addViewControl(map, () => gaugesRef.current, () => themeRef.current,
       () => {
         themeRef.current = themeRef.current === 'dark' ? 'light' : 'dark';

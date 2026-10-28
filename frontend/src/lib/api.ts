@@ -556,6 +556,11 @@ class ApiClient {
     return this.fetch('/api/news');
   }
 
+  // Official bulletins (lib/bulletins.ts)
+  async getMetAdvisory(): Promise<import('./bulletins').MetAdvisoryResponse> { return this.fetch('/api/bulletins/met-advisory'); }
+  async getDmcSitrep(): Promise<import('./bulletins').SitrepResponse> { return this.fetch('/api/bulletins/dmc-sitrep'); }
+  async getLandslideWarnings(): Promise<import('./bulletins').LandslideResponse> { return this.fetch('/api/bulletins/landslide'); }
+
   async getGaugeHistory(gauge: string, days: number = 7): Promise<GaugeReading[]> {
     return this.fetch<GaugeReading[]>(`/api/intel/irrigation/history/${encodeURIComponent(gauge)}?days=${days}`);
   }

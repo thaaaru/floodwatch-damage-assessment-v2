@@ -20,6 +20,7 @@ import type {
 import { ui } from '@/lib/ui';
 import BasinStatusTable from '@/components/BasinStatusTable';
 import LatestNews, { ActiveWarnings, useNews } from '@/components/LatestNews';
+import MetAdvisoryBanner from '@/components/MetAdvisoryBanner';
 import RainContext from '@/components/RainContext';
 import ExternalFloodSources from '@/components/ExternalFloodSources';
 
@@ -253,7 +254,9 @@ export default function Dashboard() {
       </header>
 
       <div className="max-w-screen-2xl mx-auto px-3 sm:px-4 lg:px-8 py-3 space-y-3">
-        <ActiveWarnings items={news} />
+        {/* The land advisory has its own banner directly above the map. */}
+        <ActiveWarnings items={news?.filter((i) => !i.id.startsWith('slmet-land_pdf-')) ?? null} />
+        <MetAdvisoryBanner />
         {mode === 'public' ? (
           <section className="space-y-3" aria-labelledby="public-map-heading">
             <div className="rounded-lg border border-amber-600/60 bg-amber-950/50 p-3 text-sm text-amber-100" role="note">
