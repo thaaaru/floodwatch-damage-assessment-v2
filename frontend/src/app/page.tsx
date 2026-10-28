@@ -20,6 +20,7 @@ import type {
 import { ui } from '@/lib/ui';
 import BasinStatusTable from '@/components/BasinStatusTable';
 import LatestNews, { ActiveWarnings, useNews } from '@/components/LatestNews';
+import RiversToWatch from '@/components/RiversToWatch';
 import MetAdvisoryBanner from '@/components/MetAdvisoryBanner';
 import RainContext from '@/components/RainContext';
 import ExternalFloodSources from '@/components/ExternalFloodSources';
@@ -40,6 +41,7 @@ export default function Dashboard() {
   const [mode, setMode] = useState<Mode>('technical');
   const [data, setData] = useState<MetStationsResponse | null>(null);
   const [selected, setSelected] = useState<MetStation | null>(null);
+  const [focusGauge, setFocusGauge] = useState<{ g: IrrigationStation } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastFetched, setLastFetched] = useState<Date | null>(null);
@@ -371,7 +373,7 @@ export default function Dashboard() {
                 ) : stations.length === 0 && gauges.length === 0 ? (
                   <MapMessage text="No measured observations are available yet." kind="empty" actionLabel="Check again" onAction={fetchData} />
                 ) : (
-                  <MetStationsMap mode="technical" stations={visibleStations} selectedWmoId={selected?.wmo_id ?? null} onStationSelect={setSelected} gauges={visibleGauges} />
+                  <MetStationsMap mode="technical" stations={visibleStations} selectedWmoId={selected?.wmo_id ?? null} onStationSelect={setSelected} gauges={visibleGauges} focusGauge={focusGauge} />
                 )}
                 {selected && <StationCard station={selected} onClose={() => setSelected(null)} />}
               </div>
@@ -384,6 +386,7 @@ export default function Dashboard() {
                 </p>
                 {error && <div className="space-y-2 text-sm" role="alert"><p className="text-red-300">{error}</p><button type="button" onClick={fetchData} className="focus-ring min-h-[44px] rounded-lg border border-cyan-700 px-3 font-semibold text-cyan-200 hover:bg-cyan-950">Retry unavailable sources</button></div>}
                 <LatestNews items={news} />
+                <RiversToWatch gauges={visibleGauges} onSelect={(g) => setFocusGauge({ g })} />
               </div>
             </div>
             <div className="order-4 space-y-3 lg:order-none">

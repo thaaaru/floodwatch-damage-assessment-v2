@@ -5,10 +5,11 @@
 // Protomaps archive by scripts/build_places.mjs. Colours come from CSS vars set per theme.
 
 import L from 'leaflet';
+import { DROPS } from '@/lib/rainNormal';
 
 const PANE = 'fw-places'; // z 640: above gauges (620) and rain badges (610)
-// Marker panes names step around: flood gauges and landslide marks (lib/bulletins.ts). Rain badges
-// move around names instead (lib/rainNormal.ts).
+// Marker panes names step around: flood gauges and landslide marks (lib/bulletins.ts), plus Met station
+// raindrops (DROPS, in Leaflet's default marker pane). Rain badges move around names instead (lib/rainNormal.ts).
 const AVOID = ['fw-gauges', 'fw-official-warn'];
 const RAIN = 'fw-rain-normal'; // rain badges carry their district's name, so that town name is not drawn twice
 // How many names (in rank order: the 8 major cities, then by population) a zoom level may show.
@@ -58,7 +59,7 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
     // or landslide marker (read from the DOM, plus 3 px) or a label already placed.
     // ponytail: width estimated from character count; measure text if labels start to clip.
     const origin = map.getContainer().getBoundingClientRect();
-    const taken: number[][] = [...map.getContainer().querySelectorAll(AVOID.map((p) => `.leaflet-${p}-pane .leaflet-marker-icon`).join(', '))].flatMap((el) => {
+    const taken: number[][] = [...map.getContainer().querySelectorAll([...AVOID.map((p) => `.leaflet-${p}-pane .leaflet-marker-icon`), DROPS].join(', '))].flatMap((el) => {
       const r = el.getBoundingClientRect();
       if (r.width < 14) return []; // small normal/no-threshold gauge dots may sit under a name
       return [[r.left - origin.left - 3, r.top - origin.top - 3, r.right - origin.left + 3, r.bottom - origin.top + 3]];
@@ -89,7 +90,7 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
   // Re-place after the view settles and whenever a gauge marker or rain badge is added or removed.
   let frame = 0;
   const schedule = (e?: L.LeafletEvent) => {
-    if (e?.type !== 'zoomend' && e?.type !== 'moveend' && ![...AVOID, RAIN].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
+    if (e?.type !== 'zoomend' && e?.type !== 'moveend' && ![...AVOID, RAIN, 'markerPane'].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(render);
   };

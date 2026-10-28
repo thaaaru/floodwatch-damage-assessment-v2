@@ -9,6 +9,7 @@ import { api, RainVsNormal } from '@/lib/api';
 import { DOCK_LEGENDS, GAUGE_PANE, NARROW } from '@/lib/gauges';
 import { RAIN_BANDS, rainBand, type Palette } from '@/lib/mapPalette';
 import { MONTHS, RAIN_HISTORY_LABEL, fmtDay } from '@/lib/rainHistory';
+import { OUTLOOK_SLOT, withOutlook } from '@/lib/rainOutlook';
 
 const esc = (v: unknown) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
@@ -20,12 +21,16 @@ function popup(r: RainVsNormal): string {
       (${r.mtd_mm} mm vs ${r.normal_to_date_mm} mm normal)</div>
     <div style="font-size:11px;color:#6b7280;margin-top:4px">1 to ${fmtDay(r.as_of as string)}</div>
     <div style="font-size:10px;color:#9ca3af;margin-top:6px">${RAIN_HISTORY_LABEL}</div>
+    ${OUTLOOK_SLOT}
   </div>`;
 }
 
 const PANE = 'fw-rain-normal'; // z 610: above basins, below gauges (620) and place labels (640)
 const PLACES_PANE = 'fw-places'; // lib/places.ts
 const WARN_PANE = 'fw-official-warn'; // landslide marks, lib/bulletins.ts: badges step around them like gauges
+// Met station raindrops and their mm tags (components/MetStationsMap.tsx, default marker pane): the drop
+// and tag are measured, not the 60 x 48 icon box, which is mostly empty.
+export const DROPS = '.met-station-marker svg, .met-station-marker svg + div';
 const OFFSET = 17; // badge centre sits this far off the station on each axis, joined by a leader line
 // Where a badge may sit relative to its station, tried in order: up-right first, then the other
 // diagonals and the sides, then the same eight directions further and further out.
@@ -46,9 +51,9 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
   const draw = (force = true) => {
     const pal = getPal();
     // Greedy placement in screen space, wettest first: a badge takes the first spot clear of gauge
-    // markers, place names, station dots and badges already placed; if none is clear it takes the least covered spot.
+    // markers, landslide marks, raindrops, place names, station dots and badges already placed; if none is clear it takes the least covered spot.
     const origin = map.getContainer().getBoundingClientRect();
-    const taken: number[][] = [...map.getContainer().querySelectorAll(`.leaflet-${GAUGE_PANE}-pane .leaflet-marker-icon, .leaflet-${WARN_PANE}-pane .leaflet-marker-icon, .fw-place`)].map((el) => {
+    const taken: number[][] = [...map.getContainer().querySelectorAll(`.leaflet-${GAUGE_PANE}-pane .leaflet-marker-icon, .leaflet-${WARN_PANE}-pane .leaflet-marker-icon, .fw-place, ${DROPS}`)].map((el) => {
       const r = el.getBoundingClientRect();
       return [r.left - origin.left, r.top - origin.top, r.right - origin.left, r.bottom - origin.top];
     });
@@ -98,7 +103,7 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
         <span class="fw-rain-dot" style="background:${pal.label}" aria-hidden="true"></span>
         <span class="fw-rain-badge" style="left:${dx - hw}px;top:${dy - hh}px;width:${hw * 2}px;height:${hh * 2}px;background:${b.fill};border:1px solid ${b.border};color:${b.text}" aria-hidden="true">${showPct ? pct : ''}</span>
         <span class="fw-rain-name" style="left:${dx < 0 ? dx - hw - 3 : dx + hw + 3}px;top:${dy}px;transform:translate(${dx < 0 ? '-100%' : '0'}, -50%)" aria-hidden="true">${esc(r.district)}</span>`;
-      L.marker([r.lat, r.lon], {
+      withOutlook(L.marker([r.lat, r.lon], {
         pane: PANE,
         zIndexOffset: Math.round(pct * 10000), // wetter districts draw on top; outweighs Leaflet's by-latitude order
         title: `${r.district}: ${pct}% of usual rain this month (modelled)`,
@@ -107,7 +112,7 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
         .bindTooltip(`<b>${esc(r.district)}</b> &mdash; Rainfall ${pct}% of normal &middot; ${RAIN_BANDS[band].label}`, {
           direction: 'right', offset: [dx + hw, dy], className: 'fw-gauge-tip',
         })
-        .bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260, offset: [dx, dy] })
+        .bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260, offset: [dx, dy] }), r.lat, r.lon)
         .addTo(layer);
     });
     uncover();
@@ -126,7 +131,7 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
   // DOM is in place. Place names never avoid badges (that would loop); badges move around names.
   let frame = 0;
   const schedule = (e?: L.LeafletEvent) => {
-    if (e?.type !== 'zoomend' && ![GAUGE_PANE, WARN_PANE, PLACES_PANE].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
+    if (e?.type !== 'zoomend' && ![GAUGE_PANE, WARN_PANE, PLACES_PANE, 'markerPane'].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => { if (data && map.hasLayer(layer)) draw(false); });
   };

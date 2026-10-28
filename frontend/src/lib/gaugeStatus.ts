@@ -49,3 +49,6 @@ export function colomboTime(iso: string): string {
     timeZone: 'Asia/Colombo', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false,
   });
 }
+
+export const LEVEL_NAME = { alert: 'Alert level', minor: 'Minor flood level', major: 'Major flood level' } as const;
+export const aboutHours = (h: number) => (h < 1 ? 'under 1 h' : `about ${Math.round(h)} h`);

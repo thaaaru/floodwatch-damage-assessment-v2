@@ -8,7 +8,7 @@
 
 import L from 'leaflet';
 import { api, GaugeReading, GaugeStatus, IrrigationStation } from '@/lib/api';
-import { BASIN_CREDIT, GAUGE_CREDIT, STATUS_COLOR, STATUS_LABEL, STATUS_TEXT, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
+import { BASIN_CREDIT, GAUGE_CREDIT, LEVEL_NAME, STATUS_COLOR, STATUS_LABEL, STATUS_TEXT, aboutHours, colomboTime, trendArrow, worstStatus } from '@/lib/gaugeStatus';
 import { MARKER_RING, PALETTES, type FloodKey, type Palette, type StatusKey } from '@/lib/mapPalette';
 import { fillFlowOutlook } from '@/lib/flowOutlook';
 
@@ -48,8 +48,6 @@ function shapeSvg(status: GaugeStatus, s: number, pal: Palette): string {
 const staleRing = (size: number, pal: Palette) =>
   `<span style="position:absolute;width:${size + 8}px;height:${size + 8}px;box-sizing:border-box;border-radius:9999px;border:1.5px dashed ${pal.staleRing};pointer-events:none" aria-hidden="true"></span>`;
 
-const LEVEL_NAME = { alert: 'Alert level', minor: 'Minor flood level', major: 'Major flood level' } as const;
-const aboutHours = (h: number) => (h < 1 ? 'under 1 h' : `about ${Math.round(h)} h`);
 const hoursAgo = (iso: string) => Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 3_600_000));
 
 // Marker = shape centred in a box, trend badge on its top-right corner, optional count pill bottom-right.

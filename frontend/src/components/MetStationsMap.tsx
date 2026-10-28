@@ -9,6 +9,7 @@ import type { CandidateRoute, EmergencyFacility, IrrigationStation, MapCoordinat
 import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 import { createForecastLayer } from '@/lib/forecast';
 import { createRainNormalLayer } from '@/lib/rainNormal';
+import { OUTLOOK_SLOT, withOutlook } from '@/lib/rainOutlook';
 import { createRain24hLayer } from '@/lib/rain24h';
 import { createFacilitiesLayer } from '@/lib/facilities';
 import {
@@ -43,6 +44,8 @@ interface MetStationsMapProps {
   onLocationSelect?: (location: MapCoordinate) => void;
   facilities?: EmergencyFacility[];
   route?: CandidateRoute | null;
+  // Zoom to this gauge and open its popup; a new object each time, so the same gauge can be picked again.
+  focusGauge?: { g: IrrigationStation } | null;
 }
 
 /**
@@ -63,6 +66,29 @@ function colorFor(mm: number): string {
   if (mm >= 5)   return '#3b82f6'; // blue-500 - light
   if (mm > 0)    return '#93c5fd'; // blue-300 - very light / trace
   return '#cbd5e1';                // slate-300 - dry
+}
+
+// Each raindrop's mm tag takes the first side (below, above, right, left) clear of other drops, flood
+// gauges, landslide marks and tags already placed; if none is clear, the least covered side. Drops can't move
+// (they mark the station). Runs before rain badges and town names re-place (a frame later), which avoid both.
+function placeDropTags(map: L.Map) {
+  const box = (el: Element) => el.getBoundingClientRect();
+  const c = map.getContainer();
+  const taken = [...c.querySelectorAll('.met-station-marker svg, .leaflet-fw-gauges-pane .leaflet-marker-icon, .leaflet-fw-official-warn-pane .leaflet-marker-icon')].map(box);
+  // Area of the box at (x, y) covered by what is already there; 0 = clear.
+  const cover = (x: number, y: number, w: number, h: number) => taken.reduce((sum, t) =>
+    sum + Math.max(0, Math.min(t.right, x + w) - Math.max(t.left, x)) * Math.max(0, Math.min(t.bottom, y + h) - Math.max(t.top, y)), 0);
+  c.querySelectorAll<HTMLElement>('.met-station-marker').forEach((m) => {
+    const tag = m.querySelector<HTMLElement>('.met-tag');
+    const drop = m.querySelector('svg');
+    if (!tag || !drop) return;
+    tag.style.transform = '';
+    const s = box(drop), t = box(tag), w = t.width, h = t.height, cy = (s.top + s.bottom) / 2;
+    const spots = [[t.left, t.top], [t.left, s.top - 3 - h], [s.right + 2, cy - h / 2], [s.left - 2 - w, cy - h / 2]];
+    const [x, y] = spots.reduce((best, p) => (cover(p[0], p[1], w, h) < cover(best[0], best[1], w, h) ? p : best));
+    tag.style.transform = `translate(${x - t.left}px, ${y - t.top}px)`;
+    taken.push(new DOMRect(x, y, w, h));
+  });
 }
 
 function makeIcon(station: MetStation): L.DivIcon {
@@ -89,7 +115,7 @@ function makeIcon(station: MetStation): L.DivIcon {
             </linearGradient>
           </defs>
         </svg>
-        <div style="
+        <div class="met-tag" style="
           margin-top: 3px;
           padding: 2px 6px;
           border-radius: 4px;
@@ -152,6 +178,7 @@ function buildPopupHtml(s: MetStation): string {
         Report: ${reportLocal} &middot;
         Source: <a href="https://meteo.gov.lk" target="_blank" style="color:#2563eb;">Sri Lanka DoM</a>
       </div>
+      ${OUTLOOK_SLOT}
     </div>
   `;
 }
@@ -283,6 +310,7 @@ export default function MetStationsMap({
   onLocationSelect,
   facilities = [],
   route = null,
+  focusGauge = null,
 }: MetStationsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -443,11 +471,19 @@ export default function MetStationsMap({
 
     stations.forEach((s) => {
       const marker = L.marker([s.latitude, s.longitude], { icon: makeIcon(s) });
-      marker.bindPopup(buildPopupHtml(s), { className: 'met-station-popup', closeButton: true });
+      withOutlook(marker.bindPopup(buildPopupHtml(s), { className: 'met-station-popup', closeButton: true }), s.latitude, s.longitude);
       marker.on('click', () => onStationSelect(s));
       marker.addTo(mapRef.current!);
       markersRef.current.push(marker);
     });
+    const map = mapRef.current;
+    const place = (e?: L.LeafletEvent) => {
+      const pane = (e as L.LayerEvent | undefined)?.layer?.options?.pane;
+      if (!e || e.type === 'zoomend' || pane === 'fw-gauges' || pane === 'fw-official-warn') placeDropTags(map);
+    };
+    place();
+    map.on('zoomend layeradd layerremove', place);
+    return () => { map.off('zoomend layeradd layerremove', place); };
   }, [mode, stations, onStationSelect]);
 
   // --- river gauges (on by default) -------------------------------------
@@ -536,6 +572,22 @@ export default function MetStationsMap({
     routeLayerRef.current = line;
     map.fitBounds(line.getBounds(), { padding: [32, 32], animate: !prefersReducedMotion() });
   }, [mode, route]);
+
+  // --- zoom to a gauge picked in "Rivers to watch" ------------------------
+  useEffect(() => {
+    const map = mapRef.current;
+    const g = focusGauge?.g;
+    if (!map || !g || g.lat == null || g.lon == null) return;
+    const animate = !prefersReducedMotion();
+    // Gauge markers are rebuilt per zoom (basin groups below zoom 9), so the popup is opened once the view settles.
+    map.once('moveend', () => requestAnimationFrame(() => {
+      const layer = gaugeLayerRef.current;
+      if (!layer || !map.hasLayer(layer)) return; // gauges switched off: the zoom alone shows where it is
+      layer.eachLayer((m) => { if ((m as L.Marker).options.title?.startsWith(`${g.station} river gauge`)) m.openPopup(); });
+    }));
+    map.setView([g.lat, g.lon], Math.max(map.getZoom(), 11), { animate, duration: animate ? 0.5 : 0 });
+    map.getContainer().scrollIntoView({ block: 'nearest', behavior: animate ? 'smooth' : 'auto' });
+  }, [focusGauge]);
 
   // --- pan to selected station ------------------------------------------
   useEffect(() => {
