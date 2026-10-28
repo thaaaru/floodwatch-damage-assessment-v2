@@ -8,7 +8,9 @@ import L from 'leaflet';
 
 const PANE = 'fw-places'; // z 640: above gauges (620) and rain badges (610)
 const GAUGES = 'fw-gauges'; // flood markers names step around; rain badges move around names instead (lib/rainNormal.ts)
-const ALL_TOWNS_ZOOM = 8; // below this only the major cities show
+// How many names (in rank order: the 8 major cities, then by population) a zoom level may show.
+// Collisions can drop some of these; zooming in raises the cap.
+const nameCap = (z: number) => (z < 7 ? 4 : z < 8 ? 6 : z < 8.5 ? 8 : z < 9 ? 20 : z < 10 ? 60 : Infinity);
 
 type Place = { name: string; major: boolean; at: L.LatLng };
 
@@ -59,8 +61,8 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
       return [[r.left - origin.left - 3, r.top - origin.top - 3, r.right - origin.left + 3, r.bottom - origin.top + 3]];
     });
     const free = (b: number[]) => !taken.some((t) => t[0] < b[2] && b[0] < t[2] && t[1] < b[3] && b[1] < t[3]);
-    for (const p of places) {
-      if ((!p.major && z < ALL_TOWNS_ZOOM) || !view.contains(p.at)) continue;
+    for (const p of places.slice(0, nameCap(z))) {
+      if (!view.contains(p.at)) continue;
       const pt = map.latLngToContainerPoint(p.at);
       const w = p.name.length * (p.major ? 7.5 : 6.6) + 6;
       const h = p.major ? 18 : 16;

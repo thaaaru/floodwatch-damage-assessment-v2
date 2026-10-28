@@ -71,7 +71,7 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
       return spot;
     });
     const key = spots.join(';');
-    if (!force && key === placed) return;
+    if (!force && key === placed) return uncover();
     placed = key;
     layer.clearLayers();
     rows.forEach((r, i) => {
@@ -93,6 +93,17 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
         })
         .bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260, offset: [dx, dy] })
         .addTo(layer);
+    });
+    uncover();
+  };
+  // Last guard: a name that still sits on a badge (a badge with no clear spot) is hidden until the
+  // next placement. Badges carry the data, so they win.
+  const uncover = () => {
+    const rect = (el: Element) => el.getBoundingClientRect();
+    const badges = [...map.getContainer().querySelectorAll('.fw-rain-badge')].map(rect);
+    map.getContainer().querySelectorAll<HTMLElement>('.fw-place').forEach((el) => {
+      const a = rect(el);
+      el.style.visibility = badges.some((c) => a.left < c.right && c.left < a.right && a.top < c.bottom && c.top < a.bottom) ? 'hidden' : '';
     });
   };
   // Re-place after a zoom and whenever gauge markers or place names change, a frame later so their
@@ -145,6 +156,9 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
       })
       .catch((e) => console.error('Failed to load rainfall vs normal:', e));
   });
-  layer.on('remove', () => legend.remove());
+  layer.on('remove', () => {
+    legend.remove();
+    map.getContainer().querySelectorAll<HTMLElement>('.fw-place').forEach((el) => { el.style.visibility = ''; });
+  });
   return { layer, redraw, setShowPct };
 }
