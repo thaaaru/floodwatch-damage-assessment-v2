@@ -37,39 +37,61 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
   const layer = L.layerGroup();
   let places: Place[] = [];
 
+  // Label spots, as the label centre's offset from the point, tried in order: below, above, right, left,
+  // the four diagonals, then one row further out. A name steps around rain bubbles instead of hiding under them.
+  const spots = (w: number, h: number) => {
+    const [x, y, dx, dy] = [w / 2 + 7, h / 2 + 4, w / 2 + 3, h / 2 + 2];
+    return [[0, y], [0, -y], [x, 0], [-x, 0], [dx, dy], [-dx, dy], [dx, -dy], [-dx, -dy], [0, y + h], [0, -y - h]];
+  };
+
   const render = () => {
     layer.clearLayers();
     const z = map.getZoom();
     const view = map.getBounds().pad(0.1);
-    // Greedy collision check in screen space: a label is dropped if it would overlap one already placed.
+    // Greedy collision check in screen space: a label is dropped only if every spot overlaps a rain bubble
+    // or a label already placed. Bubbles are read from the DOM (plus 3 px for their ring).
     // ponytail: width estimated from character count; measure text if labels start to clip.
-    const taken: { x0: number; x1: number; y0: number; y1: number }[] = [];
+    const origin = map.getContainer().getBoundingClientRect();
+    const taken: number[][] = [...map.getContainer().querySelectorAll('.fw-rain-badge')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return [r.left - origin.left - 3, r.top - origin.top - 3, r.right - origin.left + 3, r.bottom - origin.top + 3];
+    });
+    const free = (b: number[]) => !taken.some((t) => t[0] < b[2] && b[0] < t[2] && t[1] < b[3] && b[1] < t[3]);
     for (const p of places) {
       if ((!p.major && z < ALL_TOWNS_ZOOM) || !view.contains(p.at)) continue;
       const pt = map.latLngToContainerPoint(p.at);
       const w = p.name.length * (p.major ? 7.5 : 6.6) + 6;
-      const box = { x0: pt.x - w / 2, x1: pt.x + w / 2, y0: pt.y + 3, y1: pt.y + (p.major ? 21 : 19) };
-      if (taken.some((b) => b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1)) continue;
-      taken.push(box);
+      const h = p.major ? 18 : 16;
+      const spot = spots(w, h).find(([dx, dy]) => free([pt.x + dx - w / 2, pt.y + dy - h / 2, pt.x + dx + w / 2, pt.y + dy + h / 2]));
+      if (!spot) continue;
+      const [dx, dy] = spot;
+      taken.push([pt.x + dx - w / 2, pt.y + dy - h / 2, pt.x + dx + w / 2, pt.y + dy + h / 2]);
       L.marker(p.at, {
         pane: PANE,
         interactive: false,
         keyboard: false,
         icon: L.divIcon({
           className: 'fw-place-wrap',
-          html: `<span class="fw-place${p.major ? ' fw-place-major' : ''}">${p.name.replace(/[&<>]/g, '')}</span>`,
+          html: `<span class="fw-place${p.major ? ' fw-place-major' : ''}" style="transform:translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))">${p.name.replace(/[&<>]/g, '')}</span>`,
           iconSize: [0, 0],
         }),
       }).addTo(layer);
     }
   };
+  // Re-place after the view settles and whenever another layer (the rain bubbles) is added or removed.
+  let frame = 0;
+  const schedule = (e?: L.LeafletEvent) => {
+    if ((e as L.LayerEvent | undefined)?.layer?.options?.pane === PANE) return; // our own labels
+    cancelAnimationFrame(frame);
+    frame = requestAnimationFrame(render);
+  };
 
   layer.on('add', () => {
-    map.on('zoomend moveend', render);
+    map.on('zoomend moveend layeradd layerremove', schedule);
     loadPlaces()
       .then((ps) => { places = ps; if (map.hasLayer(layer)) render(); })
       .catch((e) => console.error('Failed to load place labels:', e));
   });
-  layer.on('remove', () => map.off('zoomend moveend', render));
+  layer.on('remove', () => { map.off('zoomend moveend layeradd layerremove', schedule); cancelAnimationFrame(frame); });
   return layer;
 }

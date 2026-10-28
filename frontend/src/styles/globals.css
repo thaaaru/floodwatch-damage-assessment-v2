@@ -561,7 +561,7 @@
   text-shadow: -1px 0 var(--fw-label-halo), 1px 0 var(--fw-label-halo), 0 -1px var(--fw-label-halo), 0 1px var(--fw-label-halo);
 }
 
-/* Place labels (lib/places.ts): 5 px below the point, 2 px halo on all sides, above every marker */
+/* Place labels (lib/places.ts): below the point by default (places.ts moves them off rain bubbles), 2 px halo on all sides, above every marker */
 .fw-place {
   position: absolute;
   transform: translate(-50%, 5px);
@@ -603,9 +603,9 @@
   justify-content: center;
   pointer-events: auto;
   cursor: pointer;
-  font: 600 10px/1 var(--font-plex-mono), ui-monospace, monospace;
+  font: 600 9px/1 var(--font-plex-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
 }
 
 /* Panels and controls share the theme's panel tokens */
@@ -657,9 +657,59 @@
   color: var(--fw-panel-muted);
   font-size: 10px;
 }
-/* The credits line spans the bottom edge (bottom-right corner), so lift the bottom-left legend above it */
-.fw-map .leaflet-bottom.leaflet-left .fw-panel {
-  margin-bottom: 44px;
+/* Toolbar above and legend strip below the canvas (MetStationsMap docks) */
+.fw-dock {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+}
+.fw-dock-bottom:has(.fw-dock-slot:empty) {
+  display: none;
+}
+.fw-dock-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+}
+.fw-map-shell:fullscreen {
+  background: #0f172a;
+}
+/* Full screen: the canvas takes what the toolbar and legends leave */
+.fw-map-shell:fullscreen > .relative {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+.fw-dock-legends .fw-basin-legend {
+  order: -1;
+}
+@media (min-width: 640px) {
+  .fw-dock-legends .fw-panel {
+    max-width: none;
+  }
+  /* Legends read across in one row each, so the strip stays short */
+  .fw-dock-legends .fw-legend-grid {
+    grid-template-columns: repeat(5, 22px 18px auto);
+  }
+  .fw-dock-legends .fw-legend-grid span {
+    margin-right: 8px;
+  }
+  .fw-dock-legends .fw-rain-legend .fw-legend-row {
+    display: inline-flex;
+    margin-right: 12px;
+  }
+}
+/* No focus box on the canvas or a clicked basin/river. Those shapes are tabindex -1 (not in the tab
+   order), so the box only ever showed after a mouse click; the canvas keeps its keyboard ring. */
+.fw-map path.leaflet-interactive:focus {
+  outline: none;
+  box-shadow: none;
+}
+.fw-map .leaflet-container:focus:not(:focus-visible) {
+  outline: none;
 }
 /* Gauge legend: marker shape | basin swatch | label */
 .fw-legend-grid {

@@ -6,8 +6,8 @@
 
 import L from 'leaflet';
 import { api, RainVsNormal } from '@/lib/api';
-import { NARROW } from '@/lib/gauges';
-import { RAIN_BANDS, rainBand, type Palette } from '@/lib/mapPalette';
+import { DOCK_LEGENDS, NARROW } from '@/lib/gauges';
+import { RAIN_BANDS, rainBand, rgba, type Palette } from '@/lib/mapPalette';
 import { MONTHS, RAIN_HISTORY_LABEL, fmtDay } from '@/lib/rainHistory';
 
 const esc = (v: unknown) =>
@@ -42,14 +42,15 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
       const band = rainBand(r.pct_of_normal);
       const b = pal.rain[band];
       const big = band === RAIN_BANDS.length - 1; // ≥150%
-      const radius = showPct ? (big ? 15 : 13) : (big ? 9 : 7);
+      const radius = showPct ? (big ? 13 : 12) : (big ? 8 : 6);
       const shadow = `${b.ring ? `0 0 0 3px ${b.ring}, ` : ''}0 1px 3px rgba(0, 0, 0, 0.28)`;
       const html = `<svg class="fw-rain-leader" width="${OFFSET}" height="${OFFSET}" style="top:${-OFFSET}px" aria-hidden="true">
           <line x1="0" y1="${OFFSET}" x2="${OFFSET}" y2="0" stroke="${pal.label}" stroke-opacity="0.55" stroke-width="1"/></svg>
-        <span class="fw-rain-dot" style="background:${b.fill}" aria-hidden="true"></span>
-        <span class="fw-rain-badge" style="left:${OFFSET - radius}px;top:${-OFFSET - radius}px;width:${radius * 2}px;height:${radius * 2}px;background:${b.fill};border:${b.borderWidth}px solid ${b.border};color:${b.text};box-shadow:${shadow}" aria-hidden="true">${showPct ? `${r.pct_of_normal}%` : ''}</span>`;
+        <span class="fw-rain-dot" style="background:${b.ring ?? b.border}" aria-hidden="true"></span>
+        <span class="fw-rain-badge" style="left:${OFFSET - radius}px;top:${-OFFSET - radius}px;width:${radius * 2}px;height:${radius * 2}px;background:${rgba(b.fill, b.alpha)};border:${b.borderWidth}px solid ${b.border};color:${b.text};box-shadow:${shadow}" aria-hidden="true">${showPct ? `${r.pct_of_normal}%` : ''}</span>`;
       L.marker([r.lat, r.lon], {
         pane: PANE,
+        zIndexOffset: Math.round(r.pct_of_normal * 10000), // wetter districts draw on top; outweighs Leaflet's by-latitude order
         title: `${r.district}: ${r.pct_of_normal}% of usual rain this month (modelled)`,
         icon: L.divIcon({ className: 'fw-rain-wrap', html, iconSize: [0, 0] }),
       })
@@ -61,16 +62,16 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
     }
   };
 
-  // Top-right under the zoom control on narrow screens, where the bottom edge holds the credits.
+  // Below the map, next to the gauge legend; closed on phones.
   const wide = window.innerWidth >= NARROW;
-  const legend = new L.Control({ position: wide ? 'bottomright' : 'topright' });
+  const legend = new L.Control({ position: DOCK_LEGENDS });
   let legendEl: HTMLElement | null = null;
   const renderLegend = () => {
     if (!legendEl) return;
     const pal = getPal();
     const shown = (data ?? []).filter((r) => r.pct_of_normal != null).length;
     legendEl.innerHTML = `<summary>Rainfall vs normal (this month)</summary>
-      ${RAIN_BANDS.map((band, i) => `<div class="fw-legend-row"><span class="fw-legend-dot" style="background:${pal.rain[i].fill};border:${pal.rain[i].borderWidth}px solid ${pal.rain[i].border}${pal.rain[i].ring ? `;box-shadow:0 0 0 2px ${pal.rain[i].ring}` : ''}"></span>${band.label}</div>`).join('')}
+      ${RAIN_BANDS.map((band, i) => `<div class="fw-legend-row"><span class="fw-legend-dot" style="background:${rgba(pal.rain[i].fill, pal.rain[i].alpha)};border:${pal.rain[i].borderWidth}px solid ${pal.rain[i].border}${pal.rain[i].ring ? `;box-shadow:0 0 0 2px ${pal.rain[i].ring}` : ''}"></span>${band.label}</div>`).join('')}
       <label class="fw-legend-check"><input type="checkbox"${showPct ? ' checked' : ''}> Show % on circles</label>
       ${data && shown < data.length ? `<p>${shown} of ${data.length} districts loaded so far</p>` : ''}
       <p>${RAIN_HISTORY_LABEL}</p>`;

@@ -13,6 +13,7 @@ import {
   BASIN_CREDIT, BasinFillMode, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey,
 } from '@/lib/gauges';
 import { PALETTES, Palette, Theme, cssVars } from '@/lib/mapPalette';
+import { DOCK_LEGENDS, DOCK_TOP } from '@/lib/gauges';
 import { createPlaceLabels } from '@/lib/places';
 
 // The map theme is a per-viewer preference; storage can be unavailable (private mode), so it is optional.
@@ -154,8 +155,7 @@ function buildPopupHtml(s: MetStation): string {
 
 // "Colour all basins" switch: off = only basins on alert are filled (default), on = every gauged basin.
 function createFillModeSwitch(setFillMode: (mode: BasinFillMode) => void): L.Control {
-  // Top-left under the layer switcher: the bottom corners are crowded by the legend and credits on phones.
-  const ctl = new L.Control({ position: 'topleft' });
+  const ctl = new L.Control({ position: DOCK_TOP });
   ctl.onAdd = () => {
     const label = L.DomUtil.create('label', 'fw-basin-switch');
     label.innerHTML = '<input type="checkbox"> Colour all basins';
@@ -171,11 +171,8 @@ function createFillModeSwitch(setFillMode: (mode: BasinFillMode) => void): L.Con
 // element full-screen is unsupported (e.g. iPhone Safari).
 const ISLAND: L.LatLngBoundsExpression = [[5.9, 79.6], [9.85, 81.9]];
 const FLOODING: IrrigationStation['status'][] = ['alert', 'minor', 'major'];
-// Keep the south clear of the credits and, on wide maps, the west coast (Colombo) clear of the gauge legend.
-const fitIsland = (map: L.Map) => map.fitBounds(ISLAND, {
-  paddingTopLeft: [map.getSize().x >= 700 ? 200 : 0, 0],
-  paddingBottomRight: [0, 48],
-});
+// Keep the south clear of the credits line.
+const fitIsland = (map: L.Map) => map.fitBounds(ISLAND, { paddingBottomRight: [0, 24] });
 
 // "Flood area" zooms to the gauges at alert or worse; "Whole island" resets the view; the third button flips the theme.
 function addViewControl(map: L.Map, getGauges: () => IrrigationStation[], getTheme: () => Theme, toggleTheme: () => void) {
@@ -213,11 +210,12 @@ function addViewControl(map: L.Map, getGauges: () => IrrigationStation[], getThe
       return bar;
     },
   });
-  new Control({ position: 'topleft' }).addTo(map);
+  new Control({ position: DOCK_TOP }).addTo(map);
 }
 
 function addFullscreenControl(map: L.Map) {
-  const el = map.getContainer();
+  // Full screen takes the whole shell, so the toolbar and legends outside the canvas come along.
+  const el = map.getContainer().closest<HTMLElement>('.fw-map-shell') ?? map.getContainer();
   if (!document.fullscreenEnabled || !el.requestFullscreen) return;
   const Control = L.Control.extend({
     onAdd() {
@@ -282,6 +280,9 @@ export default function MetStationsMap({
   route = null,
 }: MetStationsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const shellRef = useRef<HTMLDivElement>(null);
+  const topDockRef = useRef<HTMLDivElement>(null);
+  const legendDockRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const controlRef = useRef<L.Control.Layers | null>(null);
@@ -319,6 +320,14 @@ export default function MetStationsMap({
       scrollWheelZoom: false,
       zoomSnap: 0.25, // lets fitBounds fill the box instead of rounding down a whole level
     });
+    // Toolbar and legends live outside the canvas: extra control corners in the shell (Leaflet
+    // removes corner elements on map.remove(), so they are children of the React-owned docks).
+    const corners = (map as unknown as { _controlCorners: Record<string, HTMLElement> })._controlCorners;
+    corners[DOCK_TOP] = L.DomUtil.create('div', 'fw-dock-slot', topDockRef.current!);
+    corners[DOCK_LEGENDS] = L.DomUtil.create('div', 'fw-dock-slot fw-dock-legends', legendDockRef.current!);
+    // The canvas resizes when a legend opens or closes.
+    const resize = new ResizeObserver(() => map.invalidateSize());
+    resize.observe(containerRef.current);
     const wheelOn = () => map.scrollWheelZoom.enable();
     map.on('layeradd', ({ layer }) => {
       if (layer instanceof L.Path) layer.getElement()?.setAttribute('tabindex', '-1');
@@ -383,6 +392,7 @@ export default function MetStationsMap({
       .finally(loadBasins);
     return () => {
       retryBasinsRef.current = null;
+      resize.disconnect();
       map.remove();
       mapRef.current = null;
     };
@@ -449,7 +459,7 @@ export default function MetStationsMap({
     palRef.current = pal;
     themeRef.current = theme;
     saveTheme(theme);
-    const el = containerRef.current;
+    const el = shellRef.current;
     if (el) {
       Object.entries(cssVars(pal)).forEach(([k, v]) => el.style.setProperty(k, v));
       el.dataset.theme = theme;
@@ -541,62 +551,66 @@ export default function MetStationsMap({
           white-space: nowrap;
         }
       `}</style>
-      <div
-        ref={containerRef}
-        className="fw-map w-full h-full"
-        role="region"
-        aria-label={mode === 'public'
-          ? 'Interactive flood map. Use arrow keys to pan, plus or minus to zoom, and the Use map centre button to select the current centre.'
-          : 'Interactive flood map. Use arrow keys to pan and plus or minus to zoom.'}
-      />
-      <section
-        className="absolute bottom-16 left-14 right-14 z-[999] mx-auto flex max-w-sm flex-col text-slate-100 sm:bottom-auto sm:left-auto sm:right-16 sm:top-3 sm:mx-0 sm:w-64 sm:items-end sm:flex-col-reverse"
-        aria-label="Map evidence layers"
-      >
-        {evidenceKeyOpen && (
-          <div id="map-evidence-key" className="mb-2 sm:mb-0 sm:mt-2 rounded-xl border border-slate-600 bg-slate-950/95 p-3 shadow-xl backdrop-blur-sm">
-            <h2 className="text-sm font-semibold">Evidence on this map</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-300">Category shows how much confidence to place in each layer.</p>
-            <dl className="mt-2 space-y-2 text-xs leading-4">
-              <div>
-                <dt className="font-semibold text-sky-200">Observed <span className="font-normal text-slate-300">— {mode === 'technical' ? 'available now' : 'technical mode only'}</span></dt>
-                <dd className="text-slate-300">Rainfall and river gauges are direct measurements, but reports may be delayed.</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-200">Detected <span className="font-normal text-slate-400">— unavailable</span></dt>
-                <dd className="text-slate-400">Satellite flood extent is not operational; no detected-flood layer is shown.</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-violet-200">Modelled <span className="font-normal text-slate-300">— optional layers</span></dt>
-                <dd className="text-slate-300">Open-Meteo forecast and ERA5 rainfall-vs-normal are estimates, not observations.</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-emerald-200">Context <span className="font-normal text-slate-300">— available now</span></dt>
-                <dd className="text-slate-300">Base map, rivers and basins provide reference geography, not proof of flooding.</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-amber-200">Planning <span className="font-normal text-slate-300">— {mode === 'public' ? 'shown when available' : 'public mode only'}</span></dt>
-                <dd className="text-slate-300">Selected places, unverified candidate facilities and candidate routes support decisions; verify locally.</dd>
-              </div>
-            </dl>
-          </div>
-        )}
-        <button
-          type="button"
-          className="focus-ring mx-auto flex min-h-[44px] items-center justify-center rounded-full border border-slate-600 bg-slate-950/95 px-4 text-sm font-semibold shadow-lg hover:bg-slate-800"
-          aria-expanded={evidenceKeyOpen}
-          aria-controls={evidenceKeyOpen ? 'map-evidence-key' : undefined}
-          onClick={() => setEvidenceKeyOpen((open) => !open)}
-        >
-          {evidenceKeyOpen ? 'Hide evidence key' : 'Show evidence key'}
-        </button>
-      </section>
-      {basinError && (
-        <div className="absolute inset-x-3 top-3 z-[1000] flex items-center justify-between gap-3 rounded-lg border border-amber-600 bg-amber-950/95 p-3 text-sm text-amber-100" role="status">
-          <span>River basin overlay is temporarily unavailable. The base map is still usable.</span>
-          <button type="button" onClick={() => retryBasinsRef.current?.()} className="focus-ring min-h-[44px] shrink-0 rounded-lg border border-amber-500 px-3 font-semibold hover:bg-amber-900">Retry overlay</button>
+      <div ref={shellRef} className="fw-map fw-map-shell flex flex-col">
+        <div className="fw-dock fw-dock-top" role="group" aria-label="Map controls">
+          <div ref={topDockRef} className="contents" />
+          <button
+            type="button"
+            className="focus-ring ml-auto flex min-h-[44px] items-center justify-center rounded-full border border-slate-600 bg-slate-950/95 px-4 text-sm font-semibold text-slate-100 shadow-lg hover:bg-slate-800"
+            aria-expanded={evidenceKeyOpen}
+            aria-controls={evidenceKeyOpen ? 'map-evidence-key' : undefined}
+            onClick={() => setEvidenceKeyOpen((open) => !open)}
+          >
+            {evidenceKeyOpen ? 'Hide evidence key' : 'Show evidence key'}
+          </button>
         </div>
-      )}
+        {/* The canvas keeps the full map height; toolbar and legends add to the card instead of eating into it. */}
+        <div className={`relative ${mode === 'public' ? 'h-[55vh] min-h-[420px] lg:h-[calc(100dvh-13rem)]' : 'h-[max(420px,60vh)] lg:h-[max(500px,calc(100dvh-12rem))]'}`}>
+          <div
+            ref={containerRef}
+            className="h-full w-full"
+            role="region"
+            aria-label={mode === 'public'
+              ? 'Interactive flood map. Use arrow keys to pan, plus or minus to zoom, and the Use map centre button to select the current centre.'
+              : 'Interactive flood map. Use arrow keys to pan and plus or minus to zoom.'}
+          />
+          {evidenceKeyOpen && (
+            <div id="map-evidence-key" className="absolute right-3 top-3 z-[1000] w-72 max-w-[calc(100%-1.5rem)] rounded-xl border border-slate-600 bg-slate-950/95 p-3 shadow-xl backdrop-blur-sm">
+              <h2 className="text-sm font-semibold">Evidence on this map</h2>
+              <p className="mt-1 text-xs leading-5 text-slate-300">Category shows how much confidence to place in each layer.</p>
+              <dl className="mt-2 space-y-2 text-xs leading-4">
+                <div>
+                  <dt className="font-semibold text-sky-200">Observed <span className="font-normal text-slate-300">— {mode === 'technical' ? 'available now' : 'technical mode only'}</span></dt>
+                  <dd className="text-slate-300">Rainfall and river gauges are direct measurements, but reports may be delayed.</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-slate-200">Detected <span className="font-normal text-slate-400">— unavailable</span></dt>
+                  <dd className="text-slate-400">Satellite flood extent is not operational; no detected-flood layer is shown.</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-violet-200">Modelled <span className="font-normal text-slate-300">— optional layers</span></dt>
+                  <dd className="text-slate-300">Open-Meteo forecast and ERA5 rainfall-vs-normal are estimates, not observations.</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-emerald-200">Context <span className="font-normal text-slate-300">— available now</span></dt>
+                  <dd className="text-slate-300">Base map, rivers and basins provide reference geography, not proof of flooding.</dd>
+                </div>
+                <div>
+                  <dt className="font-semibold text-amber-200">Planning <span className="font-normal text-slate-300">— {mode === 'public' ? 'shown when available' : 'public mode only'}</span></dt>
+                  <dd className="text-slate-300">Selected places, unverified candidate facilities and candidate routes support decisions; verify locally.</dd>
+                </div>
+              </dl>
+            </div>
+          )}
+          {basinError && (
+            <div className="absolute inset-x-3 top-3 z-[1000] flex items-center justify-between gap-3 rounded-lg border border-amber-600 bg-amber-950/95 p-3 text-sm text-amber-100" role="status">
+              <span>River basin overlay is temporarily unavailable. The base map is still usable.</span>
+              <button type="button" onClick={() => retryBasinsRef.current?.()} className="focus-ring min-h-[44px] shrink-0 rounded-lg border border-amber-500 px-3 font-semibold hover:bg-amber-900">Retry overlay</button>
+            </div>
+          )}
+        </div>
+        <div ref={legendDockRef} className="fw-dock fw-dock-bottom" role="group" aria-label="Map legends" />
+      </div>
     </>
   );
 }

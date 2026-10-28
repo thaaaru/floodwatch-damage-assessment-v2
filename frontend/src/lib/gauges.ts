@@ -378,13 +378,16 @@ export async function createWaterLayer(
 }
 
 // Panels collapse to <details> below this width.
+// Control positions outside the canvas: MetStationsMap registers them as extra Leaflet control corners.
+export const DOCK_TOP = 'fwtop' as L.ControlPosition;
+export const DOCK_LEGENDS = 'fwlegends' as L.ControlPosition;
 export const NARROW = 560;
 
 /** Gauge legend: marker shape | basin swatch | label. render() rebuilds it for the current theme. */
 export function createBasinLegend(getPal: () => Palette): { control: L.Control; render: () => void } {
-  // On phones the map credits span the bottom edge and would cover it, so it goes top-left, closed.
+  // Below the map; closed on phones.
   const wide = window.innerWidth >= NARROW;
-  const control = new L.Control({ position: wide ? 'bottomleft' : 'topleft' });
+  const control = new L.Control({ position: DOCK_LEGENDS });
   let el: HTMLElement | null = null;
   const render = () => {
     if (!el) return;
