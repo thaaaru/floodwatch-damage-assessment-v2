@@ -406,6 +406,15 @@ export default function MetStationsMap({
     reThemeRef.current.push(rain24h.redraw, facilitiesLayer.redraw);
     controlRef.current.addOverlay(rain24h.layer, 'Observed — Rain last 24 h (NBRO via RISE)');
     controlRef.current.addOverlay(facilitiesLayer.layer, 'Context — Hospitals &amp; shelters (OpenStreetMap)');
+    // Copernicus GFM: flood water mapped from Sentinel-1 radar (sees through cloud), one global layer per day.
+    // A satellite passes over a given spot only every few days, so show the union of the last 12 days.
+    const day = (ago: number) => new Date(Date.now() - ago * 864e5).toISOString().slice(0, 10);
+    map.createPane('fw-flood').style.zIndex = '250'; // above the land fill (210), below shapes and markers
+    controlRef.current.addOverlay(L.tileLayer.wms('https://geoserver.gfm.eodc.eu/geoserver/gfm/wms', {
+      layers: 'observed_flood_extent', format: 'image/png', transparent: true, opacity: 0.85, pane: 'fw-flood',
+      time: `${day(12)}/${day(0)}`,
+      attribution: 'Flood extent: <a href="https://global-flood.emergency.copernicus.eu/">Copernicus EMS GFM</a>',
+    } as L.WMSOptions), 'Observed — Satellite flood extent, last 12 days (Copernicus)');
     addViewControl(map, () => gaugesRef.current, () => themeRef.current,
       () => {
         themeRef.current = themeRef.current === 'dark' ? 'light' : 'dark';
