@@ -40,24 +40,26 @@ export function ActiveWarnings({ items }: { items: NewsItem[] | null }) {
   const active = activeWarnings(items);
   if (active.length === 0) return null;
   return (
-    <section aria-label="Active official warnings" className="space-y-2">
+    <section aria-label="Active official warnings" className="space-y-1 sm:space-y-2">
       {active.map((item) => {
         const critical = item.severity === 'critical';
+        // Phones: one line per warning (title cut short, source and age hidden) so the map stays near the top.
         return (
           <a
             key={item.id}
             href={item.url}
             target="_blank"
             rel="noopener noreferrer"
-            className={`focus-ring flex min-h-[44px] flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border px-3 py-1.5 text-sm hover:underline ${
+            title={item.title}
+            className={`focus-ring flex min-h-[44px] items-center gap-x-2 gap-y-1 rounded-lg border px-2 py-1 text-sm hover:underline sm:flex-wrap sm:gap-x-3 sm:px-3 sm:py-1.5 ${
               critical ? 'border-red-500 bg-red-950/70 text-red-50' : 'border-amber-500 bg-amber-950/60 text-amber-50'
             }`}
           >
-            <span className={`rounded px-2 py-0.5 text-xs font-bold uppercase tracking-wide ${critical ? 'bg-red-600 text-white' : 'bg-amber-400 text-amber-950'}`}>
+            <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide sm:px-2 sm:text-xs ${critical ? 'bg-red-600 text-white' : 'bg-amber-400 text-amber-950'}`}>
               {item.kind ?? 'Warning'}
             </span>
-            <strong className="font-semibold">{item.title}</strong>
-            <span className="text-xs opacity-80">
+            <strong className="min-w-0 truncate font-semibold sm:whitespace-normal">{item.title}</strong>
+            <span className="hidden text-xs opacity-80 sm:inline">
               {item.source}{item.publishedAt ? ` · ${formatRelativeTime(item.publishedAt)}` : ''}
             </span>
           </a>
