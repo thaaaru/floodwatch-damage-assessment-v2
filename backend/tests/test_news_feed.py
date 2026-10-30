@@ -93,3 +93,18 @@ def test_expiry_fleet_valid_period_and_weakened_imd_storm():
     assert i["kind"] == "Forecast" and i["expiresAt"] is None
     live = nf.parse_imd(page.replace("WML over south Chhattisgarh", "Deep Depression over Westcentral Bay of Bengal"))[0]
     assert live["kind"] == "Warning" and live["expiresAt"] == "2026-10-30T06:00:00+00:00"
+
+
+def test_gdacs_uses_latest_episode_level_and_flags_only_sri_lanka_storms():
+    def tc(lon, lat, country, overall="Red", episode="Orange"):
+        return {"geometry": {"type": "Point", "coordinates": [lon, lat]},
+                "properties": {"eventtype": "TC", "eventid": 1, "episodeid": 10, "name": "Tropical Cyclone X",
+                               "alertlevel": overall, "episodealertlevel": episode, "iscurrent": "true",
+                               "country": country, "todate": "2026-10-28T06:00:00"}}
+    [india] = nf.parse_gdacs([tc(83.7, 18.1, "India")])
+    assert india["title"] == "Orange alert: Tropical Cyclone X"   # not the lifetime Red
+    assert india["kind"] is None and india["severity"] == "info"  # stays as news
+    [ours] = nf.parse_gdacs([tc(82.5, 8.0, "")])
+    assert ours["kind"] == "Warning" and ours["severity"] == "warning"
+    [named] = nf.parse_gdacs([tc(88.0, 16.0, "India, Sri Lanka", episode="Red")])
+    assert named["kind"] == "Warning" and named["severity"] == "critical"

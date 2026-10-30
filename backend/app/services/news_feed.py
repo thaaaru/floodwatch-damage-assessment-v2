@@ -231,6 +231,11 @@ def in_region(lon: float, lat: float) -> bool:
     return REGION["west"] <= lon <= REGION["east"] and REGION["south"] <= lat <= REGION["north"]
 
 
+def near_sri_lanka(lon: float, lat: float) -> bool:
+    """Within roughly 500 km of the island."""
+    return 75.5 <= lon <= 86.5 and 1.5 <= lat <= 14.5
+
+
 async def fetch_gdacs(client: httpx.AsyncClient) -> list[dict]:
     # The country= filter returns 204 for multiple countries, so filter by location here.
     since = (datetime.now(timezone.utc) - MAX_AGE).strftime("%Y-%m-%d")
@@ -239,21 +244,29 @@ async def fetch_gdacs(client: httpx.AsyncClient) -> list[dict]:
     if r.status_code == 204 or not r.content:
         return []
     r.raise_for_status()
+    return parse_gdacs(r.json().get("features", []))
+
+
+def parse_gdacs(features: list[dict]) -> list[dict]:
     out = []
-    for f in r.json().get("features", []):
+    for f in features:
         g, p = f.get("geometry") or {}, f.get("properties") or {}
         if g.get("type") != "Point" or not in_region(*g["coordinates"][:2]):
             continue
-        level = p.get("alertlevel") or "Green"
+        # alertlevel is the worst level over the event's life; the latest episode's level is what holds now.
+        level = p.get("episodealertlevel") or p.get("alertlevel") or "Green"
         current = str(p.get("iscurrent")).lower() == "true"
+        # A warning for us only when it affects Sri Lanka; other regional events stay as news.
+        ours = "sri lanka" in (p.get("country") or "").lower() or near_sri_lanka(*g["coordinates"][:2])
+        flagged = ours and level in ("Red", "Orange")
         when = p.get("todate") or p.get("fromdate")
         published = datetime.fromisoformat(when).replace(tzinfo=timezone.utc) if when else None
         out.append(item(f"gdacs-{p.get('eventtype')}-{p.get('eventid')}-{p.get('episodeid')}",
                         f"{level} alert: {p.get('name') or p.get('eventtype')}", _strip(p.get("htmldescription") or p.get("description") or ""),
                         "GDACS", "🔴", ((p.get("url") or {}).get("report")) or "https://www.gdacs.org",
                         published, "cyclone" if p.get("eventtype") == "TC" else "flood",
-                        {"Red": "critical", "Orange": "warning"}.get(level, "info"),
-                        kind="Warning" if current and level in ("Red", "Orange") else None,
+                        {"Red": "critical", "Orange": "warning"}.get(level, "info") if ours else "info",
+                        kind="Warning" if current and flagged else None,
                         # GDACS updates a live storm every 6 h and can leave iscurrent set after the last episode
                         expires_at=published + timedelta(hours=24) if published else None))
     return out
