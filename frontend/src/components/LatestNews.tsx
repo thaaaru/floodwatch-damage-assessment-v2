@@ -27,11 +27,11 @@ export function useNews() {
   return items;
 }
 
-// Official warnings/advisories from the last 48 h, pinned above the map so they don't sit among news.
+// Official warnings/advisories from the last 48 h and not past their source's expiry, pinned above the map.
 const activeWarnings = (items: NewsItem[] | null) => {
   const now = Date.now();
   return (items ?? [])
-    .filter((i) => isOfficialWarning(i) && now - ts(i) < WARNING_WINDOW_MS)
+    .filter((i) => isOfficialWarning(i) && now - ts(i) < WARNING_WINDOW_MS && !(i.expiresAt && Date.parse(i.expiresAt) <= now))
     .sort((a, b) => (b.severity === 'critical' ? 1 : 0) - (a.severity === 'critical' ? 1 : 0) || ts(b) - ts(a))
     .slice(0, 3);
 };

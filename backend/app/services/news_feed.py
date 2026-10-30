@@ -66,12 +66,14 @@ def about_sri_lanka(title: str, summary: str) -> bool:
 
 
 def item(id, title, summary, source, icon, url, published_at: Optional[datetime], category, severity="info",
-         kind: Optional[str] = None):
-    """kind: what the source says the item is (Warning / Advisory / Forecast / News), else None."""
+         kind: Optional[str] = None, expires_at: Optional[datetime] = None):
+    """kind: what the source says the item is (Warning / Advisory / Forecast / News), else None.
+    expires_at: when the source says it stops being in force; the warning strip drops it after that."""
     return {
         "id": id, "title": title, "summary": summary, "source": source, "sourceIcon": icon,
         "url": url, "category": category, "severity": severity, "kind": kind,
         "publishedAt": published_at.astimezone(timezone.utc).isoformat() if published_at else None,
+        "expiresAt": expires_at.astimezone(timezone.utc).isoformat() if expires_at else None,
     }
 
 
@@ -90,6 +92,14 @@ def parse_issued_local(text: str) -> Optional[datetime]:
         return None
     hour = int(m.group(1)) % 12 + (12 if m.group(3).lower() == "p" else 0)
     return datetime(int(m.group(6)), MONTHS[m.group(5).lower()], int(m.group(4)), hour, int(m.group(2)), tzinfo=COLOMBO)
+
+
+def parse_valid_until(text: str) -> Optional[datetime]:
+    """'Valid period: 2026.10.30/0600UTC to 2026.10.30/1400UTC' -> the end, aware."""
+    m = re.search(r"Valid period:.*?to\s*(\d{4})\.(\d{2})\.(\d{2})/(\d{2})(\d{2})\s*UTC", text, re.I)
+    if not m:
+        return None
+    return datetime(*(int(g) for g in m.groups()), tzinfo=timezone.utc)
 
 
 def parse_issued_utc(text: str) -> Optional[datetime]:
@@ -162,7 +172,7 @@ async def fetch_slmet(client: httpx.AsyncClient) -> list[dict]:
                         f'Cyclonic storm "{name.group(1)}"' if name else "Weather system advisory (fleet forecast)",
                         system.group(0).strip(), "SL Met", "🌀", "https://meteo.gov.lk", issued, "cyclone",
                         "critical" if re.search(r"cyclonic storm|severe", system.group(0), re.I) else "warning",
-                        kind="Advisory"))
+                        kind="Advisory", expires_at=parse_valid_until(fleet)))
 
     for key, path in (data.get("severe_weather_advisory") or {}).items():
         if not path or key not in ADVISORIES:
@@ -235,6 +245,7 @@ async def fetch_gdacs(client: httpx.AsyncClient) -> list[dict]:
         if g.get("type") != "Point" or not in_region(*g["coordinates"][:2]):
             continue
         level = p.get("alertlevel") or "Green"
+        current = str(p.get("iscurrent")).lower() == "true"
         when = p.get("todate") or p.get("fromdate")
         published = datetime.fromisoformat(when).replace(tzinfo=timezone.utc) if when else None
         out.append(item(f"gdacs-{p.get('eventtype')}-{p.get('eventid')}-{p.get('episodeid')}",
@@ -242,7 +253,9 @@ async def fetch_gdacs(client: httpx.AsyncClient) -> list[dict]:
                         "GDACS", "🔴", ((p.get("url") or {}).get("report")) or "https://www.gdacs.org",
                         published, "cyclone" if p.get("eventtype") == "TC" else "flood",
                         {"Red": "critical", "Orange": "warning"}.get(level, "info"),
-                        kind="Warning" if level in ("Red", "Orange") else None))
+                        kind="Warning" if current and level in ("Red", "Orange") else None,
+                        # GDACS updates a live storm every 6 h and can leave iscurrent set after the last episode
+                        expires_at=published + timedelta(hours=24) if published else None))
     return out
 
 
@@ -264,12 +277,16 @@ def parse_imd(page: str) -> list[dict]:
     national = re.search(r'href="([^"]+)"[^>]*>\s*National Bulletin', block)
     active = bool(national and "no cyclone" not in national.group(1).lower())
     headline = re.search(r'warning\.png"[^>]*>\s*<a [^>]*>([^<]+)</a>', page)
+    # The advisory PDF stays the newest link after a storm weakens to a (well marked) low: the headline says so.
+    if headline and not re.search(r"depression|cyclon", headline.group(1), re.I):
+        active = False
     summary = ((" ".join(headline.group(1).split()) + ". " if headline else "") + "Cyclone bulletins are active for the North Indian Ocean - see RSMC New Delhi."
                if active else "Daily tropical weather outlook for the North Indian Ocean; no cyclone bulletin in force.")
     return [item(f"imd-two-{published.isoformat()}",
                  f"IMD {'Tropical Cyclone Advisory' if 'advisory' in href.lower() else 'Tropical Weather Outlook'} ({hhmm} UTC, {published:%d %b %Y})", summary, "IMD RSMC", "🇮🇳",
                  IMD_BASE + href.replace(" ", "%20").lstrip("/"), published, "cyclone",
-                 "warning" if active else "info", kind="Warning" if active else "Forecast")]
+                 "warning" if active else "info", kind="Warning" if active else "Forecast",
+                 expires_at=published + timedelta(hours=24) if active else None)]
 
 
 async def fetch_imd(client: httpx.AsyncClient) -> list[dict]:

@@ -77,3 +77,19 @@ def test_imd_cyclone_advisory_while_storm_active():
     [i] = nf.parse_imd(page)
     assert i["publishedAt"] == "2026-10-28T03:00:00+00:00" and i["severity"] == "warning"
     assert i["title"].startswith("IMD Tropical Cyclone Advisory") and "Arnab” over Westcentral" in i["summary"]
+
+
+def test_expiry_fleet_valid_period_and_weakened_imd_storm():
+    fleet = "Valid period: 2026.10.30/0600UTC to 2026.10.30/1400UTC\r\nIssued at 0000UTC on 2026.10.30"
+    assert nf.parse_valid_until(fleet) == datetime(2026, 10, 30, 14, 0, tzinfo=timezone.utc)
+    assert nf.parse_valid_until("no validity line") is None
+    # Storm weakened to a well marked low: the advisory PDF is still the newest link, but it is no longer a warning.
+    page = ('<img src="images/warning.png"><a href="uploads/x.pdf"> WML over south Chhattisgarh</a>'
+            '<h3>Cyclone Warnings/Advisory</h3><ul class="menu">'
+            '<li><a href="uploads/archive/1/1_45207b_34._National_Bulletin_No_34-29Oct2026_1730IST.pdf">National Bulletin</a></li>'
+            '<li><a href="uploads/archive/2/2_51b887_Tropical_cyclone_advisory__No.26_based_on_0600_UTC_of_29.10.2026.pdf">'
+            'RSMC Bulletin</a></li></ul>')
+    [i] = nf.parse_imd(page)
+    assert i["kind"] == "Forecast" and i["expiresAt"] is None
+    live = nf.parse_imd(page.replace("WML over south Chhattisgarh", "Deep Depression over Westcentral Bay of Bengal"))[0]
+    assert live["kind"] == "Warning" and live["expiresAt"] == "2026-10-30T06:00:00+00:00"

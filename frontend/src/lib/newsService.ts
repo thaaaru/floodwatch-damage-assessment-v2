@@ -20,6 +20,8 @@ export interface NewsItem {
   severity?: 'info' | 'warning' | 'critical';
   /** What the source says this is; null when it doesn't say. */
   kind?: 'Warning' | 'Advisory' | 'Forecast' | 'News' | null;
+  /** When the source says it stops being in force; null when it doesn't say. */
+  expiresAt?: string | null;
 }
 
 export interface NewsSourceStatus {
