@@ -415,6 +415,28 @@ export default function MetStationsMap({
       time: `${day(12)}/${day(0)}`,
       attribution: 'Flood extent: <a href="https://global-flood.emergency.copernicus.eu/">Copernicus EMS GFM</a>',
     } as L.WMSOptions), 'Observed — Satellite flood extent, last 12 days (Copernicus)');
+    // NASA GIBS satellite tiles (no key, CORS). Each product publishes with a lag, so ask for a time it has.
+    const GIBS = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best';
+    const gibs = (layer: string, time: string, level: number, opacity: number, attribution: string) =>
+      L.tileLayer(`${GIBS}/${layer}/default/${time}/GoogleMapsCompatible_Level${level}/{z}/{y}/{x}.png`,
+        { maxNativeZoom: level, opacity, pane: 'fw-flood', attribution });
+    const halfHour = Math.floor((Date.now() - 7 * 36e5) / 18e5) * 18e5; // IMERG lands ~4-6 h after the fact
+    controlRef.current.addOverlay(gibs('IMERG_Precipitation_Rate_30min', new Date(halfHour).toISOString().slice(0, 19) + 'Z', 6, 0.8,
+      'Rain: <a href="https://gpm.nasa.gov/data/imerg">NASA GPM IMERG</a>'), 'Observed — Satellite rain rate, ~7 h ago (NASA)');
+    controlRef.current.addOverlay(gibs('SMAP_L4_Analyzed_Root_Zone_Soil_Moisture', day(4), 6, 0.6,
+      'Soil moisture: <a href="https://smap.jpl.nasa.gov/">NASA SMAP</a>'), 'Modelled — Soil wetness, 4 days ago (NASA SMAP)');
+    // Himawari-9 infrared clouds (JMA, every 10 min): look up the newest image time when the layer is switched on.
+    const clouds = L.layerGroup();
+    clouds.on('add', () => {
+      fetch('https://www.jma.go.jp/bosai/himawari/data/satimg/targetTimes_fd.json').then((r) => r.json())
+        .then((t: { basetime: string; validtime: string }[]) => {
+          const { basetime, validtime } = t[t.length - 1];
+          clouds.clearLayers().addLayer(L.tileLayer(
+            `https://www.jma.go.jp/bosai/himawari/data/satimg/${basetime}/fd/${validtime}/B13/TBB/{z}/{x}/{y}.jpg`,
+            { maxNativeZoom: 5, opacity: 0.55, pane: 'fw-flood', attribution: 'Clouds: <a href="https://www.jma.go.jp/bosai/en_himawari/">JMA Himawari-9</a>' }));
+        }).catch(() => {});
+    });
+    controlRef.current.addOverlay(clouds, 'Observed — Live clouds, infrared (JMA Himawari)');
     addViewControl(map, () => gaugesRef.current, () => themeRef.current,
       () => {
         themeRef.current = themeRef.current === 'dark' ? 'light' : 'dark';
