@@ -48,6 +48,8 @@ interface MetStationsMapProps {
   route?: CandidateRoute | null;
   // Zoom to this gauge and open its popup; a new object each time, so the same gauge can be picked again.
   focusGauge?: { g: IrrigationStation } | null;
+  // Met Dept feed returned nothing or failed: the NBRO rain gauges come on instead, so the map still shows observed rain.
+  rainFeedDown?: boolean;
 }
 
 /**
@@ -313,6 +315,7 @@ export default function MetStationsMap({
   facilities = [],
   route = null,
   focusGauge = null,
+  rainFeedDown = false,
 }: MetStationsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -340,6 +343,10 @@ export default function MetStationsMap({
   const [basinError, setBasinError] = useState(false);
   const [evidenceKeyOpen, setEvidenceKeyOpen] = useState(false);
   const retryBasinsRef = useRef<(() => void) | null>(null);
+  // Layers switched on automatically, once each, so a viewer who turns one off keeps it off.
+  const rain24hRef = useRef<L.LayerGroup | null>(null);
+  const eventLayersRef = useRef<L.Layer[]>([]);
+  const autoOnRef = useRef({ rain24h: false, event: false });
   const fresh = useGaugeFreshness(mode === 'technical' ? gauges : []);
   // Toolbar from 560 px; below that it would push the toolbar past one row, so it sits under the map.
   const freshNote = (where: string) => fresh && (
@@ -400,23 +407,24 @@ export default function MetStationsMap({
     const rainNormal = createRainNormalLayer(map, getPal);
     reThemeRef.current.push(rainNormal.redraw);
     controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
-    if (mode === 'technical') rainNormal.layer.addTo(map); // labelled as modelled in its legend and popups
     addBulletinOverlays(map, controlRef.current, getPal, (f) => reThemeRef.current.push(f));
-    // Off by default: NBRO rain gauges (lib/rain24h.ts) and OSM hospitals/shelters (lib/facilities.ts).
+    // Off by default: NBRO rain gauges (lib/rain24h.ts, on when the Met feed is down) and OSM hospitals/shelters (lib/facilities.ts).
     const rain24h = createRain24hLayer(map, getPal);
     const facilitiesLayer = createFacilitiesLayer(map, getPal);
     reThemeRef.current.push(rain24h.redraw, facilitiesLayer.redraw);
+    rain24hRef.current = rain24h.layer;
     controlRef.current.addOverlay(rain24h.layer, 'Observed — Rain last 24 h (NBRO via RISE)');
     controlRef.current.addOverlay(facilitiesLayer.layer, 'Context — Hospitals &amp; shelters (OpenStreetMap)');
     // Copernicus GFM: flood water mapped from Sentinel-1 radar (sees through cloud), one global layer per day.
     // A satellite passes over a given spot only every few days, so show the union of the last 12 days.
     const day = (ago: number) => new Date(Date.now() - ago * 864e5).toISOString().slice(0, 10);
     map.createPane('fw-flood').style.zIndex = '250'; // above the land fill (210), below shapes and markers
-    controlRef.current.addOverlay(L.tileLayer.wms('https://geoserver.gfm.eodc.eu/geoserver/gfm/wms', {
+    const floodExtent = L.tileLayer.wms('https://geoserver.gfm.eodc.eu/geoserver/gfm/wms', {
       layers: 'observed_flood_extent', format: 'image/png', transparent: true, opacity: 0.85, pane: 'fw-flood',
       time: `${day(12)}/${day(0)}`,
       attribution: 'Flood extent: <a href="https://global-flood.emergency.copernicus.eu/">Copernicus EMS GFM</a>',
-    } as L.WMSOptions), 'Observed — Satellite flood extent, last 12 days (Copernicus)');
+    } as L.WMSOptions);
+    controlRef.current.addOverlay(floodExtent, 'Observed — Satellite flood extent, last 12 days (Copernicus)');
     // NASA GIBS satellite tiles (no key, CORS). Each product publishes with a lag, so ask for a time it has.
     const GIBS = 'https://gibs.earthdata.nasa.gov/wmts/epsg3857/best';
     const gibs = (layer: string, time: string, level: number, opacity: number, attribution: string) =>
@@ -440,11 +448,16 @@ export default function MetStationsMap({
     });
     controlRef.current.addOverlay(clouds, 'Observed — Live clouds, infrared (JMA Himawari)');
     // GloFAS 100-year flood depth (JRC), static: where a 1-in-100-year river flood reaches.
-    controlRef.current.addOverlay(L.tileLayer.wms('https://ows.globalfloods.eu/glofas-ows/ows.py', {
+    const hazard = L.tileLayer.wms('https://ows.globalfloods.eu/glofas-ows/ows.py', {
       layers: 'FloodHazard100y', format: 'image/png', transparent: true, opacity: 0.7, pane: 'fw-flood',
       attribution: 'Flood hazard: <a href="https://global-flood.emergency.copernicus.eu/">Copernicus GloFAS / JRC</a>',
-    }), 'Context — 100-year flood zones (GloFAS)');
-    controlRef.current.addOverlay(createCycloneLayer(), 'Observed — Cyclones near Sri Lanka (GDACS)');
+    });
+    controlRef.current.addOverlay(hazard, 'Context — 100-year flood zones (GloFAS)');
+    eventLayersRef.current = [floodExtent, hazard]; // switched on when a gauge reaches minor flood (event mode)
+    // On by default: draws nothing unless a storm is active near Sri Lanka.
+    const cyclones = createCycloneLayer();
+    controlRef.current.addOverlay(cyclones, 'Observed — Cyclones near Sri Lanka (GDACS)');
+    if (mode === 'technical') cyclones.addTo(map);
     controlRef.current.addOverlay(createSeaLevelLayer(), 'Observed — Sea level, Colombo &amp; Trincomalee (IOC)');
     addViewControl(map, () => gaugesRef.current, () => themeRef.current,
       () => {
@@ -547,7 +560,19 @@ export default function MetStationsMap({
       controlRef.current?.addOverlay(layer, 'Observed — Measured river gauges');
     }
     restyleWaterRef.current?.();
+    // Event mode: a gauge at minor flood or worse brings in where the water is and where it can spread.
+    if (mode === 'technical' && !autoOnRef.current.event && visibleGauges.some((g) => g.status === 'minor' || g.status === 'major')) {
+      autoOnRef.current.event = true;
+      eventLayersRef.current.forEach((l) => l.addTo(map));
+    }
   }, [mode, gauges]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || mode !== 'technical' || !rainFeedDown || autoOnRef.current.rain24h || !rain24hRef.current) return;
+    autoOnRef.current.rain24h = true;
+    rain24hRef.current.addTo(map);
+  }, [mode, rainFeedDown]);
 
   // --- theme: panel tokens, basemap colours, then every layer redraws from the new palette ---
   useEffect(() => {

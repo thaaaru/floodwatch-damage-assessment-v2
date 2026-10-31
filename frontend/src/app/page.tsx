@@ -373,7 +373,7 @@ export default function Dashboard() {
                 ) : stations.length === 0 && gauges.length === 0 ? (
                   <MapMessage text="No measured observations are available yet." kind="empty" actionLabel="Check again" onAction={fetchData} />
                 ) : (
-                  <MetStationsMap mode="technical" stations={visibleStations} selectedWmoId={selected?.wmo_id ?? null} onStationSelect={setSelected} gauges={visibleGauges} focusGauge={focusGauge} />
+                  <MetStationsMap mode="technical" stations={visibleStations} selectedWmoId={selected?.wmo_id ?? null} onStationSelect={setSelected} gauges={visibleGauges} focusGauge={focusGauge} rainFeedDown={rainSourceState === 'empty' || rainSourceState === 'error'} />
                 )}
                 {selected && <StationCard station={selected} onClose={() => setSelected(null)} />}
               </div>
