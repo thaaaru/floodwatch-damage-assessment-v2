@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     google_maps_api_key: str = ""
     # ReliefWeb API v2 requires a pre-approved appname; empty = source disabled.
     reliefweb_appname: str = ""
+    # Shared secret for the Sri Lanka relay that uploads the Met Dept bulletin
+    # (meteo.gov.lk only answers Sri Lankan addresses); empty = upload endpoint off.
+    met_relay_token: str = ""
 
     # SMS/WhatsApp subscriber alerts. Off by default: subscription routes are
     # not registered and the alert engine never sends messages.

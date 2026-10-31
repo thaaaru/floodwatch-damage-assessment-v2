@@ -58,12 +58,17 @@ services:
       WEATHER_SOURCE: ${WEATHER_SOURCE:-open_meteo}
       # ReliefWeb API v2 appname (pre-approved by ReliefWeb); empty = source off
       RELIEFWEB_APPNAME: ${RELIEFWEB_APPNAME:-}
+      # Secret shared with the Sri Lanka relay that pushes the Met Dept bulletin; empty = off
+      MET_RELAY_TOKEN: ${MET_RELAY_TOKEN:-}
       FRONTEND_URL: https://floodwatch.teklab.dev
       DEBUG: "false"
       # Required in production: CIDRs containing only Caddy and the Next proxy.
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:?set trusted proxy CIDRs}
     secrets:
       - db_password
+    volumes:
+      # Feed snapshots (last good Met Dept bulletin, DMC bulletins) survive restarts and rebuilds.
+      - backend_cache:/app/cache
     networks:
       - internal
       - edge
@@ -139,3 +144,4 @@ networks:
 
 volumes:
   postgres_data:
+  backend_cache:

@@ -149,6 +149,11 @@ class MetDepartmentService:
     FALLBACK_BULLETIN_PATH: Optional[Path] = (
         Path(__file__).resolve().parents[2] / "data" / "met_department_3hourly.xlsx"
     )
+    # Last bulletin fetched OK, kept on disk (a volume in prod) so a restart during
+    # a Met Dept outage still serves the latest measured readings.
+    LAST_GOOD_PATH: Optional[Path] = (
+        Path(__file__).resolve().parents[2] / "cache" / "met_department_last_good.xlsx"
+    )
 
     def __init__(self) -> None:
         self._client: Optional[httpx.AsyncClient] = None
@@ -212,17 +217,9 @@ class MetDepartmentService:
                 )
                 if self._cache:
                     return self._cache
-                path = self.FALLBACK_BULLETIN_PATH
-                if path is None or not path.is_file():
+                stations = self._read_fallback()
+                if not stations:
                     return self._cache
-                try:
-                    stations = self._parse_workbook(path.read_bytes())
-                except Exception as fallback_exc:
-                    logger.warning("Bundled Met Dept bulletin is unreadable: %s", fallback_exc)
-                    return self._cache
-                logger.warning(
-                    "Serving bundled measured Met Dept bulletin from %s", path
-                )
             else:
                 self._failed_at = None
             self._cache = stations
@@ -241,13 +238,51 @@ class MetDepartmentService:
             )
             return stations
 
+    async def accept_bulletin(self, content: bytes) -> list[MetStation]:
+        """Take a bulletin pushed by the Sri Lanka relay; raises ValueError if it has no stations."""
+        stations = self._parse_workbook(content)
+        if not stations:
+            raise ValueError("bulletin has no known stations")
+        self._save_last_good(content)
+        async with self._cache_lock:
+            self._cache, self._cache_at, self._failed_at = stations, datetime.now(timezone.utc), None
+            self._last_report_time = datetime.fromisoformat(stations[0].report_time_utc)
+        return stations
+
+    def _save_last_good(self, content: bytes) -> None:
+        if self.LAST_GOOD_PATH is None:
+            return
+        try:
+            self.LAST_GOOD_PATH.parent.mkdir(parents=True, exist_ok=True)
+            self.LAST_GOOD_PATH.write_bytes(content)
+        except OSError as exc:
+            logger.warning("Could not save Met Dept bulletin: %s", exc)
+
     async def _fetch_and_parse(self) -> list[MetStation]:
         client = await self._get_client()
         # Cache-bust on every fetch since their CDN has aggressive headers.
         params = {"t": int(datetime.now(timezone.utc).timestamp())}
         resp = await client.get(EXCEL_URL, params=params)
         resp.raise_for_status()
-        return self._parse_workbook(resp.content)
+        stations = self._parse_workbook(resp.content)
+        if stations:
+            self._save_last_good(resp.content)
+        return stations
+
+    def _read_fallback(self) -> list[MetStation]:
+        """Last bulletin saved to disk, else the bundled one; [] if neither is usable."""
+        for path in (self.LAST_GOOD_PATH, self.FALLBACK_BULLETIN_PATH):
+            if path is None or not path.is_file():
+                continue
+            try:
+                stations = self._parse_workbook(path.read_bytes())
+            except Exception as exc:
+                logger.warning("Met Dept bulletin %s is unreadable: %s", path, exc)
+                continue
+            if stations:
+                logger.warning("Serving saved measured Met Dept bulletin from %s", path)
+                return stations
+        return []
 
     @staticmethod
     def _parse_workbook(content: bytes) -> list[MetStation]:

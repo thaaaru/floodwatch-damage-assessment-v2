@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime, timedelta, date
@@ -117,6 +117,25 @@ async def get_met_stations():
         "summary": summary,
         "stations": [s.to_dict() for s in stations],
     }
+
+
+@router.post("/met-stations/upload", include_in_schema=False)
+async def upload_met_bulletin(request: Request, x_relay_token: str = Header(default="")):
+    """The Sri Lanka relay pushes meteo.gov.lk's 3hourly.xlsx here (the site only answers Sri Lankan IPs)."""
+    import hmac
+    token = get_settings().met_relay_token
+    if not token:
+        raise HTTPException(status_code=404)
+    if not hmac.compare_digest(x_relay_token.encode(), token.encode()):
+        raise HTTPException(status_code=401)
+    body = await request.body()
+    if not body or len(body) > 2_000_000:
+        raise HTTPException(status_code=413 if body else 400)
+    try:
+        stations = await met_department_service.accept_bulletin(body)
+    except Exception as exc:
+        raise HTTPException(status_code=422, detail=f"not a Met Dept bulletin: {type(exc).__name__}")
+    return {"stations": len(stations), "report_time_utc": stations[0].report_time_utc}
 
 
 @router.get("/cache-status")
