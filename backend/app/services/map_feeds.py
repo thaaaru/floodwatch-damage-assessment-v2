@@ -191,3 +191,52 @@ class MapFacilitiesService(_CachedFeed):
         if not facilities:
             raise ValueError("Overpass returned no facilities")
         return {**self.EMPTY, "facilities": facilities}
+
+
+GDACS_API = "https://www.gdacs.org/gdacsapi/api"
+# Track lines (labelled with storm category), the forecast cone and the latest position, from
+# GDACS's per-episode geometry. Wind-swath and per-point polygons are left out: the cone says it.
+CYCLONE_KEEP = ("Line_", "Poly_Cones", "Point_Centroid")
+
+
+def parse_cyclone_geometry(payload: dict) -> list[dict]:
+    """GDACS getgeometry -> features {kind: track|cone|now, label} with the upstream geometry."""
+    out = []
+    for f in payload.get("features") or []:
+        p, g = f.get("properties") or {}, f.get("geometry")
+        cls = str(p.get("Class") or "")
+        if not g or not cls.startswith(CYCLONE_KEEP):
+            continue
+        kind = "track" if cls.startswith("Line_") else "cone" if cls == "Poly_Cones" else "now"
+        out.append({"type": "Feature", "geometry": g, "properties": {"kind": kind, "label": p.get("polygonlabel")}})
+    return out
+
+
+class CycloneService(_CachedFeed):
+    """Current tropical cyclones within ~2,000 km of Sri Lanka (news_feed.REGION), GDACS track + cone.
+    GDACS's geometry endpoint has no CORS header, so the browser can't fetch it directly."""
+    TTL_SECONDS = 30 * 60
+    EMPTY = {"source": "GDACS (European Commission JRC)", "storms": []}
+
+    async def _fetch(self) -> dict:
+        from .news_feed import in_region
+        since = (datetime.now(timezone.utc) - timedelta(days=10)).strftime("%Y-%m-%d")
+        client = await self._get_client()
+        r = await client.get(f"{GDACS_API}/events/geteventlist/SEARCH", params={"eventlist": "TC", "fromdate": since})
+        r.raise_for_status()
+        events = r.json().get("features", []) if r.content else []  # 204 = no storms
+        storms = []
+        for e in events:
+            p, (lon, lat) = e.get("properties") or {}, (e.get("geometry") or {}).get("coordinates") or (None, None)
+            if str(p.get("iscurrent")).lower() != "true" or lon is None or not in_region(lon, lat):
+                continue
+            geo = await self._json("GET", f"{GDACS_API}/polygons/getgeometry",
+                                   params={"eventtype": "TC", "eventid": p.get("eventid"), "episodeid": p.get("episodeid")})
+            storms.append({
+                "name": p.get("eventname") or p.get("name"),
+                "alert_level": p.get("episodealertlevel") or p.get("alertlevel"),
+                "updated": p.get("todate"),
+                "url": (p.get("url") or {}).get("report"),
+                "features": parse_cyclone_geometry(geo),
+            })
+        return {**self.EMPTY, "storms": storms}

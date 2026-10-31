@@ -87,6 +87,7 @@ function gaugePopup(g: IrrigationStation): string {
       ${g.eta_next_threshold ? `<div style="font-size:11px;color:#374151;margin-top:6px">At the current rate${g.rise_rate_m_per_h ? ` (+${Math.round(g.rise_rate_m_per_h * 100)} cm/h)` : ''}: <b>${LEVEL_NAME[g.eta_next_threshold.level]} in ${aboutHours(g.eta_next_threshold.hours)}</b><div style="font-size:10px;color:#6b7280">Straight-line estimate from recent readings, not a forecast.</div></div>` : ''}
       ${g.stale ? `<div style="font-size:10px;color:#b91c1c;font-weight:700">Last reading ${hoursAgo(g.observed_at)} h ago &mdash; may be out of date</div>` : ''}
       <div class="fw-gauge-chart" style="margin-top:6px;font-size:10px;color:#9ca3af">Loading 7-day levels&hellip;</div>
+      <div class="fw-flow-outlook"></div>
       <div style="font-size:9px;color:#9ca3af;margin-top:4px">${GAUGE_CREDIT}</div>
     </div>`;
 }
@@ -146,6 +147,8 @@ function singleMarker(g: IrrigationStation, pal: Palette, onSelect?: (g: Irrigat
     api.getGaugeHistory(g.station)
       .then((rows) => { el.innerHTML = sparkline(Array.isArray(rows) ? rows : [], g); })
       .catch(() => { el.textContent = '7-day history unavailable'; });
+    const flow = (e as L.PopupEvent).popup.getElement()?.querySelector<HTMLElement>('.fw-flow-outlook');
+    if (flow) fillFlowOutlook(flow, [g.station]);
   });
   if (onSelect) marker.on('click', () => onSelect(g));
   return marker;

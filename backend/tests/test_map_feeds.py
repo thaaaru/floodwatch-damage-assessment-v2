@@ -96,3 +96,13 @@ def test_facilities_failure_serves_bundled_snapshot():
         assert result["retrieved_at"] and "not an official evacuation centre list" in result["disclaimer"]
         await client.aclose()
     asyncio.run(scenario())
+
+
+def test_cyclone_geometry_keeps_track_cone_and_position_only():
+    from app.services.map_feeds import parse_cyclone_geometry
+    pt = {"type": "Point", "coordinates": [81.8, 16.4]}
+    feats = [{"geometry": pt, "properties": {"Class": c, "polygonlabel": l}} for c, l in [
+        ("Point_Centroid", "Centroid"), ("Poly_Red", "120 km/h"), ("Line_Line_0", "HU"),
+        ("Point_Polygon_Point_3", "26/10 18:00 UTC"), ("Poly_Cones", "Uncertainty Cones")]]
+    out = parse_cyclone_geometry({"features": feats + [{"properties": {"Class": "Line_Line_1"}}]})
+    assert [(f["properties"]["kind"], f["properties"]["label"]) for f in out] == [("now", "Centroid"), ("track", "HU"), ("cone", "Uncertainty Cones")]

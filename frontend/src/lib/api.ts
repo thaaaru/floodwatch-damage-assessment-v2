@@ -618,6 +618,10 @@ class ApiClient {
     return this.fetch<MapFacilitiesResponse>('/api/map/facilities');
   }
 
+  async getCyclones(): Promise<CyclonesResponse> {
+    return this.fetch<CyclonesResponse>('/api/map/cyclones');
+  }
+
   async getDischargeForecastStations(): Promise<DischargeForecastStations> {
     return this.fetch<DischargeForecastStations>('/api/rivers/discharge-forecast/stations');
   }
@@ -1214,6 +1218,14 @@ export interface Rain24hStation {
   rain_24h_mm: number;
   observed_at: string | null;
   stale: boolean; // observation older than 3 h
+}
+
+// GDACS track ('track'), forecast cone ('cone') and latest position ('now') per current storm near Sri Lanka.
+export interface CyclonesResponse {
+  source: string;
+  stale: boolean;
+  storms: { name: string; alert_level: string | null; updated: string | null; url: string | null;
+    features: GeoJSON.Feature<GeoJSON.Geometry, { kind: 'track' | 'cone' | 'now'; label: string | null }>[] }[];
 }
 
 export interface Rain24hResponse {

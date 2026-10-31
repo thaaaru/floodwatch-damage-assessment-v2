@@ -10,6 +10,8 @@ import { addBasemap, addSatelliteOption } from '@/lib/basemap';
 import { createForecastLayer } from '@/lib/forecast';
 import { createRainNormalLayer } from '@/lib/rainNormal';
 import { OUTLOOK_SLOT, withOutlook } from '@/lib/rainOutlook';
+import { createCycloneLayer } from '@/lib/cyclones';
+import { createSeaLevelLayer } from '@/lib/seaLevel';
 import { createRain24hLayer } from '@/lib/rain24h';
 import { createFacilitiesLayer } from '@/lib/facilities';
 import {
@@ -437,6 +439,13 @@ export default function MetStationsMap({
         }).catch(() => {});
     });
     controlRef.current.addOverlay(clouds, 'Observed — Live clouds, infrared (JMA Himawari)');
+    // GloFAS 100-year flood depth (JRC), static: where a 1-in-100-year river flood reaches.
+    controlRef.current.addOverlay(L.tileLayer.wms('https://ows.globalfloods.eu/glofas-ows/ows.py', {
+      layers: 'FloodHazard100y', format: 'image/png', transparent: true, opacity: 0.7, pane: 'fw-flood',
+      attribution: 'Flood hazard: <a href="https://global-flood.emergency.copernicus.eu/">Copernicus GloFAS / JRC</a>',
+    }), 'Context — 100-year flood zones (GloFAS)');
+    controlRef.current.addOverlay(createCycloneLayer(), 'Observed — Cyclones near Sri Lanka (GDACS)');
+    controlRef.current.addOverlay(createSeaLevelLayer(), 'Observed — Sea level, Colombo &amp; Trincomalee (IOC)');
     addViewControl(map, () => gaugesRef.current, () => themeRef.current,
       () => {
         themeRef.current = themeRef.current === 'dark' ? 'light' : 'dark';
