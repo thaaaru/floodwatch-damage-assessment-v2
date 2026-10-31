@@ -17,7 +17,8 @@ const BINS: { max: number; label: string; color: string }[] = [
   { max: Infinity, label: '>100', color: '#be123c' },
 ];
 export const FORECAST_LABEL = 'Forecast (Open-Meteo model), not measured';
-const PANE = 'fw-forecast'; // above rivers (450), below gauge/rain markers (600)
+// Switched on deliberately, so above the rain badges (605/610) to stay clickable; below gauges (620) and labels (640).
+const PANE = 'fw-forecast';
 
 export const binColor = (mm: number) => (BINS.find((b) => mm < b.max) ?? BINS[BINS.length - 1]).color;
 
@@ -43,7 +44,7 @@ function popup(w: WeatherSummary): string {
  * 24 h / 48 h switch and legend, shown only while the layer is on.
  */
 export function createForecastLayer(map: L.Map): L.LayerGroup {
-  if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '550';
+  if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '615';
   const layer = L.layerGroup();
   let data: WeatherSummary[] | null = null;
   let hours: ForecastWindow = 24;
@@ -54,7 +55,9 @@ export function createForecastLayer(map: L.Map): L.LayerGroup {
       if (w.latitude == null || w.longitude == null) continue;
       const value = hours === 24 ? w.forecast_precip_24h_mm : w.forecast_precip_48h_mm;
       L.circleMarker([w.latitude, w.longitude], {
-        pane: PANE, radius: 6, weight: 1, color: '#1e293b', fillColor: binColor(value ?? 0), fillOpacity: 0.9,
+        pane: PANE, radius: 7, weight: 1, color: '#1e293b', fillColor: binColor(value ?? 0), fillOpacity: 0.9,
+      }).bindTooltip(`<b>${esc(w.district)}</b> &mdash; ${mm(value)} forecast, next ${hours} h`, {
+        direction: 'right', offset: [8, 0], className: 'fw-gauge-tip',
       }).bindPopup(popup(w), { className: 'fw-light-popup', maxWidth: 240 }).addTo(layer);
     }
   };
