@@ -49,7 +49,6 @@ interface MetStationsMapProps {
   // Zoom to this gauge and open its popup; a new object each time, so the same gauge can be picked again.
   focusGauge?: { g: IrrigationStation } | null;
   // Met Dept feed returned nothing or failed: the NBRO rain gauges come on instead, so the map still shows observed rain.
-  rainFeedDown?: boolean;
 }
 
 /**
@@ -298,7 +297,6 @@ export default function MetStationsMap({
   facilities = [],
   route = null,
   focusGauge = null,
-  rainFeedDown = false,
 }: MetStationsMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -327,9 +325,8 @@ export default function MetStationsMap({
   const [evidenceKeyOpen, setEvidenceKeyOpen] = useState(false);
   const retryBasinsRef = useRef<(() => void) | null>(null);
   // Layers switched on automatically, once each, so a viewer who turns one off keeps it off.
-  const rain24hRef = useRef<L.LayerGroup | null>(null);
   const eventLayersRef = useRef<L.Layer[]>([]);
-  const autoOnRef = useRef({ rain24h: false, event: false });
+  const autoOnRef = useRef({ event: false });
   const fresh = useGaugeFreshness(mode === 'technical' ? gauges : []);
   // Toolbar from 560 px; below that it would push the toolbar past one row, so it sits under the map.
   const freshNote = (where: string) => fresh && (
@@ -401,11 +398,11 @@ export default function MetStationsMap({
     reThemeRef.current.push(rainNormal.redraw);
     controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
     addBulletinOverlays(map, controlRef.current, getPal, (f) => reThemeRef.current.push(f));
-    // Off by default: NBRO rain gauges (lib/rain24h.ts, on when the Met feed is down) and OSM hospitals/shelters (lib/facilities.ts).
+    // NBRO rain gauges (lib/rain24h.ts): on in technical mode. OSM hospitals/shelters (lib/facilities.ts): off by default.
     const rain24h = createRain24hLayer(map);
     const facilitiesLayer = createFacilitiesLayer(map, getPal);
     reThemeRef.current.push(facilitiesLayer.redraw);
-    rain24hRef.current = rain24h;
+    if (mode === 'technical') rain24h.addTo(map);
     controlRef.current.addOverlay(rain24h, 'Observed — Rain last 24 h (NBRO via RISE)');
     controlRef.current.addOverlay(facilitiesLayer.layer, 'Context — Hospitals &amp; shelters (OpenStreetMap)');
     // Copernicus GFM: flood water mapped from Sentinel-1 radar (sees through cloud), one global layer per day.
@@ -561,13 +558,6 @@ export default function MetStationsMap({
       eventLayersRef.current.forEach((l) => l.addTo(map));
     }
   }, [mode, gauges]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || mode !== 'technical' || !rainFeedDown || autoOnRef.current.rain24h || !rain24hRef.current) return;
-    autoOnRef.current.rain24h = true;
-    rain24hRef.current.addTo(map);
-  }, [mode, rainFeedDown]);
 
   // --- theme: panel tokens, basemap colours, then every layer redraws from the new palette ---
   useEffect(() => {
