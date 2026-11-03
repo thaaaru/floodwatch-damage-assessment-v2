@@ -17,7 +17,7 @@ const BINS: { max: number; label: string; color: string }[] = [
   { max: Infinity, label: '>100', color: '#be123c' },
 ];
 export const FORECAST_LABEL = 'Forecast (Open-Meteo model), not measured';
-// Switched on deliberately, so above the rain badges (605/610) to stay clickable; below gauges (620) and labels (640).
+// Switched on deliberately, so above the rain badges (605/610) to stay clickable; below gauges (644) and labels (640).
 const PANE = 'fw-forecast';
 
 export const binColor = (mm: number) => (BINS.find((b) => mm < b.max) ?? BINS[BINS.length - 1]).color;

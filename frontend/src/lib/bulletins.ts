@@ -50,7 +50,7 @@ export function colomboTime(iso: string | null | undefined, withYear = false): s
 const colomboDate = (iso: string) =>
   new Date(iso).toLocaleDateString('en-GB', { timeZone: 'Asia/Colombo', day: 'numeric', month: 'short', year: 'numeric' });
 
-const PANE = 'fw-official'; // z 600 (DMC circles): above basins, below rain-vs-normal (610), gauges (620), place labels (640)
+const PANE = 'fw-official'; // z 600 (DMC circles): above basins, below rain-vs-normal (610), gauges (644), place labels (640)
 const WARN_PANE = 'fw-official-warn'; // z 615 (landslide marks): above the modelled rain badges, below gauges
 // Keep an opened popup clear of the layers button and zoom bar.
 const POPUP = { className: 'fw-light-popup', autoPanPaddingTopLeft: L.point(60, 12), autoPanPaddingBottomRight: L.point(60, 12) };

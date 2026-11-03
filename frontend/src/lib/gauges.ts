@@ -28,7 +28,7 @@ const statusText = (s: GaugeStatus) => STATUS_LABEL[s].charAt(0) + STATUS_LABEL[
 
 // Severity is coded by shape and size as well as colour, so it survives colour blindness and
 // greyscale: dot → diamond (alert) → triangle (minor) → bigger triangle with a pulse (major).
-const SIZE: Record<GaugeStatus, number> = { unknown: 6, normal: 8, alert: 10, minor: 11, major: 13 };
+const SIZE: Record<GaugeStatus, number> = { unknown: 10, normal: 14, alert: 16, minor: 18, major: 20 };
 const GROUP_ZOOM = 9; // below this, gauges in a flooding basin collapse into one marker per basin
 
 // Flood shapes get a 2 px white ring outside their dark stroke, so they stay separate on basin fills.
@@ -173,7 +173,7 @@ function groupMarker(map: L.Map, basin: BasinInfo, gs: IrrigationStation[], pal:
   return marker;
 }
 
-export const GAUGE_PANE = 'fw-gauges'; // z 620
+export const GAUGE_PANE = 'fw-gauges'; // z 644: above place labels (640) and NBRO drops (642), under Met drops (645)
 
 /** Gauge markers; re-renders on zoom (grouping) and on render() (theme or data change). */
 export function createGaugeLayer(
@@ -182,7 +182,7 @@ export function createGaugeLayer(
   getPal: () => Palette,
   onSelect?: (g: IrrigationStation) => void,
 ): { layer: L.LayerGroup; render: () => void } {
-  if (!map.getPane(GAUGE_PANE)) map.createPane(GAUGE_PANE).style.zIndex = '620';
+  if (!map.getPane(GAUGE_PANE)) map.createPane(GAUGE_PANE).style.zIndex = '644';
   const layer = L.layerGroup();
   const placed = gauges.filter((g) => g.lat !== null && g.lon !== null);
   let basins: BasinInfo[] = [];

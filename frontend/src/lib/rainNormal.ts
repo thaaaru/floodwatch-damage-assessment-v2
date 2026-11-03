@@ -25,7 +25,7 @@ function popup(r: RainVsNormal): string {
   </div>`;
 }
 
-const PANE = 'fw-rain-normal'; // z 610: above basins, below gauges (620) and place labels (640)
+const PANE = 'fw-rain-normal'; // z 610: above basins, below gauges (644) and place labels (640)
 const PLACES_PANE = 'fw-places'; // lib/places.ts
 const WARN_PANE = 'fw-official-warn'; // landslide marks, lib/bulletins.ts: badges step around them like gauges
 // Met station raindrops and their mm tags (components/MetStationsMap.tsx, default marker pane): the drop
@@ -131,7 +131,7 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
   // DOM is in place. Place names never avoid badges (that would loop); badges move around names.
   let frame = 0;
   const schedule = (e?: L.LeafletEvent) => {
-    if (e?.type !== 'zoomend' && ![GAUGE_PANE, WARN_PANE, PLACES_PANE, 'markerPane'].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
+    if (e?.type !== 'zoomend' && ![GAUGE_PANE, WARN_PANE, PLACES_PANE, 'fw-met-drops'].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(() => { if (data && map.hasLayer(layer)) draw(false); });
   };

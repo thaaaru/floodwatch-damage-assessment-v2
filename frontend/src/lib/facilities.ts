@@ -40,7 +40,7 @@ function popup(f: MapFacility): string {
   </div>`;
 }
 
-const PANE = 'fw-facilities'; // z 615: above rain dots and badges (605/610), below gauges (620) and place labels (640)
+const PANE = 'fw-facilities'; // z 615: above rain dots and badges (605/610), below gauges (644) and place labels (640)
 const DETAIL_ZOOM = 9;
 const CELL = 96; // px: grid cell for the zoomed-out count pills (coarse, so they don't bury the other layers)
 

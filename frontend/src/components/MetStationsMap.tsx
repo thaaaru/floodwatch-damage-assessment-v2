@@ -17,7 +17,7 @@ import { createFacilitiesLayer } from '@/lib/facilities';
 import {
   BASIN_CREDIT, GAUGE_CREDIT, createBasinLegend, createGaugeLayer, createWaterLayer, gaugesKey,
 } from '@/lib/gauges';
-import { PALETTES, Palette, Theme, cssVars } from '@/lib/mapPalette';
+import { PALETTES, Palette, Theme, cssVars, RAIN_PULSE_MM, rainDropColor, rainDropSize, rainDropSvg } from '@/lib/mapPalette';
 import { DOCK_LEGENDS, DOCK_TOP } from '@/lib/gauges';
 import { createPlaceLabels } from '@/lib/places';
 import { addBulletinOverlays } from '@/lib/bulletins';
@@ -60,18 +60,6 @@ function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]!);
 }
 
-// Color scale based on TODAY's accumulated rainfall (since 08:30 local).
-// Thresholds match Met Dept's daily-bulletin alert tiers.
-function colorFor(mm: number): string {
-  if (mm >= 150) return '#7c2d12'; // brown-900 - extreme
-  if (mm >= 100) return '#dc2626'; // red-600 - very heavy
-  if (mm >= 50)  return '#f97316'; // orange-500 - heavy
-  if (mm >= 25)  return '#eab308'; // yellow-500 - moderate
-  if (mm >= 5)   return '#3b82f6'; // blue-500 - light
-  if (mm > 0)    return '#93c5fd'; // blue-300 - very light / trace
-  return '#cbd5e1';                // slate-300 - dry
-}
-
 // Each raindrop's mm tag takes the first side (below, above, right, left) clear of other drops, flood
 // gauges, landslide marks and tags already placed; if none is clear, the least covered side. Drops can't move
 // (they mark the station). Runs before rain badges and town names re-place (a frame later), which avoid both.
@@ -80,51 +68,46 @@ function placeDropTags(map: L.Map) {
   const c = map.getContainer();
   const taken = [...c.querySelectorAll('.met-station-marker svg, .leaflet-fw-gauges-pane .leaflet-marker-icon, .leaflet-fw-official-warn-pane .leaflet-marker-icon')].map(box);
   // Area of the box at (x, y) covered by what is already there; 0 = clear.
-  const cover = (x: number, y: number, w: number, h: number) => taken.reduce((sum, t) =>
+  const overlap = (boxes: DOMRect[], x: number, y: number, w: number, h: number) => boxes.reduce((sum, t) =>
     sum + Math.max(0, Math.min(t.right, x + w) - Math.max(t.left, x)) * Math.max(0, Math.min(t.bottom, y + h) - Math.max(t.top, y)), 0);
-  c.querySelectorAll<HTMLElement>('.met-station-marker').forEach((m) => {
+  const cover = (x: number, y: number, w: number, h: number) => overlap(taken, x, y, w, h);
+  const tags: DOMRect[] = []; // only another tag can hide a tag; drops and gauges just steer it to a clearer side
+  // Wettest first: where a cluster has no room, the lowest values lose their tag (still in the tooltip and popup).
+  const mmOf = (m: Element) => parseFloat(m.querySelector('.met-tag')?.textContent ?? '') || 0;
+  [...c.querySelectorAll<HTMLElement>('.met-station-marker')].sort((a, b) => mmOf(b) - mmOf(a)).forEach((m) => {
     const tag = m.querySelector<HTMLElement>('.met-tag');
     const drop = m.querySelector('svg');
     if (!tag || !drop) return;
     tag.style.transform = '';
+    tag.style.visibility = '';
     const s = box(drop), t = box(tag), w = t.width, h = t.height, cy = (s.top + s.bottom) / 2;
     const spots = [[t.left, t.top], [t.left, s.top - 3 - h], [s.right + 2, cy - h / 2], [s.left - 2 - w, cy - h / 2]];
     const [x, y] = spots.reduce((best, p) => (cover(p[0], p[1], w, h) < cover(best[0], best[1], w, h) ? p : best));
+    if (overlap(tags, x, y, w, h) > w * h * 0.1) { tag.style.visibility = 'hidden'; return; }
     tag.style.transform = `translate(${x - t.left}px, ${y - t.top}px)`;
     taken.push(new DOMRect(x, y, w, h));
+    tags.push(new DOMRect(x, y, w, h));
   });
 }
 
+const MET_PANE = 'fw-met-drops'; // z 645: above gauges (644) and place labels (640), under tooltips (650) and popups (700)
+
 function makeIcon(station: MetStation): L.DivIcon {
   const mm = station.rainfall_since_830am_mm ?? 0;
-  const color = colorFor(mm);
+  const color = rainDropColor(mm);
   const labelText = mm > 0 ? `${mm.toFixed(1)}mm` : '0';
-  const labelBg = mm > 0 ? color : '#e2e8f0';
-  const labelColor = mm >= 25 ? '#ffffff' : '#0f172a';
-  // SVG raindrop. Inline so we don't need an asset pipeline.
+  // Inline SVG drop, same as the NBRO drops but larger.
   return L.divIcon({
     className: 'met-station-marker',
     html: `
-      <div style="display:flex; flex-direction:column; align-items:center; pointer-events:auto; cursor:pointer;">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
-             style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.35));">
-          <path d="M12 2C12 2 6 8 6 13C6 17.4183 9.58172 21 14 21C18.4183 21 22 17.4183 22 13C22 8 16 2 16 2L12 2Z"
-                fill="${color}" stroke="#0f172a" stroke-width="1.5"/>
-          <path d="M12 2C12 2 6 8 6 13C6 17.4183 9.58172 21 14 21C18.4183 21 22 17.4183 22 13C22 8 16 2 16 2L12 2Z"
-                fill="url(#shine-${station.wmo_id})" opacity="0.6"/>
-          <defs>
-            <linearGradient id="shine-${station.wmo_id}" x1="0%" y1="0%" x2="40%" y2="0%">
-              <stop offset="0%" style="stop-color:rgba(255,255,255,0.6)" />
-              <stop offset="100%" style="stop-color:rgba(255,255,255,0)" />
-            </linearGradient>
-          </defs>
-        </svg>
+      <div style="display:flex; flex-direction:column; align-items:center; cursor:pointer;">
+        ${rainDropSvg(rainDropSize(16, mm), color, mm >= RAIN_PULSE_MM)}
         <div class="met-tag" style="
           margin-top: 3px;
           padding: 2px 6px;
           border-radius: 4px;
-          background: ${labelBg};
-          color: ${labelColor};
+          background: #ffffff;
+          color: #0f172a;
           font-family: -apple-system, system-ui, sans-serif;
           font-size: 11px;
           font-weight: 700;
@@ -141,7 +124,7 @@ function makeIcon(station: MetStation): L.DivIcon {
 
 function buildPopupHtml(s: MetStation): string {
   const mm = s.rainfall_since_830am_mm ?? 0;
-  const c = colorFor(mm);
+  const c = rainDropColor(mm);
   const tempStr = s.temperature_c !== null ? `${s.temperature_c.toFixed(1)}&deg;C` : '—';
   const rhStr = s.relative_humidity_pct !== null ? `${s.relative_humidity_pct}%` : '—';
   const reportLocal = new Date(s.report_time_utc).toLocaleString('en-LK', {
@@ -153,9 +136,9 @@ function buildPopupHtml(s: MetStation): string {
   });
   return `
     <div style="font-family:system-ui,-apple-system,sans-serif; min-width:200px; color:#1f2937;">
-      <div style="font-weight:700; font-size:14px; margin-bottom:2px;">${s.name}</div>
+      <div style="font-weight:700; font-size:14px; margin-bottom:2px;">${escapeHtml(s.name)}</div>
       <div style="color:#6b7280; font-size:11px; margin-bottom:6px;">
-        ${s.district} &middot; WMO ${s.wmo_id}
+        ${escapeHtml(s.district)} &middot; WMO ${s.wmo_id}
       </div>
       <div style="display:inline-block; background:${c}; color:white; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; margin-bottom:8px;">
         ${s.weather_type ? s.weather_type.toUpperCase() : 'NO REPORT'}
@@ -385,6 +368,16 @@ export default function MetStationsMap({
       if (layer instanceof L.Path) layer.getElement()?.setAttribute('tabindex', '-1');
     });
     map.on('click focus', wheelOn);
+    // A popup says more than a tooltip, and opening one pans the map under the cursor: no tooltips while it is open.
+    map.on('popupopen', () => map.getContainer().classList.add('fw-popup-open'));
+    // Leaflet's Escape only works with the map itself focused, not a marker.
+    L.DomEvent.on(map.getContainer(), 'keydown', (e) => { if ((e as KeyboardEvent).key === 'Escape') map.closePopup(); });
+    map.on('popupclose', () => {
+      map.getContainer().classList.remove('fw-popup-open');
+      map.eachLayer((l) => { l.closeTooltip(); });
+    });
+    // One tooltip at a time: a marker that moved or was redrawn under the cursor never sends mouseout.
+    map.on('tooltipopen', ({ tooltip }) => map.eachLayer((l) => { if (l.getTooltip() !== tooltip) l.closeTooltip(); }));
     map.on('click', (event: L.LeafletMouseEvent) => {
       locationSelectRef.current?.({ latitude: event.latlng.lat, longitude: event.latlng.lng });
     });
@@ -409,11 +402,11 @@ export default function MetStationsMap({
     controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
     addBulletinOverlays(map, controlRef.current, getPal, (f) => reThemeRef.current.push(f));
     // Off by default: NBRO rain gauges (lib/rain24h.ts, on when the Met feed is down) and OSM hospitals/shelters (lib/facilities.ts).
-    const rain24h = createRain24hLayer(map, getPal);
+    const rain24h = createRain24hLayer(map);
     const facilitiesLayer = createFacilitiesLayer(map, getPal);
-    reThemeRef.current.push(rain24h.redraw, facilitiesLayer.redraw);
-    rain24hRef.current = rain24h.layer;
-    controlRef.current.addOverlay(rain24h.layer, 'Observed — Rain last 24 h (NBRO via RISE)');
+    reThemeRef.current.push(facilitiesLayer.redraw);
+    rain24hRef.current = rain24h;
+    controlRef.current.addOverlay(rain24h, 'Observed — Rain last 24 h (NBRO via RISE)');
     controlRef.current.addOverlay(facilitiesLayer.layer, 'Context — Hospitals &amp; shelters (OpenStreetMap)');
     // Copernicus GFM: flood water mapped from Sentinel-1 radar (sees through cloud), one global layer per day.
     // A satellite passes over a given spot only every few days, so show the union of the last 12 days.
@@ -522,21 +515,23 @@ export default function MetStationsMap({
     markersRef.current = [];
     if (mode !== 'technical') return;
 
+    if (!mapRef.current.getPane(MET_PANE)) mapRef.current.createPane(MET_PANE).style.zIndex = '645';
     stations.forEach((s) => {
-      const marker = L.marker([s.latitude, s.longitude], { icon: makeIcon(s) });
+      const marker = L.marker([s.latitude, s.longitude], { icon: makeIcon(s), pane: MET_PANE });
       withOutlook(marker.bindPopup(buildPopupHtml(s), { className: 'met-station-popup', closeButton: true }), s.latitude, s.longitude);
       marker.on('click', () => onStationSelect(s));
       marker.addTo(mapRef.current!);
+      marker.getElement()?.setAttribute('aria-label', `${s.name} rain station: ${s.rainfall_since_830am_mm ?? 0} mm since 08:30`);
       markersRef.current.push(marker);
     });
     const map = mapRef.current;
     const place = (e?: L.LeafletEvent) => {
       const pane = (e as L.LayerEvent | undefined)?.layer?.options?.pane;
-      if (!e || e.type === 'zoomend' || pane === 'fw-gauges' || pane === 'fw-official-warn') placeDropTags(map);
+      if (!e || e.type === 'zoomend' || e.type === 'fw-drops-drawn' || pane === 'fw-gauges' || pane === 'fw-official-warn') placeDropTags(map);
     };
     place();
-    map.on('zoomend layeradd layerremove', place);
-    return () => { map.off('zoomend layeradd layerremove', place); };
+    map.on('zoomend layeradd layerremove fw-drops-drawn', place);
+    return () => { map.off('zoomend layeradd layerremove fw-drops-drawn', place); };
   }, [mode, stations, onStationSelect]);
 
   // --- river gauges (on by default) -------------------------------------

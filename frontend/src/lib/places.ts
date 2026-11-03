@@ -7,7 +7,7 @@
 import L from 'leaflet';
 import { DROPS } from '@/lib/rainNormal';
 
-const PANE = 'fw-places'; // z 640: above gauges (620) and rain badges (610)
+const PANE = 'fw-places'; // z 640: above rain badges (610), below gauges (644)
 // Marker panes names step around: flood gauges and landslide marks (lib/bulletins.ts), plus Met station
 // raindrops (DROPS, in Leaflet's default marker pane). Rain badges move around names instead (lib/rainNormal.ts).
 const AVOID = ['fw-gauges', 'fw-official-warn'];
@@ -90,7 +90,7 @@ export function createPlaceLabels(map: L.Map): L.LayerGroup {
   // Re-place after the view settles and whenever a gauge marker or rain badge is added or removed.
   let frame = 0;
   const schedule = (e?: L.LeafletEvent) => {
-    if (e?.type !== 'zoomend' && e?.type !== 'moveend' && ![...AVOID, RAIN, 'markerPane'].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
+    if (e?.type !== 'zoomend' && e?.type !== 'moveend' && ![...AVOID, RAIN, 'fw-met-drops'].includes((e as L.LayerEvent).layer?.options?.pane ?? '')) return;
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(render);
   };

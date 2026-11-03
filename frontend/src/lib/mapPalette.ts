@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // Every colour the home map draws with, per theme. Layer code reads these; it holds no hex.
-// One hue family per meaning: warm = gauge/flood status, blue = rain vs normal (more rain = darker; brighter on the dark map), purple = observed 24 h rain, teal/slate = facilities. No imports: scripts/check-palette.mjs
+// One hue family per meaning: warm = gauge/flood status, blue = rain vs normal (more rain = darker; brighter on the dark map), teal/slate = facilities. No imports: scripts/check-palette.mjs
 // loads this file on its own and fails the build if a contrast check below fails.
 
 export type Theme = 'light' | 'dark';
@@ -16,7 +16,6 @@ export interface Palette {
   river: string; riverOpacity: number; riverWeight: number; mainRiverWeight: number;
   label: string; labelHalo: string; waterLabel: string;
   rain: [Badge, Badge, Badge, Badge, Badge]; // <50, 50–90, 90–110, 110–150, >150 %
-  rain24: [Swatch, Swatch, Swatch, Swatch, Swatch]; // observed 24 h mm, RAIN24_BANDS (purple, apart from the blue % ramp)
   facility: Record<'hospital' | 'shelter', { fill: string; glyph: string }>;
   status: Record<StatusKey, { fill: string; stroke: string }>;
   basin: Record<FloodKey, { fillOpacity: number; stroke: string; weight: number }>;
@@ -45,13 +44,6 @@ export const PALETTES: Record<Theme, Palette> = {
       { fill: '#60A5FA', border: '#1D4ED8', text: '#0F172A' },
       { fill: '#2F80FF', border: '#1D4ED8', text: '#0F172A' },
       { fill: '#0A5CFF', border: '#FFFFFF', text: '#FFFFFF' },
-    ],
-    rain24: [ // light lilac to deep purple
-      { fill: '#F3E8FF', border: '#6B21A8' },
-      { fill: '#D8B4FE', border: '#6B21A8' },
-      { fill: '#9333EA', border: '#FFFFFF' }, // was #A855F7 (2.98:1 on land)
-      { fill: '#7E22CE', border: '#FFFFFF' },
-      { fill: '#3B0764', border: '#FFFFFF' },
     ],
     facility: {
       hospital: { fill: '#0F766E', glyph: '#FFFFFF' },
@@ -92,13 +84,6 @@ export const PALETTES: Record<Theme, Palette> = {
       { fill: '#93C5FD', border: '#0F172A', text: '#0F172A' },
       { fill: '#DBEAFE', border: '#0F172A', text: '#0F172A' },
     ],
-    rain24: [ // reversed: more rain = brighter
-      { fill: '#3B0764', border: '#D8B4FE' },
-      { fill: '#6B21A8', border: '#D8B4FE' },
-      { fill: '#A855F7', border: '#0F172A' },
-      { fill: '#D8B4FE', border: '#0F172A' },
-      { fill: '#F3E8FF', border: '#0F172A' },
-    ],
     facility: {
       hospital: { fill: '#5EEAD4', glyph: '#042F2E' },
       shelter: { fill: '#E2E8F0', glyph: '#1E293B' },
@@ -138,17 +123,28 @@ export const RAIN_BANDS = [
   { max: 150, label: '110–150%' },
   { max: Infinity, label: '>150%' },
 ] as const;
-export const RAIN24_BANDS = [
-  { max: 10, label: '0–10 mm' },
-  { max: 50, label: '10–50 mm' },
-  { max: 100, label: '50–100 mm' },
-  { max: 150, label: '100–150 mm' },
-  { max: Infinity, label: '>150 mm' },
+// One blue scale for every rain gauge drop (Met Dept and NBRO): pale when dry, most vivid at the highest totals.
+export const RAIN_DROP_BANDS = [
+  { min: 150, color: '#0029ff', text: '#ffffff', label: '150 mm or more' },
+  { min: 100, color: '#1f5eff', text: '#ffffff', label: '100–150 mm' },
+  { min: 50, color: '#4a6fa5', text: '#ffffff', label: '50–100 mm' },
+  { min: 25, color: '#60a5fa', text: '#0f172a', label: '25–50 mm' },
+  { min: 5, color: '#93c5fd', text: '#0f172a', label: '5–25 mm' },
+  { min: 0.01, color: '#bfdbfe', text: '#0f172a', label: 'Under 5 mm' },
+  { min: 0, color: '#eff6ff', text: '#0f172a', label: 'No rain' },
 ] as const;
-export const rain24Band = (mm: number) => {
-  const i = RAIN24_BANDS.findIndex((b) => mm < b.max);
-  return i === -1 ? RAIN24_BANDS.length - 1 : i;
-};
+export const rainDropBand = (mm: number) => RAIN_DROP_BANDS.find((b) => mm >= b.min) ?? RAIN_DROP_BANDS[6];
+export const rainDropColor = (mm: number) => rainDropBand(mm).color;
+// The two most vivid blues sit close together, so the heaviest totals also step up in size.
+export const rainDropSize = (base: number, mm: number) => base + (mm >= 150 ? 4 : mm >= 100 ? 2 : 0);
+// Dark outline inside a white halo: readable on both light and dark land, so it needs no theme.
+const DROP_PATH = 'M12 2C12 2 4 10.5 4 15a8 8 0 0 0 16 0C20 10.5 12 2 12 2Z';
+export const DROP_INK = '#0f172a';
+export const DROP_HALO = '#ffffff';
+const DROP_GLOW = '#38bdf8';
+export const RAIN_PULSE_MM = 100;
+export const rainDropSvg = (size: number, fill: string, pulse = false) =>
+  `<svg ${pulse ? 'class="fw-drop-pulse" ' : ''}width="${size}" height="${size}" viewBox="0 0 24 24" style="display:block"><path d="${DROP_PATH}" fill="none" stroke="${DROP_HALO}" stroke-width="5"/><path d="${DROP_PATH}" fill="${fill}" stroke="${DROP_INK}" stroke-width="2"${fill === 'none' ? ' stroke-dasharray="4 3"' : ''}/></svg>`;
 export const rainBand = (pct: number) => {
   const i = RAIN_BANDS.findIndex((b) => pct < b.max);
   return i === -1 ? RAIN_BANDS.length - 1 : i;
@@ -161,6 +157,7 @@ export function cssVars(p: Palette): Record<string, string> {
     '--fw-panel-muted': p.ui.muted, '--fw-accent': p.ui.accent, '--fw-panel-shadow': p.ui.shadow, '--fw-warn': p.ui.warn,
     '--fw-label': p.label, '--fw-label-halo': p.labelHalo, '--fw-water-label': p.waterLabel,
     '--fw-trend-bg': p.trendBadge.bg, '--fw-trend-border': p.trendBadge.border, '--fw-trend-glyph': p.trendBadge.glyph,
+    '--fw-drop-ink': DROP_INK, '--fw-drop-halo': DROP_HALO, '--fw-drop-glow': DROP_GLOW,
     '--fw-pill-bg': p.pill.bg, '--fw-pill-text': p.pill.text, '--fw-pill-border': p.pill.border,
   };
 }
@@ -207,11 +204,10 @@ export function paletteFailures(): string[] {
     });
     const ic = contrast(p.impact.stroke, p.land);
     need(ic >= 3, `${theme}: DMC impact circle edge vs land ${ic.toFixed(2)} < 3`);
-    // 24 h rain dots: the dot (filled) or its ring (stale, hollow: drawn in whichever of the two reads better) must stand off the land.
-    p.rain24.forEach((b, i) => {
-      const m = Math.max(contrast(b.fill, p.land), contrast(b.border, p.land));
-      need(m >= 3, `${theme}: 24 h rain ${RAIN24_BANDS[i].label} dot vs land ${m.toFixed(2)} < 3`);
-    });
+    // Rain drops: the outline must stand off the land, filled or hollow (stale).
+    const dropEdge = Math.max(contrast(DROP_INK, p.land), contrast(DROP_HALO, p.land));
+    need(dropEdge >= 3, `${theme}: rain drop outline vs land ${dropEdge.toFixed(2)} < 3`);
+    for (const b of RAIN_DROP_BANDS) need(contrast(b.text, b.color) >= 4.5, `${theme}: rain tag ${b.label} text ${contrast(b.text, b.color).toFixed(2)} < 4.5`);
     for (const [k, f] of Object.entries(p.facility)) {
       const m = contrast(f.fill, p.land);
       need(m >= 3, `${theme}: ${k} icon vs land ${m.toFixed(2)} < 3`);
