@@ -61,3 +61,11 @@ tsconfig.tsbuildinfo
 
 # Basemap archives (scripts/build_basemap.sh) live on the server, never in git
 *.pmtiles
+
+# Local agent/tool state, never in git
+.claude/
+.omc/
+.playwright-mcp/
+.serena/
+backend/.venv311/
+backend/data/
