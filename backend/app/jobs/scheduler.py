@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
@@ -132,6 +133,15 @@ async def refresh_dmc_bulletins():
         logger.error(f"DMC bulletin refresh failed: {e}")
 
 
+async def warm_rain_24h():
+    """Every 8 min, inside the 10 min TTL: the home map's NBRO drops never wait on RISE."""
+    from ..routers.map_layers import rain_24h_service
+    try:
+        await rain_24h_service.refresh()
+    except Exception as e:
+        logger.error(f"NBRO 24 h rain refresh failed: {e}")
+
+
 async def update_rain_history():
     """Daily job: the only runtime caller of the Open-Meteo archive API (ERA5).
     Re-fetches the last 14 days (ERA5 lags ~5 days), then continues any unfinished
@@ -227,6 +237,16 @@ def start_scheduler():
         trigger=IntervalTrigger(minutes=GAUGE_SYNC_INTERVAL_MINUTES),
         id="river_gauge_sync",
         name="Sync Irrigation Dept river gauges",
+        replace_existing=True
+    )
+
+    # NBRO 24 h rain (RISE) - kept warm for the home map
+    scheduler.add_job(
+        warm_rain_24h,
+        trigger=IntervalTrigger(minutes=8),
+        id="rain_24h_warm",
+        name="Keep NBRO 24 h rain cache warm",
+        next_run_time=datetime.now(),
         replace_existing=True
     )
 

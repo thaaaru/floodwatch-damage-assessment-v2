@@ -65,6 +65,11 @@ class _CachedFeed:
         ttl = self.RETRY_SECONDS if self._served["stale"] else self.TTL_SECONDS
         return (now - self._tried_at).total_seconds() < min(ttl, self.TTL_SECONDS)
 
+    async def refresh(self) -> dict:
+        """Re-fetch now, so a scheduler can keep the cache warm and no viewer waits on upstream."""
+        self._tried_at = None
+        return await self.get()
+
     async def get(self) -> dict:
         now = datetime.now(timezone.utc)
         if self._fresh(now):

@@ -105,7 +105,7 @@ export default function Dashboard() {
     if (mode !== 'technical') return;
     // Download the map code and the NBRO drops alongside the first data request instead of after it.
     import('@/components/MetStationsMap');
-    import('@/lib/rain24h').then((m) => m.prefetchRain24h());
+    api.prefetchRain24h();
     fetchData();
     const interval = setInterval(fetchData, 5 * 60 * 1000);
     return () => clearInterval(interval);

@@ -614,6 +614,18 @@ class ApiClient {
     return this.fetch<Rain24hResponse>('/api/rain/24h');
   }
 
+  // The home page starts the NBRO request at load; the map layer takes it instead of asking again.
+  private rain24hEarly: Promise<Rain24hResponse> | null = null;
+  prefetchRain24h(): void {
+    this.rain24hEarly ??= this.getRain24h();
+    this.rain24hEarly.catch(() => {});
+  }
+  takeRain24h(): Promise<Rain24hResponse> {
+    const request = this.rain24hEarly ?? this.getRain24h();
+    this.rain24hEarly = null;
+    return request;
+  }
+
   async getMapFacilities(): Promise<MapFacilitiesResponse> {
     return this.fetch<MapFacilitiesResponse>('/api/map/facilities');
   }
