@@ -180,8 +180,10 @@ const FLOODING: IrrigationStation['status'][] = ['alert', 'minor', 'major'];
 // Keep the south clear of the credits line.
 const fitIsland = (map: L.Map) => map.fitBounds(ISLAND, { paddingBottomRight: [0, 24] });
 
-// "Flood area" zooms to the gauges at alert or worse; "Whole island" resets the view; the third button flips the theme.
-function addViewControl(map: L.Map, getGauges: () => IrrigationStation[], getTheme: () => Theme, toggleTheme: () => void) {
+// "Flood area" zooms to the gauges at alert or worse; "Whole island" resets the view; the third button flips the theme;
+// then one on/off button per layer in `toggles` ([layer, label, tooltip]).
+function addViewControl(map: L.Map, getGauges: () => IrrigationStation[], getTheme: () => Theme, toggleTheme: () => void,
+  toggles: [L.Layer, string, string][] = []) {
   const Control = L.Control.extend({
     onAdd() {
       const bar = L.DomUtil.create('div', 'fw-view-switch');
@@ -215,6 +217,15 @@ function addViewControl(map: L.Map, getGauges: () => IrrigationStation[], getThe
         themeBtn.setAttribute('aria-pressed', String(dark));
       };
       syncTheme();
+      // One-tap switches for layers also listed in the layers panel; both stay in step through the map's layer events.
+      toggles.forEach(([layer, text, title], i) => {
+        const btn = make(text, () => (map.hasLayer(layer) ? map.removeLayer(layer) : map.addLayer(layer)));
+        btn.className = `fw-layer-toggle${i === 0 ? ' fw-seg-first' : ''}${i === toggles.length - 1 ? ' fw-seg-last' : ''}`;
+        btn.title = title;
+        const sync = () => btn.setAttribute('aria-pressed', String(map.hasLayer(layer)));
+        map.on('layeradd layerremove', (e: L.LayerEvent) => { if (e.layer === layer) sync(); });
+        sync();
+      });
       L.DomEvent.disableClickPropagation(bar);
       return bar;
     },
@@ -397,7 +408,8 @@ export default function MetStationsMap({
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
     addSatelliteOption(L, controlRef.current, 'Context — Satellite (Esri)');
     // Model context is deliberately optional and off by default.
-    controlRef.current.addOverlay(createForecastLayer(map), 'Modelled — Rain forecast (Open-Meteo)');
+    const forecast = createForecastLayer(map);
+    controlRef.current.addOverlay(forecast, 'Modelled — Rain forecast (Open-Meteo)');
     const rainNormal = createRainNormalLayer(map, getPal);
     reThemeRef.current.push(rainNormal.redraw);
     controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
@@ -457,7 +469,10 @@ export default function MetStationsMap({
       () => {
         themeRef.current = themeRef.current === 'dark' ? 'light' : 'dark';
         setTheme(themeRef.current);
-      });
+      }, [
+        [forecast, 'Forecast', 'Rain forecast, next 24 or 48 h (Open-Meteo model)'],
+        [rainNormal.layer, 'vs normal', 'Rainfall compared with the 30-year normal (ERA5 model)'],
+      ]);
     createPlaceLabels(map).addTo(map);
     map.createPane(LAND_PANE).style.zIndex = '210';
     mapRef.current = map;

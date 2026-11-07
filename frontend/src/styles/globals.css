@@ -837,6 +837,23 @@
   border-radius: 8px;
   font-size: 15px;
 }
+/* Layer on/off pair ("Forecast | vs normal"): its own segmented group after the theme button */
+.fw-map .fw-view-switch .fw-seg-first {
+  margin-left: 6px;
+  border-radius: 8px 0 0 8px;
+}
+.fw-map .fw-view-switch .fw-seg-last {
+  border-left: 0;
+  border-radius: 0 8px 8px 0;
+}
+.fw-map .fw-view-switch .fw-seg-first.fw-seg-last {
+  border-left: 1px solid var(--fw-panel-border);
+  border-radius: 8px;
+}
+.fw-map .fw-view-switch .fw-layer-toggle[aria-pressed='true'] {
+  background: var(--fw-accent);
+  color: var(--fw-panel); /* white on dark blue (light map), dark on light blue (dark map) */
+}
 .fw-view-switch button[aria-pressed='true'] {
   outline: 2px solid var(--fw-accent);
   outline-offset: -2px;
