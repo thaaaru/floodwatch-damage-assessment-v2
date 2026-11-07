@@ -450,7 +450,7 @@ export default function MetStationsMap({
           const { basetime, validtime } = t[t.length - 1];
           clouds.clearLayers().addLayer(L.tileLayer(
             `https://www.jma.go.jp/bosai/himawari/data/satimg/${basetime}/fd/${validtime}/B13/TBB/{z}/{x}/{y}.jpg`,
-            { maxNativeZoom: 5, opacity: 0.55, pane: 'fw-flood', attribution: 'Clouds: <a href="https://www.jma.go.jp/bosai/en_himawari/">JMA Himawari-9</a>' }));
+            { maxNativeZoom: 5, opacity: 0.55, pane: 'fw-flood', attribution: 'Clouds: <a href="https://www.data.jma.go.jp/mscweb/en/index.html">JMA Himawari-9</a>' }));
         }).catch(() => {});
     });
     controlRef.current.addOverlay(clouds, 'Observed — Live clouds, infrared (JMA Himawari)');
