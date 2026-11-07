@@ -5,7 +5,8 @@ import Section from '@/components/ui/Section';
 import { ui } from '@/lib/ui';
 
 // Checked against the code: backend/app/jobs/scheduler.py intervals, backend/app/services/*
-// fetchers, and frontend/src/lib/{basemap,gauges,forecast}.ts. Keep it in step with them.
+// fetchers, frontend/src/lib/{basemap,gauges,forecast,rain24h,bulletins,cyclones,seaLevel,flowOutlook}.ts
+// and the overlays in components/MetStationsMap.tsx. Keep it in step with them.
 type Row = { source: React.ReactNode; feeds: string; how: string; trust?: string; credit: React.ReactNode };
 
 const ext = (href: string, text: string) => (
@@ -28,12 +29,52 @@ const ROWS: Row[] = [
   {
     source: <>{ext('https://meteo.gov.lk', 'Sri Lanka Department of Meteorology')}: 3-hourly station rainfall</>,
     feeds: 'Measured rainfall at 24 stations on the home map',
-    how: 'At most every 15 minutes, when someone opens the map (the bulletin is issued every 3 hours)',
+    how: 'Every 15 minutes, uploaded by a relay inside Sri Lanka (the Met site answers only Sri Lankan addresses); the bulletin itself is issued every few hours',
     credit: 'Sri Lanka Department of Meteorology',
   },
   {
+    source: <>{ext('https://www.nbro.gov.lk', 'NBRO')} automatic rain gauges via {ext('https://risesrilanka.org', 'RISE Sri Lanka')}</>,
+    feeds: '"Rain last 24 h" drops on the home map (on by default)',
+    how: 'When the layer is shown; the server caches for 10 minutes',
+    trust: 'Measured by NBRO, relayed by RISE (non-official aggregator). A station not heard from for over 3 hours is drawn hollow.',
+    credit: 'Rain gauges: National Building Research Organisation, via RISE Sri Lanka',
+  },
+  {
+    source: <>{ext('https://www.dmc.gov.lk', 'Disaster Management Centre')} situation reports and {ext('https://www.nbro.gov.lk', 'NBRO')} landslide warnings</>,
+    feeds: '"Official" map layers: people affected per district, landslide warning level per district',
+    how: 'Every hour (the PDF is downloaded only when a new one is published)',
+    trust: 'Official bulletins, shown as published and linked to the source PDF.',
+    credit: 'Disaster Management Centre; National Building Research Organisation',
+  },
+  {
+    source: <>{ext('https://www.gdacs.org', 'GDACS')}: tropical cyclones</>,
+    feeds: '"Cyclones near Sri Lanka" map layer: track, forecast cone and latest position',
+    how: 'Every 30 minutes (server cache)',
+    credit: 'Global Disaster Alert and Coordination System (UN / European Commission)',
+  },
+  {
+    source: <>{ext('https://www.ioc-sealevelmonitoring.org', 'IOC Sea Level Monitoring')}: Colombo and Trincomalee tide gauges</>,
+    feeds: 'Sea-level map layer (last 3 days, tide included)',
+    how: 'Requested by your browser when you open a gauge popup',
+    credit: 'Sea level: IOC / UNESCO Sea Level Station Monitoring Facility',
+  },
+  {
+    source: <>{ext('https://global-flood.emergency.copernicus.eu', 'Copernicus Emergency Management Service')}: GFM flood extent and GloFAS</>,
+    feeds: 'Satellite flood extent (last 12 days), 100-year flood zones, river-flow outlook in basin popups',
+    how: 'Map tiles requested by your browser when a layer is on; flood extent and flood zones switch on by themselves when a gauge reaches minor flood. River-flow outlook via the Open-Meteo Flood API.',
+    trust: 'Satellite mapping and models. Flood zones are a long-term hazard map, not a current flood.',
+    credit: 'Copernicus EMS GFM; Copernicus GloFAS / JRC',
+  },
+  {
+    source: <>NASA {ext('https://nasa-gibs.github.io/gibs-api-docs/', 'GIBS')} (GPM IMERG, SMAP) and {ext('https://www.jma.go.jp/jma/jma-eng/satellite/', 'JMA Himawari-9')}</>,
+    feeds: 'Optional satellite layers: rain rate (about 7 h old), soil wetness (4 days old), live infrared clouds',
+    how: 'Map tiles requested by your browser only when you switch a layer on',
+    trust: 'Satellite estimates, not rain gauges.',
+    credit: 'NASA GPM IMERG and SMAP via GIBS; Japan Meteorological Agency',
+  },
+  {
     source: <>{ext('https://open-meteo.com', 'Open-Meteo')}: weather and forecast</>,
-    feeds: 'Optional "Rain forecast" map layer (a model, not measured)',
+    feeds: 'Optional "Rain forecast" map layer and the 5-day outlook in rain popups (a model, not measured)',
     how: 'Every 30 minutes',
     credit: <>CC BY 4.0. {ext('https://open-meteo.com', 'Weather data by Open-Meteo.com')}</>,
   },
