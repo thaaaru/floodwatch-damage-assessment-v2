@@ -228,10 +228,17 @@ class RainHistory:
             for district in DISTRICTS:
                 if self._range(district)[1] is None:
                     continue
-                try:
-                    stored += self.store(district, await self.fetch(client, district, start, end))
-                except httpx.HTTPError as e:
-                    logger.warning("Rain history update failed for %s: %s", district, e)
+                for attempt in range(2):
+                    try:
+                        stored += self.store(district, await self.fetch(client, district, start, end))
+                        break
+                    except httpx.HTTPError as e:
+                        # Open-Meteo rate limit (the weather sweep shares this IP): wait a minute, try once more.
+                        if attempt == 0 and isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 429:
+                            await asyncio.sleep(60)
+                            continue
+                        logger.warning("Rain history update failed for %s: %s", district, e)
+                        break
                 await asyncio.sleep(2)
         return stored
 

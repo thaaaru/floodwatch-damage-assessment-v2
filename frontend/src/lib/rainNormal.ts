@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-// "Rainfall vs normal (this month)" overlay for the home map: district capitals coloured
+// "Rainfall vs normal" (latest month ERA5 covers) overlay for the home map: district capitals coloured
 // by month-to-date ERA5 rain as % of the pro-rated 1996-2025 normal. Served from the
 // backend DB (/api/rain-history/districts), so switching it on adds no upstream calls.
 
@@ -106,10 +106,10 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
       withOutlook(L.marker([r.lat, r.lon], {
         pane: PANE,
         zIndexOffset: Math.round(pct * 10000), // wetter districts draw on top; outweighs Leaflet's by-latitude order
-        title: `${r.district}: ${pct}% of usual rain this month (modelled)`,
+        title: `${r.district}: ${pct}% of usual ${MONTHS[(r.month ?? 1) - 1]} rain, 1 to ${fmtDay(r.as_of as string)} (modelled)`,
         icon: L.divIcon({ className: 'fw-rain-wrap', html, iconSize: [0, 0] }),
       })
-        .bindTooltip(`<b>${esc(r.district)}</b> &mdash; Rainfall ${pct}% of normal &middot; ${RAIN_BANDS[band].label}`, {
+        .bindTooltip(`<b>${esc(r.district)}</b> &mdash; ${MONTHS[(r.month ?? 1) - 1]} rainfall ${pct}% of normal &middot; ${RAIN_BANDS[band].label}`, {
           direction: 'right', offset: [dx + hw, dy], className: 'fw-gauge-tip',
         })
         .bindPopup(popup(r), { className: 'fw-light-popup', maxWidth: 260, offset: [dx, dy] }), r.lat, r.lon)
@@ -145,7 +145,10 @@ export function createRainNormalLayer(map: L.Map, getPal: () => Palette): RainNo
     if (!legendEl) return;
     const pal = getPal();
     const shown = (data ?? []).filter((r) => r.pct_of_normal != null).length;
-    legendEl.innerHTML = `<summary>Rainfall this month, % of normal</summary>
+    // ERA5 lags ~5 days, so early in a month the latest data is last month's: name the month and day, never "this month".
+    const latest = (data ?? []).reduce<RainVsNormal | null>((a, r) => (r.as_of && (!a || r.as_of > a.as_of!) ? r : a), null);
+    const period = latest ? `${MONTHS[(latest.month ?? 1) - 1]} (1 to ${fmtDay(latest.as_of as string)})` : 'this month';
+    legendEl.innerHTML = `<summary>Rainfall in ${period}, % of normal</summary>
       ${RAIN_BANDS.map((band, i) => `<div class="fw-legend-row"><span class="fw-legend-dot" style="background:${pal.rain[i].fill};border:1px solid ${pal.rain[i].border}"></span>${band.label}</div>`).join('')}
       <label class="fw-legend-check"><input type="checkbox"${showPct ? ' checked' : ''}> Show % on rain markers</label>
       ${data && shown < data.length ? `<p>${shown} of ${data.length} districts loaded so far</p>` : ''}

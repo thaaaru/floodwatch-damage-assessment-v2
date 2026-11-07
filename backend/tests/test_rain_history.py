@@ -89,3 +89,24 @@ def test_read_endpoints_never_call_upstream(tmp_path, monkeypatch):
     d = client.get("/api/rain-history/districts/Ratnapura").json()
     assert d["as_of"] == as_of.isoformat() and len(d["monthly_normals_mm"]) == 12
     assert client.get("/api/rain-history/districts/Atlantis").status_code == 404
+
+
+def test_update_recent_retries_once_on_rate_limit(monkeypatch):
+    h = rh.RainHistory.__new__(rh.RainHistory)
+    calls = []
+
+    async def fetch(client, district, start, end):
+        calls.append(district)
+        if len(calls) == 1:
+            raise httpx.HTTPStatusError("429", request=httpx.Request("GET", "x"), response=httpx.Response(429))
+        return [(date(2026, 11, 1), 2.4)]
+
+    async def no_sleep(_):
+        pass
+
+    h.fetch, h.store = fetch, lambda district, values: len(values)
+    h._range = lambda d: (rh.START, date(2026, 10, 31), 1) if d == "Colombo" else (None, None, 0)
+    monkeypatch.setattr(rh.asyncio, "sleep", no_sleep)
+    import asyncio
+    assert asyncio.run(h.update_recent(today=date(2026, 11, 7))) == 1
+    assert calls == ["Colombo", "Colombo"]
