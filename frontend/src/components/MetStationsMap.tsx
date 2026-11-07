@@ -407,12 +407,13 @@ export default function MetStationsMap({
       .addTo(map);
     controlRef.current = L.control.layers(undefined, undefined, { position: 'topleft' }).addTo(map);
     addSatelliteOption(L, controlRef.current, 'Context — Satellite (Esri)');
-    // Model context is deliberately optional and off by default.
+    // Model context: on by default in technical mode, one tap off via the toolbar's "Forecast | vs normal".
     const forecast = createForecastLayer(map);
     controlRef.current.addOverlay(forecast, 'Modelled — Rain forecast (Open-Meteo)');
     const rainNormal = createRainNormalLayer(map, getPal);
     reThemeRef.current.push(rainNormal.redraw);
     controlRef.current.addOverlay(rainNormal.layer, 'Modelled — Rainfall vs normal (ERA5)');
+    if (mode === 'technical') { forecast.addTo(map); rainNormal.layer.addTo(map); }
     addBulletinOverlays(map, controlRef.current, getPal, (f) => reThemeRef.current.push(f));
     // NBRO rain gauges (lib/rain24h.ts): on in technical mode. OSM hospitals/shelters (lib/facilities.ts): off by default.
     const rain24h = createRain24hLayer(map);
