@@ -43,6 +43,10 @@ function dropHtml(s: Rain24hStation, size: number): string {
   </div>`;
 }
 
+// The home page starts this request at load, so the drops don't wait for the map code to download first.
+let early: Promise<Rain24hResponse> | null = null;
+export const prefetchRain24h = () => { early ??= api.getRain24h(); early.catch(() => {}); };
+
 export function createRain24hLayer(map: L.Map): L.LayerGroup {
   if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '642';
   const layer = L.layerGroup();
@@ -117,14 +121,16 @@ export function createRain24hLayer(map: L.Map): L.LayerGroup {
     redraw();
   };
 
-  // Fetched on first switch-on, then on each later switch-on (the backend caches for 10 min).
+  // Fetched on first switch-on (or earlier by prefetchRain24h), then on each later switch-on (the backend caches for 10 min).
   layer.on('add', () => {
     legend.addTo(map);
     map.on('zoomend', onZoom);
     map.on('moveend', syncTabStops);
     showAll = map.getZoom() >= ALL_GAUGES_ZOOM;
     if (res) draw();
-    api.getRain24h()
+    const request = early ?? api.getRain24h();
+    early = null;
+    request
       .then((r) => {
         res = r && Array.isArray(r.stations) ? r : { source: RAIN24_CREDIT, stations: [], latest_observation_at: null, stale: true };
         if (map.hasLayer(layer)) redraw();

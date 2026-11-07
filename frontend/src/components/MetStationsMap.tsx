@@ -65,6 +65,15 @@ function escapeHtml(value: string): string {
 function placeDropTags(map: L.Map) {
   const box = (el: Element) => el.getBoundingClientRect();
   const c = map.getContainer();
+  // Reset every tag, then measure everything, then move: one layout pass instead of one per tag.
+  const drops = [...c.querySelectorAll<HTMLElement>('.met-station-marker')].flatMap((m) => {
+    const tag = m.querySelector<HTMLElement>('.met-tag');
+    const drop = m.querySelector('svg');
+    if (!tag || !drop) return [];
+    tag.style.transform = '';
+    tag.style.visibility = '';
+    return [{ tag, drop }];
+  });
   const taken = [...c.querySelectorAll('.met-station-marker svg, .leaflet-fw-gauges-pane .leaflet-marker-icon, .leaflet-fw-official-warn-pane .leaflet-marker-icon')].map(box);
   // Area of the box at (x, y) covered by what is already there; 0 = clear.
   const overlap = (boxes: DOMRect[], x: number, y: number, w: number, h: number) => boxes.reduce((sum, t) =>
@@ -72,14 +81,9 @@ function placeDropTags(map: L.Map) {
   const cover = (x: number, y: number, w: number, h: number) => overlap(taken, x, y, w, h);
   const tags: DOMRect[] = []; // only another tag can hide a tag; drops and gauges just steer it to a clearer side
   // Wettest first: where a cluster has no room, the lowest values lose their tag (still in the tooltip and popup).
-  const mmOf = (m: Element) => parseFloat(m.querySelector('.met-tag')?.textContent ?? '') || 0;
-  [...c.querySelectorAll<HTMLElement>('.met-station-marker')].sort((a, b) => mmOf(b) - mmOf(a)).forEach((m) => {
-    const tag = m.querySelector<HTMLElement>('.met-tag');
-    const drop = m.querySelector('svg');
-    if (!tag || !drop) return;
-    tag.style.transform = '';
-    tag.style.visibility = '';
-    const s = box(drop), t = box(tag), w = t.width, h = t.height, cy = (s.top + s.bottom) / 2;
+  const measured = drops.map(({ tag, drop }) => ({ tag, mm: parseFloat(tag.textContent ?? '') || 0, s: box(drop), t: box(tag) }));
+  measured.sort((a, b) => b.mm - a.mm).forEach(({ tag, s, t }) => {
+    const w = t.width, h = t.height, cy = (s.top + s.bottom) / 2;
     const spots = [[t.left, t.top], [t.left, s.top - 3 - h], [s.right + 2, cy - h / 2], [s.left - 2 - w, cy - h / 2]];
     const [x, y] = spots.reduce((best, p) => (cover(p[0], p[1], w, h) < cover(best[0], best[1], w, h) ? p : best));
     if (overlap(tags, x, y, w, h) > w * h * 0.1) { tag.style.visibility = 'hidden'; return; }
@@ -522,13 +526,18 @@ export default function MetStationsMap({
       markersRef.current.push(marker);
     });
     const map = mapRef.current;
+    // A gauge redraw fires one layeradd/layerremove per marker (~80 per zoom): place once after the burst,
+    // as a microtask so it still runs before the badges and town names re-place in the next frame.
+    let queued = false, live = true;
     const place = (e?: L.LeafletEvent) => {
       const pane = (e as L.LayerEvent | undefined)?.layer?.options?.pane;
-      if (!e || e.type === 'zoomend' || e.type === 'fw-drops-drawn' || pane === 'fw-gauges' || pane === 'fw-official-warn') placeDropTags(map);
+      if (queued || !(!e || e.type === 'zoomend' || e.type === 'fw-drops-drawn' || pane === 'fw-gauges' || pane === 'fw-official-warn')) return;
+      queued = true;
+      queueMicrotask(() => { queued = false; if (live) placeDropTags(map); });
     };
     place();
     map.on('zoomend layeradd layerremove fw-drops-drawn', place);
-    return () => { map.off('zoomend layeradd layerremove fw-drops-drawn', place); };
+    return () => { live = false; map.off('zoomend layeradd layerremove fw-drops-drawn', place); };
   }, [mode, stations, onStationSelect]);
 
   // --- river gauges (on by default) -------------------------------------
