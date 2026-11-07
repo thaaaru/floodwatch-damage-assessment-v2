@@ -106,3 +106,11 @@ def test_cyclone_geometry_keeps_track_cone_and_position_only():
         ("Point_Polygon_Point_3", "26/10 18:00 UTC"), ("Poly_Cones", "Uncertainty Cones")]]
     out = parse_cyclone_geometry({"features": feats + [{"properties": {"Class": "Line_Line_1"}}]})
     assert [(f["properties"]["kind"], f["properties"]["label"]) for f in out] == [("now", "Centroid"), ("track", "HU"), ("cone", "Uncertainty Cones")]
+
+
+def test_ensemble_odds_count_members_over_each_threshold():
+    from app.services.map_feeds import parse_ensemble_odds
+    # 4 members: 24 h totals 10, 30, 60, 120 mm
+    hourly = {"time": ["t0", "t1"], **{f"precipitation_member{i:02d}": [mm / 2, mm / 2] for i, mm in enumerate([10, 30, 60, 120])}}
+    rows = parse_ensemble_odds([{"hourly": hourly}, {"hourly": {}}], ["Colombo", "Empty"])
+    assert rows == [{"name": "Colombo", "median_mm": 60.0, "p25": 75, "p50": 50, "p100": 25}]

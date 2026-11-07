@@ -5,7 +5,7 @@
 // backend already caches, so switching it on adds no upstream calls.
 
 import L from 'leaflet';
-import { api, WeatherSummary } from '@/lib/api';
+import { api, RainOdds, WeatherSummary } from '@/lib/api';
 
 export type ForecastWindow = 24 | 48;
 
@@ -26,7 +26,9 @@ const esc = (v: unknown) =>
   String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 const mm = (v: number | null | undefined) => (v == null ? '—' : `${v.toFixed(1)} mm`);
 
-function popup(w: WeatherSummary): string {
+const ODDS_LABEL = '51 ECMWF ensemble runs (model)';
+
+function popup(w: WeatherSummary, o?: RainOdds): string {
   return `<div class="fw-gauge-popup">
     <div style="font-weight:700;font-size:14px">${esc(w.district)}</div>
     <div style="display:grid;grid-template-columns:auto auto;gap:2px 12px;font-size:11px;margin-top:6px">
@@ -35,6 +37,12 @@ function popup(w: WeatherSummary): string {
       <div style="color:#6b7280">Chance of rain</div><div>${w.precipitation_probability == null ? '—' : `${Math.round(w.precipitation_probability)}%`}</div>
       <div style="color:#6b7280">Past 24 h rain</div><div>${mm(w.rainfall_24h_mm)}</div>
     </div>
+    ${o ? `<div style="font-size:11px;margin-top:6px"><b>Chance of heavy rain, next 24 h</b></div>
+    <div style="display:grid;grid-template-columns:auto auto;gap:2px 12px;font-size:11px;margin-top:2px">
+      <div style="color:#6b7280">Over 50 mm</div><div style="font-weight:700">${o.p50}%</div>
+      <div style="color:#6b7280">Over 100 mm</div><div style="font-weight:700">${o.p100}%</div>
+    </div>
+    <div style="font-size:10px;color:#9ca3af;margin-top:2px">${ODDS_LABEL}</div>` : ''}
     <div style="font-size:10px;color:#9ca3af;margin-top:6px">${FORECAST_LABEL}</div>
   </div>`;
 }
@@ -47,6 +55,7 @@ export function createForecastLayer(map: L.Map): L.LayerGroup {
   if (!map.getPane(PANE)) map.createPane(PANE).style.zIndex = '615';
   const layer = L.layerGroup();
   let data: WeatherSummary[] | null = null;
+  let odds = new Map<string, RainOdds>(); // optional: popups go without it if the ensemble is down
   let hours: ForecastWindow = 24;
 
   const draw = () => {
@@ -58,7 +67,7 @@ export function createForecastLayer(map: L.Map): L.LayerGroup {
         pane: PANE, radius: 7, weight: 1, color: '#1e293b', fillColor: binColor(value ?? 0), fillOpacity: 0.9,
       }).bindTooltip(`<b>${esc(w.district)}</b> &mdash; ${mm(value)} forecast, next ${hours} h`, {
         direction: 'right', offset: [8, 0], className: 'fw-gauge-tip',
-      }).bindPopup(popup(w), { className: 'fw-light-popup', maxWidth: 240 }).addTo(layer);
+      }).bindPopup(popup(w, odds.get(w.district)), { className: 'fw-light-popup', maxWidth: 240 }).addTo(layer);
     }
   };
 
@@ -88,6 +97,9 @@ export function createForecastLayer(map: L.Map): L.LayerGroup {
   layer.on('add', () => {
     control.addTo(map);
     if (data) return draw();
+    api.getRainOdds()
+      .then((r) => { odds = new Map((r?.locations ?? []).map((o) => [o.name, o])); if (data && map.hasLayer(layer)) draw(); })
+      .catch(() => {});
     api.getAllWeather(24)
       .then((rows) => {
         // Keep nothing on an empty answer (backend cache still warming) so the next toggle retries.

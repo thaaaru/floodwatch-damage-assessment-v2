@@ -245,3 +245,46 @@ class CycloneService(_CachedFeed):
                 "features": parse_cyclone_geometry(geo),
             })
         return {**self.EMPTY, "storms": storms}
+
+
+ODDS_ATTRIBUTION = "ECMWF IFS 51-member ensemble via Open-Meteo (model forecast, not measured)"
+ODDS_THRESHOLDS_MM = (25, 50, 100)
+
+
+def parse_ensemble_odds(payload: list, names: list[str]) -> list[dict]:
+    """Open-Meteo ensemble (one entry per location, in request order) -> chance of >X mm in the next 24 h."""
+    rows = []
+    for name, loc in zip(names, payload):
+        hourly = (loc or {}).get("hourly") or {}
+        totals = sorted(sum(v or 0 for v in series) for k, series in hourly.items() if k.startswith("precipitation"))
+        if not totals:
+            continue
+        rows.append({
+            "name": name,
+            "median_mm": round(totals[len(totals) // 2], 1),
+            **{f"p{t}": round(100 * sum(x > t for x in totals) / len(totals)) for t in ODDS_THRESHOLDS_MM},
+        })
+    return rows
+
+
+class RainOddsService(_CachedFeed):
+    """Chance of heavy rain in the next 24 h at the ~100 forecast towns: one request every 3 h (Open-Meteo shares our rate limit)."""
+    TTL_SECONDS = 3 * 3600
+    RETRY_SECONDS = 15 * 60
+    MAX_RESPONSE_BYTES = 4 * 1024 * 1024  # ~1 MB for 100 towns x 51 members x 24 h
+    TIMEOUT = httpx.Timeout(60.0, connect=5.0)
+    URL = "https://ensemble-api.open-meteo.com/v1/ensemble"
+    EMPTY = {"source": ODDS_ATTRIBUTION, "hours": 24, "locations": []}
+
+    async def _fetch(self) -> dict:
+        from .districts_service import get_all_districts
+        towns = get_all_districts()
+        payload = await self._json("GET", self.URL, params={
+            "latitude": ",".join(str(t["latitude"]) for t in towns),
+            "longitude": ",".join(str(t["longitude"]) for t in towns),
+            "hourly": "precipitation", "models": "ecmwf_ifs025", "forecast_hours": 24, "timezone": "GMT",
+        })
+        rows = parse_ensemble_odds(payload if isinstance(payload, list) else [payload], [t["name"] for t in towns])
+        if not rows:
+            raise ValueError("Ensemble returned no usable locations")
+        return {**self.EMPTY, "locations": rows}

@@ -74,7 +74,7 @@ const ROWS: Row[] = [
   },
   {
     source: <>{ext('https://open-meteo.com', 'Open-Meteo')}: weather and forecast</>,
-    feeds: 'Optional "Rain forecast" map layer and the 5-day outlook in rain popups (a model, not measured)',
+    feeds: 'Optional "Rain forecast" map layer and the 5-day outlook in rain popups; chance of over 50 or 100 mm in 24 h from the 51-run ECMWF ensemble, every 3 hours (a model, not measured)',
     how: 'Every 30 minutes',
     credit: <>CC BY 4.0. {ext('https://open-meteo.com', 'Weather data by Open-Meteo.com')}</>,
   },

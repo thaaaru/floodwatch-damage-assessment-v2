@@ -626,6 +626,10 @@ class ApiClient {
     return request;
   }
 
+  async getRainOdds(): Promise<RainOddsResponse> {
+    return this.fetch<RainOddsResponse>('/api/rain/odds');
+  }
+
   async getMapFacilities(): Promise<MapFacilitiesResponse> {
     return this.fetch<MapFacilitiesResponse>('/api/map/facilities');
   }
@@ -1239,6 +1243,10 @@ export interface CyclonesResponse {
   storms: { name: string; alert_level: string | null; updated: string | null; url: string | null;
     features: GeoJSON.Feature<GeoJSON.Geometry, { kind: 'track' | 'cone' | 'now'; label: string | null }>[] }[];
 }
+
+// Chance of more than 25/50/100 mm in the next 24 h per forecast town (ECMWF ensemble, lib/forecast.ts).
+export interface RainOdds { name: string; median_mm: number; p25: number; p50: number; p100: number }
+export interface RainOddsResponse { source: string; hours: number; locations: RainOdds[]; stale: boolean }
 
 export interface Rain24hResponse {
   source: string;
