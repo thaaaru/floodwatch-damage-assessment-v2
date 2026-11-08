@@ -19,7 +19,7 @@ export default function DataHealthPanel() {
   const [failed, setFailed] = useState(false);
   useEffect(() => { api.getDataHealth().then(setData).catch(() => setFailed(true)); }, []);
 
-  if (failed) return <p className={ui.body}>Could not load the data check. Try again later.</p>;
+  if (failed) return <p className={ui.body}>Could not load the data check. Reload the page to try again.</p>;
   if (!data) return <p className={ui.body}>Loading data check…</p>;
 
   return (
@@ -37,7 +37,7 @@ export default function DataHealthPanel() {
                 <span className={`text-xs font-semibold ${st.cls}`}><span aria-hidden="true">{st.icon} </span>{st.label}</span>
               </div>
               <p className={`${ui.meta} mt-1`}>
-                {s.count} {s.source === 'era5' ? 'districts' : 'stations'}{s.stale_count ? `, ${s.stale_count} silent` : ''}{age ? ` · ${age}` : ''}
+                {s.count} {s.source === 'era5' ? (s.count === 1 ? 'district' : 'districts') : (s.count === 1 ? 'station' : 'stations')}{s.stale_count ? `, ${s.stale_count} not reporting` : ''}{age ? ` · ${age}` : ''}
               </p>
               {s.issues.length > 0 && (
                 <ul className="mt-1 list-disc pl-4 text-xs text-amber-200">

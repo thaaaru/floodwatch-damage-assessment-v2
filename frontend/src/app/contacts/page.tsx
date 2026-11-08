@@ -31,7 +31,7 @@ export default function EmergencyContacts() {
     <div className={ui.page}>
       <PageHeader title="Emergency contacts" subtitle="ආපදා සහන ලබාගැනීමේ හදිසි ඇමතුම් අංක" width="max-w-5xl" />
 
-      <main className={`max-w-5xl ${ui.container} space-y-6`}>
+      <div className={`max-w-5xl ${ui.container} space-y-6`}>
         <Section title="National emergency numbers" subtitle="ජාතික මට්ටමේ හදිසි ඇමතුම් අංක">
 
           {/* Primary: DMC 117 */}
@@ -88,7 +88,7 @@ export default function EmergencyContacts() {
           </p>
           <p className={ui.meta}>Numbers verified 11 Oct 2026 against public DMC/Police advisories.</p>
         </Section>
-      </main>
+      </div>
     </div>
   );
 }

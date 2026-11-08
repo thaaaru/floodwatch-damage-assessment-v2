@@ -103,7 +103,7 @@ export default function NewsPage() {
       />
 
       {/* max-w-2xl keeps summaries near 70 characters per line */}
-      <main className={`max-w-2xl ${ui.container} text-base leading-[1.55]`}>
+      <div className={`max-w-2xl ${ui.container} text-base leading-[1.55]`}>
         {/* Source filter */}
         <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by source">
           {['all', ...SOURCE_CHIPS].map((s) => (
@@ -182,7 +182,7 @@ export default function NewsPage() {
             </ul>
           </details>
         )}
-      </main>
+      </div>
     </div>
   );
 }

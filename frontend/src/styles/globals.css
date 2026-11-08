@@ -29,6 +29,8 @@
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
+    /* Keeps focused and anchored elements clear of the sticky header (~120px) */
+    scroll-padding-top: 8rem;
   }
 
   /* Better focus styles */

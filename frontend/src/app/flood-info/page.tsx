@@ -188,7 +188,7 @@ export default function FloodInformationPage() {
                 <div className="mb-3 sm:mb-4">
                   <h3 className="text-xs sm:text-sm font-semibold text-gray-400 mb-1 sm:mb-2">Status by River</h3>
                   <p className="text-[10px] sm:text-xs text-slate-400 mb-2">Water levels: Irrigation Department of Sri Lanka (updated every 15 mins)</p>
-                  <div className="overflow-x-auto -mx-3 sm:mx-0">
+                  <div className="focus-ring overflow-x-auto -mx-3 sm:mx-0" tabIndex={0} role="region" aria-label="Status by river table">
                     <div className="inline-block min-w-full px-3 sm:px-0">
                     <table className="w-full text-xs sm:text-sm min-w-[640px]">
                       <thead>
@@ -303,7 +303,7 @@ export default function FloodInformationPage() {
             {floodThreat && floodThreat.top_risk_districts.length > 0 && (
               <div className="glass rounded-2xl p-3 sm:p-4 shadow-lg">
                 <h2 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Top Risk Districts</h2>
-                <div className="overflow-x-auto -mx-3 sm:mx-0">
+                <div className="focus-ring overflow-x-auto -mx-3 sm:mx-0" tabIndex={0} role="region" aria-label="Top risk districts table">
                   <div className="inline-block min-w-full px-3 sm:px-0">
                   <table className="w-full text-xs sm:text-sm min-w-[640px]">
                     <thead>

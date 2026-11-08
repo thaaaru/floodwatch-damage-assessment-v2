@@ -73,7 +73,7 @@ export default function ExternalLinks() {
     <div className={ui.page}>
       <PageHeader title="Flood information resources" subtitle="Directory of Sri Lanka flood and weather monitoring websites" />
 
-      <main className={`max-w-7xl ${ui.container} space-y-6`}>
+      <div className={`max-w-7xl ${ui.container} space-y-6`}>
         <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
           {FILTERS.map((f) => (
             <button
@@ -115,7 +115,7 @@ export default function ExternalLinks() {
             convenience; check official sources for warnings.
           </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

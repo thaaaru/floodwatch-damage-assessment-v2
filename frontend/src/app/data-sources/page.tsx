@@ -164,9 +164,9 @@ export default function DataSourcesPage() {
     <div className={ui.page}>
       <PageHeader title="Data sources" subtitle="Where FloodWatch's data comes from and how often it is checked" />
 
-      <main className={`max-w-7xl ${ui.container} space-y-6`}>
+      <div className={`max-w-7xl ${ui.container} space-y-6`}>
         <Section title="Sources">
-          <div className="overflow-x-auto -mx-3 sm:mx-0">
+          <div className="focus-ring overflow-x-auto -mx-3 sm:mx-0" tabIndex={0} role="region" aria-label="Data sources table">
             <table className="w-full text-xs sm:text-sm min-w-[860px]">
               <thead>
                 <tr className={ui.th}>
@@ -209,7 +209,7 @@ export default function DataSourcesPage() {
             </p>
           </div>
         </Section>
-      </main>
+      </div>
     </div>
   );
 }

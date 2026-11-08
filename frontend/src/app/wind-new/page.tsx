@@ -102,7 +102,7 @@ export default function WindNewPage() {
       </header>
 
       {/* Map container */}
-      <main className="flex-1 relative">
+      <div className="flex-1 relative">
         <Suspense
           fallback={
             <div className="w-full h-full flex items-center justify-center bg-gray-900">
@@ -116,7 +116,7 @@ export default function WindNewPage() {
             className="w-full h-full"
           />
         </Suspense>
-      </main>
+      </div>
 
       {/* Footer info */}
       <footer className="bg-gray-900/95 border-t border-gray-700 px-4 py-2 flex items-center justify-between text-xs text-gray-400 z-50">

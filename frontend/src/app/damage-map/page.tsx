@@ -880,7 +880,7 @@ export default function DamageMapPage() {
             {/* District Impact Table */}
             <div className={`${ui.card} ${ui.cardPad} lg:col-span-2`}>
               <h3 className={`${ui.h2} mb-3`}>District-Level Analysis</h3>
-              <div className="overflow-x-auto">
+              <div className="focus-ring overflow-x-auto" tabIndex={0} role="region" aria-label="District-level analysis table">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-slate-700">
