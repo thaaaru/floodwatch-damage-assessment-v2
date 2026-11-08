@@ -2,6 +2,7 @@
 
 import PageHeader from '@/components/ui/PageHeader';
 import Section from '@/components/ui/Section';
+import DataHealthPanel from '@/components/DataHealthPanel';
 import { ui } from '@/lib/ui';
 
 // Checked against the code: backend/app/jobs/scheduler.py intervals, backend/app/services/*
@@ -189,6 +190,10 @@ export default function DataSourcesPage() {
               </tbody>
             </table>
           </div>
+        </Section>
+
+        <Section title="Data check" subtitle="Automatic check of the live sources">
+          <DataHealthPanel />
         </Section>
 
         <Section title="What FloodWatch is not">

@@ -33,3 +33,10 @@ async def map_cyclones():
 async def rain_odds():
     """Chance of more than 25/50/100 mm in the next 24 h per forecast town (ECMWF ensemble, modelled)."""
     return await rain_odds_service.get()
+
+
+@router.get("/api/health/data")
+async def data_health():
+    """Latest data-health check (every 30 min): source ages, impossible or frozen values, Met vs NBRO gaps."""
+    from ..services.data_quality import data_quality
+    return data_quality.report if data_quality.report["checked_at"] else await data_quality.run()

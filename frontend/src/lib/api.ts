@@ -630,6 +630,10 @@ class ApiClient {
     return this.fetch<RainOddsResponse>('/api/rain/odds');
   }
 
+  async getDataHealth(): Promise<DataHealth> {
+    return this.fetch<DataHealth>('/api/health/data');
+  }
+
   async getMapFacilities(): Promise<MapFacilitiesResponse> {
     return this.fetch<MapFacilitiesResponse>('/api/map/facilities');
   }
@@ -1247,6 +1251,16 @@ export interface CyclonesResponse {
 // Chance of more than 25/50/100 mm in the next 24 h per forecast town (ECMWF ensemble, lib/forecast.ts).
 export interface RainOdds { name: string; median_mm: number; p25: number; p50: number; p100: number }
 export interface RainOddsResponse { source: string; hours: number; locations: RainOdds[]; stale: boolean }
+
+// Every-30-min data check (backend/app/services/data_quality.py).
+export interface DataHealthSource {
+  source: 'met' | 'nbro' | 'rivers' | 'era5'; status: 'ok' | 'warn' | 'fail'; count: number;
+  latest: string | null; age_hours?: number | null; lag_days?: number | null; stale_count?: number; issues: string[];
+}
+export interface DataHealth {
+  checked_at: string | null; sources: DataHealthSource[];
+  disagreements: { met: string; met_mm: number; nbro: string; nbro_24h_mm: number; gauges_within_km: number }[];
+}
 
 export interface Rain24hResponse {
   source: string;

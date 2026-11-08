@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
@@ -154,6 +154,15 @@ async def update_rain_history():
         logger.error(f"Rain history update failed: {e}")
 
 
+async def check_data_quality():
+    """Every 30 min: flag stale, impossible or frozen readings and Met/NBRO disagreements (read-only)."""
+    from ..services.data_quality import data_quality
+    try:
+        await data_quality.run()
+    except Exception as e:
+        logger.error(f"Data health check failed: {e}")
+
+
 async def sync_river_gauges():
     """Background job: the only caller of the Irrigation Dept gauge layers."""
     from ..services.irrigation_fetcher import irrigation_fetcher
@@ -256,6 +265,16 @@ def start_scheduler():
         trigger=CronTrigger(hour=3, minute=15, timezone="Asia/Colombo"),
         id="rain_history_update",
         name="Update ERA5 rainfall history",
+        replace_existing=True
+    )
+
+    # Data health - every 30 min, first run 2 min after start so the feeds have loaded
+    scheduler.add_job(
+        check_data_quality,
+        trigger=IntervalTrigger(minutes=30),
+        id="data_quality_check",
+        name="Check data health",
+        next_run_time=datetime.now() + timedelta(minutes=2),
         replace_existing=True
     )
 
